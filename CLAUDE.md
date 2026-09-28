@@ -7,17 +7,41 @@ Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
 ## 상시 규칙
 
-- 스택이 [docs/decisions/](docs/decisions/)에 기록되기 전에는 앱 코드·스캐폴딩을 만들지 않는다
-- 확정된 결정은 `docs/decisions/NNNN-제목.md`로 남긴다. 대화로만 정한 것은 다음 세션에 사라진다
+- 스택이 [docs/decisions/ideas/](docs/decisions/ideas/INDEX.md)에 `ADOPT`로 기록되기 전에는 앱 코드·스캐폴딩을 만들지 않는다
+- 확정된 결정은 system-crew 형식으로 `docs/decisions/` 아래에 남긴다 (아래 표). 대화로만 정한 것은 다음 세션에 사라진다
 - `samples/raw/`는 바이트 단위 테스트 픽스처다. 편집기로 열어 저장하거나 줄바꿈을 정규화하지 않는다
 - 커밋은 전역 `korean-git-commit` 룰을 따른다
 - 스택이 정해지면 이 파일의 `구조`·`빌드` 절을 채우고 `.gitignore`에 산출물 경로를 추가한다
 
+## system-crew (호출형)
+
+`.cursor/system-crew` 서브모듈, **OnDemand** 모드. 평소 작업에는 적용하지 않는다.
+전역 `role-producer` 룰도 이 프로젝트에서는 호출됐을 때만 따른다.
+
+- 호출: `system-crew`, `시스템 크루`, `Producer로`, `아이디어 평가해줘`, `ideation`, `quick으로: …`
+- 호출되면 [.cursor/skills/system-crew/SKILL.md](.cursor/skills/system-crew/SKILL.md)를 읽고 따른다
+- 게임용 팩이라 `tuning`(지표)·`feedback`(플레이테스트)·충실도 QA는 거의 해당이 없다. 주로 쓰는 것:
+
+| 요청 유형 | 쓰임 | 기록 위치 |
+|---|---|---|
+| `idea` | 스택·설계 선택 판정 (ADOPT / DEFER / REJECT) | `docs/decisions/ideas/` |
+| `ideation` | 대안 N개 제시 → 사용자가 선택 (MVP 범위·UI 배치) | `docs/decisions/ideation/` |
+| `reference` | 다른 에디터(Typora·Obsidian 등)를 참고한 재현 | `docs/references/` |
+
+업데이트:
+
+```powershell
+git submodule update --remote .cursor/system-crew
+powershell -File .cursor/system-crew/scripts/sync-to-project.ps1 -Mode OnDemand
+```
+
 ## 구조
 
 ```
+.cursor/system-crew/   system-crew 서브모듈 (직접 고치지 않는다)
+.cursor/rules|skills/  sync 산출물 (Cursor용). 로컬 오버라이드는 .cursor/rules/local/
 docs/next-session.md   지금 열려 있는 것 (결정 대기·다음 할 일)
-docs/decisions/        확정된 설계 결정 (ADR)
+docs/decisions/        확정된 결정 (system-crew 형식)
 samples/               렌더링·파일 처리 확인용 마크다운 샘플
 ```
 
