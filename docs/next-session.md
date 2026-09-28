@@ -1,9 +1,9 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-09-28 (초기세팅)
-읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`decisions/`](decisions/)
+작성: 2026-09-28 · 갱신: 2026-09-28 (초기세팅·system-crew 설치)
+읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
-이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 `decisions/`로 옮기고 여기서 지운다.
+이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
 
 ---
 
@@ -13,6 +13,7 @@
 |---|---|
 | 전역 Claude Code 환경 | 완료 — `claude-bootstrap` 설치·최신 (origin `d549268`) |
 | 프로젝트 초기세팅 | 완료 — git, `CLAUDE.md`, 인계 문서, 샘플 |
+| system-crew | 설치 — 0.9.0, OnDemand. 결정 기록은 `decisions/ideas/` 형식으로 통일 |
 | 기술 스택 | **미정** ← §2-1 |
 | MVP 범위 | **미정** ← §2-2 |
 | 스캐폴딩·구현 | 시작 전 |
@@ -29,11 +30,13 @@
 | WPF (.NET) | 순수 네이티브, 파일 시스템 API가 자연스럽다. `DiscordForumOps`와 같은 .NET | 미리보기는 WebView2 + Markdig로 결국 HTML 렌더. 에디터 컴포넌트는 AvalonEdit 정도로 선택지가 좁다 |
 | WinUI 3 (.NET) | 최신 Fluent 룩 | 도구·배포(MSIX)가 까다롭고 에디터 컴포넌트가 가장 부족하다 |
 
-결정 시 `decisions/0001-tech-stack.md`로 기록한다.
+`system-crew idea`로 판정하고 `decisions/ideas/YYYYMMDD-stack.md` + INDEX 행으로 남긴다.
+참고 판정: `cursor-usage-widget`의 [`20260729-stack-tauri.md`](../../cursor-usage-widget/docs/decisions/ideas/20260729-stack-tauri.md) (위젯 기준 — 에디터는 에디터 컴포넌트·렌더러 비중이 크다).
 
 ### 2-2. MVP 범위
 
 첫 릴리스에 넣을 것을 고른다. 나머지는 백로그로 둔다.
+`system-crew ideation`으로 MVP 묶음 대안 몇 개를 받아 고르면 `decisions/ideation/`에 남는다.
 
 - [ ] 파일 열기·저장 (드래그 앤 드롭 포함)
 - [ ] 보기 모드 (렌더링만)
@@ -72,7 +75,7 @@
 
 ## 3. 스택 결정 직후 할 일
 
-1. `decisions/0001-tech-stack.md` 작성
+1. 스택 판정을 `decisions/ideas/`에 `ADOPT`로 기록
 2. 스캐폴딩
 3. `.gitignore`에 빌드 산출물 추가 (예: Tauri면 `node_modules/`·`dist/`·`src-tauri/target/`, .NET이면 `bin/`·`obj/`)
 4. `CLAUDE.md`의 `구조`·`빌드` 절 채우기
