@@ -1,0 +1,19 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+
+# Claude Code 개인 설정·워크트리
+.claude/settings.local.json
+.claude/worktrees/
+.mcp.json
+
+# 시크릿
+.env
+.env.*
+
+# 빌드 산출물 — 스택 결정 후 해당 항목을 추가한다 (docs/next-session.md §3)
