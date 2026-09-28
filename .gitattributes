@@ -1,0 +1,22 @@
+# 기본은 LF.
+* text=auto eol=lf
+
+# Windows 전용 스크립트·솔루션은 CRLF 로 체크아웃한다.
+# cmd.exe 는 LF 줄바꿈 .bat 에서 레이블·goto 가 어긋날 수 있다.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sln text eol=crlf
+
+# 인코딩·줄바꿈 보존 테스트용 샘플은 바이트 그대로 둔다 (samples/README.md 참고)
+samples/raw/** -text
+
+# 바이너리 취급
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.zip binary
+*.pdf binary
