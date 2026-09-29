@@ -1,0 +1,32 @@
+/* 문서 테마 토큰 — 수치는 여기 한 곳에만 둔다 (system-spec §Tunables: 매직넘버 하드코딩 금지).
+   기본값은 Typora `#write` 수치(brief R22): 본문 폭 860 px, 16 px / 1.6.
+   셸 토큰(--fg --bg --muted --line --accent --font-ui)은 src/style.css 가 정의한다. 이름이 겹치지 않게 유지한다. */
+
+:root {
+  /* 레이아웃 */
+  --body-max-width: 860px;
+  --body-padding-top: 32px;
+  --body-padding-bottom: 80px;
+  /* 좌우 여백은 창 폭에 따라 16–40 px. 400 px 창에서도 본문이 남도록 vw 기반 */
+  --body-padding-x: clamp(16px, 5vw, 40px);
+
+  /* 타이포그래피 */
+  --base-font-size: 16px;
+  --line-height: 1.6;
+  --code-font-size: 0.9em;
+  --code-line-height: 1.5;
+
+  /* 폰트 스택 — Pretendard 는 번들하지 않는다(설치돼 있으면 사용). Malgun Gothic 은 코드 스택에서
+     반드시 monospace 뒤에 둔다: 앞에 오면 셀 폭을 정해 ASCII 간격이 벌어진다 (brief G24, herdr PR #9) */
+  --font-body: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code: "D2Coding", "Cascadia Code", Consolas, "Courier New", monospace, "Malgun Gothic";
+}
+
+/* Typora 변수명 별칭 — 나중에 Typora `github.user.css` 호환(백로그)용. 값은 github-markdown 팔레트를 따른다 */
+.markdown-body {
+  --bg-color: var(--bgColor-default);
+  --text-color: var(--fgColor-default);
+  --primary-color: var(--fgColor-accent);
+  --code-block-bg-color: var(--bgColor-muted);
+  --monospace: var(--font-code);
+}
