@@ -8,6 +8,7 @@
 //! [`query_default_app`]이 이 문자열을 돌려주면 MdEditor가 기본 앱이다.
 
 use tauri::{AppHandle, Manager};
+use windows::Win32::Foundation::HWND;
 use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
 use winreg::RegKey;
 
@@ -42,29 +43,26 @@ fn current_build() -> Option<u32> {
     parse_build(&raw)
 }
 
-/// 널 종료 UTF-16 버퍼.
-fn wide(s: &str) -> Vec<u16> {
-    s.encode_utf16().chain(std::iter::once(0)).collect()
-}
-
 /// `ShellExecuteW(hwnd, "open", target)`. `ms-settings:` 같은 URI 스킴은 이 경로로만 열린다.
-fn shell_open(hwnd: *mut core::ffi::c_void, target: &str) -> Result<(), String> {
-    use windows_sys::Win32::UI::Shell::ShellExecuteW;
-    use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+fn shell_open(hwnd: Option<HWND>, target: &str) -> Result<(), String> {
+    use windows::core::{HSTRING, PCWSTR};
+    use windows::Win32::UI::Shell::ShellExecuteW;
+    use windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
 
-    let verb = wide("open");
-    let file = wide(target);
-    // SAFETY: 널 종료 UTF-16 버퍼가 호출 동안 살아 있고, 나머지 포인터 인수는 널을 허용한다.
+    let verb = HSTRING::from("open");
+    let file = HSTRING::from(target);
+    // SAFETY: 널 종료 UTF-16 버퍼(HSTRING)가 호출 동안 살아 있고, 나머지 포인터 인수는 널을 허용한다.
     let code = unsafe {
         ShellExecuteW(
             hwnd,
-            verb.as_ptr(),
-            file.as_ptr(),
-            std::ptr::null(),
-            std::ptr::null(),
+            &verb,
+            &file,
+            PCWSTR::null(),
+            PCWSTR::null(),
             SW_SHOWNORMAL,
         )
-    } as isize;
+    }
+    .0 as isize;
     // Win32 규약: 32보다 크면 성공, 이하이면 오류 코드(SE_ERR_*)
     if code > 32 {
         Ok(())
@@ -76,11 +74,11 @@ fn shell_open(hwnd: *mut core::ffi::c_void, target: &str) -> Result<(), String> 
 /// Windows 설정 → 앱 → 기본 앱을 연다. Win11(빌드 22000+)은 MdEditor 페이지로 바로, Win10은 목록으로.
 #[tauri::command]
 pub fn open_default_apps_settings(app: AppHandle) -> Result<(), String> {
+    // tauri 가 주는 HWND 는 다른 windows 크레이트 버전의 타입일 수 있으므로 포인터만 옮겨 담는다
     let hwnd = app
         .get_webview_window("main")
         .and_then(|w| w.hwnd().ok())
-        .map(|h| h.0)
-        .unwrap_or(std::ptr::null_mut());
+        .map(|h| HWND(h.0));
     shell_open(hwnd, &settings_uri(current_build()))
 }
 

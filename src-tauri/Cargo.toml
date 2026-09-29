@@ -27,6 +27,5 @@ mdeditor-core = { path = "../crates/mdeditor-core" }
 notify-debouncer-full = "0.7.0"
 blake3 = "1"
 # 파일 연결 (assoc.rs)
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
-windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_Com", "Win32_UI_Shell"] }
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_Com", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
 winreg = "0.55"
