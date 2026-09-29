@@ -20,3 +20,6 @@ desktop.ini
 
 # 생성형 대용량 샘플 (samples/gen-large.ps1)
 samples/large/
+
+# Rust 크레이트 빌드 산출물 (Phase 0-2 코어)
+crates/**/target/
