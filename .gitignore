@@ -23,3 +23,13 @@ samples/large/
 
 # Rust 크레이트 빌드 산출물 (Phase 0-2 코어)
 crates/**/target/
+
+# Phase 0 스파이크 (spike/) 빌드 산출물·측정 결과
+spike/**/target/
+spike/**/bin/
+spike/**/obj/
+spike/**/publish/
+spike/**/node_modules/
+spike/**/dist/
+spike/**/gen/schemas/
+spike/measure/results*.csv

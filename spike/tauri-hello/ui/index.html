@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Hello</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>Hello</h1>
+  <script>
+    // Signal "ready" only after the first frame has actually been painted:
+    // DOMContentLoaded -> rAF (frame scheduled) -> rAF (previous frame painted).
+    document.addEventListener('DOMContentLoaded', function () {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          window.__TAURI__.core.invoke('ready');
+        });
+      });
+    });
+  </script>
+</body>
+</html>
