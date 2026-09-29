@@ -49,8 +49,11 @@ Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tau
 crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
 src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·load_document), watch.rs(외부 변경),
                        assoc.rs(파일 연결·기본 앱), nsis/hooks.nsh(설치기 레지스트리 훅), capabilities/(최소 권한)
-src/                   프런트(vanilla TS). main.ts 셸(열기 경로·목차·상태바·줌·다크), render/(markdown-it 파이프라인,
+src/                   프런트(vanilla TS). main.ts 셸(열기 경로·목차·상태바·줌·설정 적용), render/(markdown-it 파이프라인,
                        types.ts가 계약), theme/(문서 CSS·폰트), style.css(셸 CSS·색 토큰)
+                       titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), nav.ts(왼쪽 탐색 영역·최근 파일),
+                       resize.ts(목차 폭), settings.ts(설정 스키마 — 항목을 더하면 팝업에 자동 표시), settings-dialog.ts,
+                       dialog.ts(알림·확인 팝업), prefs.ts(UI 상태 localStorage)
 public/fonts/          D2Coding woff2 (OFL) 번들
 spike/                 (main에 없음) Phase 0 실험 앱·측정 — archived-exp/ime-spike, archived-exp/wpf-hello
 ```
@@ -69,4 +72,6 @@ cd crates/mdeditor-core; cargo run --example roundtrip -- ../../samples/raw   # 
 
 - Vite `server.watch.ignored`에 `src-tauri`·`target`이 빠지면 cargo가 쓰는 exe 때문에 dev 서버가 EBUSY로 죽는다
 - 창은 `lib.rs`에서 코드로 만든다 (`on_navigation` 훅 때문). `tauri.conf.json`의 `app.windows`는 비워 둔다
+- 창은 `decorations(false)`. 제목 표시줄 버튼·드래그는 프런트가 그리고, 창 API를 새로 쓰면 `capabilities/default.json`에 권한을 더한다
+- 사용자 조절 값은 `src/settings.ts`의 `SETTINGS`에 추가하고 `main.ts` `applySetting`에서 적용한다 (하드코딩 금지)
 - CM6·다크 모드에서 `.cm-cursor` 색은 반드시 테마에서 지정한다 (기본 검정이라 안 보임 — Phase 0 발견)
