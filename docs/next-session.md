@@ -17,10 +17,10 @@
 | 에디터 엔진 | **확정** `ADOPT_WITH_CHANGES` — CodeMirror 6 ([`decisions/ideas/20260929-editor-engine.md`](decisions/ideas/20260929-editor-engine.md)) |
 | MVP 범위 | **V1 리더 퍼스트** ([`decisions/ideation/20260929-mvp-scope.md`](decisions/ideation/20260929-mvp-scope.md)) = 로드맵 Phase 0–2 |
 | 개발 계획 | 확정 — [`roadmap.md`](roadmap.md) |
-| Phase 0-2 바이트 보존 코어 | **완료** — `exp/core` `crates/mdeditor-core` (205aaa2). 테스트 23개 통과, `samples/raw` 제자리 저장 → `git status` 깨끗 |
-| Phase 0-3 Windows 실측 | **완료** — `exp/wpf-hello` `spike/measure/results-20260929.md` (548df71). Tauri 371 ms / WPF 732 ms |
+| Phase 0-2 바이트 보존 코어 | **완료** — `exp/core` `crates/mdeditor-core`. 테스트 23개 통과, `samples/raw` 제자리 저장 → `git status` 깨끗 |
+| Phase 0-3 Windows 실측 | **완료** — `exp/wpf-hello` `spike/measure/results-20260929.md`. Tauri 371 ms / WPF 732 ms |
 | Phase 0-4 픽스처 | **완료** — `samples/paths/`, `samples/gen-large.ps1` (main) |
-| Phase 0-1 IME 스파이크 | **앱 준비 완료, 사용자 실측 대기** — `exp/ime-spike` `spike/ime-spike` (29c5eb4) ← §2 |
+| Phase 0-1 IME 스파이크 | **앱 준비 완료, 사용자 실측 대기** — `exp/ime-spike` `spike/ime-spike` ← §2 |
 | Phase 1 (뷰어 MVP) | 0-1 통과 후 |
 
 결과 요약은 [`decisions/ideas/20260929-stack.md`](decisions/ideas/20260929-stack.md) "Phase 0 결과 기록란"에 있다.
