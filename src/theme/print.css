@@ -53,6 +53,7 @@
   }
 
   /* ---- 코드 블록: 종이에는 스크롤이 없으니 긴 줄을 접는다. 페이지 분할은 허용 (break-inside 지정 안 함) ---- */
+  .markdown-body:lang(ko) pre,
   .markdown-body pre {
     overflow: visible;
     white-space: pre-wrap;
@@ -60,6 +61,7 @@
     word-break: normal;
     border: 1px solid var(--borderColor-default);
   }
+  .markdown-body:lang(ko) pre code,
   .markdown-body pre code {
     white-space: pre-wrap;
     overflow-wrap: anywhere;

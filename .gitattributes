@@ -20,3 +20,5 @@ samples/raw/** -text
 *.icns binary
 *.zip binary
 *.pdf binary
+*.woff binary
+*.woff2 binary
