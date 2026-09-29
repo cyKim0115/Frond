@@ -1,5 +1,5 @@
 /* 인쇄 — MVP 의 PDF 는 window.print() (stack 결정 Modified approach 7, brief G20·G21).
-   셸(사이드바·상태바·배너)을 숨기고, 스크롤 컨테이너를 풀어 문서가 여러 장으로 흐르게 한다.
+   셸(제목 표시줄·탐색 영역·목차·상태바·배너)을 숨기고, 스크롤 컨테이너를 풀어 문서가 여러 장으로 흐르게 한다.
    팔레트는 github-markdown.css 의 @media print 블록이 항상 라이트로 고정한다.
    코드 블록은 긴 코드가 여러 장에 걸쳐 나뉘어야 하므로 break-inside: avoid 를 걸지 않는다 (G21: 페이지보다 큰 요소에 avoid → 빈 페이지). */
 
@@ -8,7 +8,7 @@
 }
 
 @media print {
-  /* ---- 셸 해제: 고정 높이·overflow 를 풀어야 한 장 이상 인쇄된다 (src/style.css 의 html/body/#app/#viewer 덮음) ---- */
+  /* ---- 셸 해제: 고정 높이·overflow 를 풀어야 한 장 이상 인쇄된다 (src/style.css 의 html/body/#app/#main/#viewer 덮음) ---- */
   html,
   body {
     height: auto;
@@ -19,11 +19,19 @@
     display: block;
     height: auto;
   }
+  #nav,
+  #nav-toggle,
   #sidebar,
+  #sidebar-resizer,
+  .col-header,
   #statusbar,
   #banner,
-  #welcome {
+  #welcome,
+  #app-dialog {
     display: none !important;
+  }
+  #main {
+    display: block;
   }
   #viewer {
     overflow: visible;

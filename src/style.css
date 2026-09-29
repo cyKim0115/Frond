@@ -1,4 +1,6 @@
-/* 앱 셸 — 사이드바·뷰어·상태바 배치와 색 토큰. 문서 본문 스타일은 src/theme/. */
+/* 앱 셸 — 제목 표시줄·탐색 영역·목차·뷰어·상태바 배치와 색 토큰. 문서 본문 스타일은 src/theme/.
+   창 테두리가 없으므로(lib.rs decorations false) 각 열이 제 배경색으로 창 맨 위까지 올라가고,
+   그 머리 띠(.col-header)가 모여 제목 표시줄이 된다 — 위쪽에 따로 떨어진 띠가 생기지 않는다. */
 
 :root {
   --fg: #1f2328;
@@ -6,9 +8,18 @@
   --muted: #59636e;
   --line: #d0d7de;
   --accent: #0969da;
+  --on-accent: #ffffff;
+  --danger: #cf222e;
   --sidebar-bg: #f6f8fa;
+  --hover: color-mix(in srgb, var(--fg) 7%, transparent);
+  --pressed: color-mix(in srgb, var(--fg) 12%, transparent);
+  --titlebar-h: 36px;
+  --toggle-w: 44px;
   --statusbar-h: 24px;
+  --nav-w: 248px;
   --sidebar-w: 260px;
+  --panel-dur: 240ms;
+  --panel-ease: cubic-bezier(0.2, 0, 0, 1);
   --font-ui: "Pretendard", "Malgun Gothic", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: light;
 }
@@ -19,6 +30,8 @@
     --muted: #9198a1;
     --line: #30363d;
     --accent: #58a6ff;
+    --on-accent: #0d1117;
+    --danger: #f85149;
     --sidebar-bg: #161b22;
     color-scheme: dark;
   }
@@ -29,8 +42,13 @@
   --muted: #9198a1;
   --line: #30363d;
   --accent: #58a6ff;
+  --on-accent: #0d1117;
+  --danger: #f85149;
   --sidebar-bg: #161b22;
   color-scheme: dark;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --panel-dur: 0ms; }
 }
 
 * { box-sizing: border-box; }
@@ -43,23 +61,172 @@ body {
 }
 
 #app {
+  position: relative;
   height: 100%;
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: 1fr var(--statusbar-h);
-  grid-template-areas: "sidebar viewer" "status status";
+  grid-template-columns: auto auto auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) var(--statusbar-h);
+  grid-template-areas: "nav sidebar resizer main" "status status status status";
 }
+/* 저장된 상태를 적용하는 첫 그림, 목차 폭을 끄는 동안에는 애니메이션을 끈다 */
+#app.no-anim *, #app.resizing * { transition: none !important; }
+#app.resizing, #app.resizing * { cursor: col-resize !important; user-select: none; }
+
+/* ---- 공통: 머리 띠·아이콘 버튼 ------------------------------------------------- */
+
+.col-header {
+  flex: none;
+  height: var(--titlebar-h);
+  display: flex;
+  align-items: center;
+}
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.icon-btn.small { width: 22px; height: 22px; border-radius: 4px; }
+.icon-btn:hover { background: var(--hover); color: var(--fg); }
+.icon-btn:active { background: var(--pressed); }
+.icon-btn:disabled { opacity: 0.4; pointer-events: none; }
+.icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.icon-btn.small svg { width: 14px; height: 14px; }
+
+/* 토글은 탐색 영역이 닫혀도 보이도록 #app 왼쪽 위에 고정. 가려지는 자리만큼 옆 열이 비켜 준다 */
+#nav-toggle {
+  position: absolute;
+  z-index: 3;
+  top: calc((var(--titlebar-h) - 28px) / 2);
+  left: calc((var(--toggle-w) - 28px) / 2);
+}
+#app[data-nav="open"] #nav-toggle { color: var(--fg); }
+
+/* ---- 탐색 영역: 바깥 폭만 0 ↔ --nav-w 로 움직이고 안쪽은 고정 폭이라 목록이 다시 줄바꿈되지 않는다 ---- */
+
+#nav {
+  grid-area: nav;
+  width: 0;
+  overflow: hidden;
+  background: var(--sidebar-bg);
+  transition: width var(--panel-dur) var(--panel-ease);
+}
+#app[data-nav="open"] #nav { width: var(--nav-w); }
+.nav-inner {
+  width: var(--nav-w);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  font-size: 13px;
+  opacity: 0;
+  transform: translateX(-12px);
+  transition:
+    opacity var(--panel-dur) var(--panel-ease),
+    transform var(--panel-dur) var(--panel-ease);
+}
+#app[data-nav="open"] .nav-inner { opacity: 1; transform: none; }
+#nav .col-header { padding-left: var(--toggle-w); gap: 2px; }
+#nav-tabs { display: flex; gap: 2px; }
+.nav-tab[aria-selected="true"] { background: var(--pressed); color: var(--fg); }
+
+.nav-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.nav-panel[hidden] { display: none; }
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px 4px 14px;
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.panel-empty { margin: 4px 14px; font-size: 12px; color: var(--muted); }
+.panel-empty[hidden] { display: none; }
+
+#recent-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0 6px 8px;
+}
+#recent-list li { position: relative; }
+.recent-open {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 5px 30px 5px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.recent-open:hover { background: var(--hover); }
+.recent-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.recent-open .name,
+.recent-open .dir {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.recent-open .dir { font-size: 11px; color: var(--muted); }
+.recent-open[aria-current="true"] .name { color: var(--accent); font-weight: 600; }
+.recent-remove {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  translate: 0 -50%;
+  opacity: 0;
+}
+#recent-list li:hover .recent-remove,
+.recent-remove:focus-visible { opacity: 1; }
+
+/* ---- 목차 --------------------------------------------------------------------- */
 
 #sidebar {
   grid-area: sidebar;
   width: var(--sidebar-w);
-  overflow: auto;
+  min-width: 120px;
+  max-width: 60vw;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid var(--line);
   background: var(--sidebar-bg);
-  padding: 12px 8px;
   font-size: 13px;
 }
 #sidebar[hidden] { display: none; }
+#toc {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 8px 12px;
+}
 #toc a {
   display: block;
   color: var(--fg);
@@ -77,10 +244,77 @@ body {
 #toc a[data-level="4"] { padding-left: 42px; }
 #toc a[data-level="5"], #toc a[data-level="6"] { padding-left: 54px; }
 
-#viewer {
-  grid-area: viewer;
-  overflow: auto;
+/* 폭 0 요소 + 가상 요소로 경계선 양쪽에 잡는 자리를 둔다. 누를 때·올릴 때만 강조선 */
+#sidebar-resizer {
+  grid-area: resizer;
+  position: relative;
+  z-index: 2;
+  width: 0;
+  outline: none;
+}
+#sidebar-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 0 -4px 0 -4px;
+  cursor: col-resize;
+}
+#sidebar-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 -1px 0 -2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+#sidebar-resizer:hover::after { opacity: 1; transition-delay: 0.15s; }
+#app.resizing #sidebar-resizer::after,
+#sidebar-resizer:focus-visible::after { opacity: 1; }
+#sidebar[hidden] + #sidebar-resizer { display: none; }
+
+/* ---- 본문 열: 제목 표시줄 + 뷰어 ------------------------------------------------ */
+
+#main {
+  grid-area: main;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+#titlebar { transition: padding-left var(--panel-dur) var(--panel-ease); }
+/* 탐색 영역이 닫혀 있고 목차도 없으면 토글이 이 띠 위에 얹힌다 */
+#app[data-nav="closed"] #sidebar[hidden] ~ #main #titlebar { padding-left: var(--toggle-w); }
+#title-text {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#open-settings { margin-right: 6px; }
+#window-controls { display: flex; align-self: stretch; }
+#window-controls button {
+  width: 46px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets", sans-serif;
+  font-size: 10px;
+  cursor: default;
+}
+#window-controls button:hover { background: var(--hover); }
+#window-controls button:active { background: var(--pressed); }
+#window-controls #win-close:hover { background: #c42b1c; color: #fff; }
+#window-controls #win-close:active { background: #c42b1c; color: color-mix(in srgb, #fff 75%, transparent); }
+
+#viewer {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 #viewer.drag-over { outline: 3px dashed var(--accent); outline-offset: -3px; }
 #welcome {
@@ -102,6 +336,21 @@ body {
   font-size: 12px;
 }
 #document[hidden], #welcome[hidden] { display: none; }
+/* 목차·문서 안 링크로 이동한 제목·각주 위에 남기는 간격 — 설정 '제목 이동 시 위쪽 여백'(main.ts가 변수를 채운다) */
+#document [id] { scroll-margin-top: var(--heading-scroll-offset, 24px); }
+
+#banner {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+#banner[hidden] { display: none; }
+
+/* ---- 상태바 ------------------------------------------------------------------- */
 
 #statusbar {
   grid-area: status;
@@ -126,20 +375,124 @@ body {
   cursor: pointer;
 }
 #statusbar button[hidden] { display: none; }
-
-@media (max-width: 720px) {
-  #sidebar { display: none; }
-}
 #status-path { overflow: hidden; text-overflow: ellipsis; }
 #statusbar .warn { color: #d1242f; }
 
-#banner {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  padding: 6px 12px;
-  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
-  border-bottom: 1px solid var(--line);
-  font-size: 13px;
+@media (max-width: 720px) {
+  #sidebar, #sidebar-resizer { display: none; }
+  #app[data-nav="closed"] #titlebar { padding-left: var(--toggle-w); }
 }
-#banner[hidden] { display: none; }
+
+/* ---- 팝업 공통 (.modal) — 알림·확인(dialog.ts), 설정(settings-dialog.ts) --------------- */
+
+.modal {
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.28);
+  font-size: 13px;
+  /* UI 문장도 한글 단어 중간에서 끊지 않는다 (본문은 theme/ko.css) */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.modal[open] { animation: modal-in 160ms var(--panel-ease); }
+.modal::backdrop { background: rgb(0 0 0 / 0.32); }
+.modal[open]::backdrop { animation: backdrop-in 160ms ease-out; }
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+@keyframes backdrop-in {
+  from { opacity: 0; }
+}
+.modal button:not(.icon-btn) {
+  min-width: 72px;
+  padding: 5px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+.modal button:not(.icon-btn):hover { background: var(--hover); }
+.modal button[hidden] { display: none; }
+.modal button:not(.icon-btn):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.modal button.primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.modal button.danger { border-color: var(--danger); background: var(--danger); color: #fff; }
+.modal button.primary:hover,
+.modal button.danger:hover { filter: brightness(1.08); }
+
+/* 알림·확인 */
+#app-dialog { width: min(400px, calc(100vw - 32px)); }
+#app-dialog form { padding: 18px 20px 16px; }
+#dialog-title { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+#dialog-message { margin: 0; line-height: 1.55; }
+#dialog-detail {
+  margin: 10px 0 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--sidebar-bg);
+  color: var(--muted);
+  font-size: 12px;
+}
+#dialog-detail[hidden] { display: none; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+/* 설정 — 행은 스키마(settings.ts)에서 그린다 */
+#settings-dialog { width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 64px); }
+#settings-dialog form { display: flex; flex-direction: column; max-height: inherit; }
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 6px 20px;
+}
+.modal-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+#settings-body { overflow: auto; padding: 0 20px 8px; }
+#settings-body h3 {
+  margin: 14px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+}
+#settings-body h3 + .setting-row { border-top: 0; }
+.setting-row label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.setting-label { font-weight: 500; }
+.setting-hint { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.setting-control { flex: none; display: flex; align-items: center; gap: 6px; }
+.setting-control select,
+.setting-control input {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+}
+.setting-control input { width: 84px; text-align: right; font-variant-numeric: tabular-nums; }
+.setting-control select:focus-visible,
+.setting-control input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+.setting-unit { min-width: 16px; color: var(--muted); font-size: 12px; }
+/* 기본값이면 자리만 차지해 컨트롤 열이 흔들리지 않게 한다 */
+.setting-reset[hidden] { display: inline-grid; visibility: hidden; }
+.modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--line);
+}
+.modal-note { font-size: 12px; color: var(--muted); }

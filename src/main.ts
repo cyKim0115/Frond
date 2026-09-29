@@ -1,6 +1,7 @@
 /**
- * 앱 셸 — 파일 열기 경로(argv·두 번째 인스턴스·드롭·Ctrl+O), 렌더 호출, 목차·상태바·줌·다크 모드,
+ * 앱 셸 — 파일 열기 경로(argv·두 번째 인스턴스·드롭·Ctrl+O·최근 파일), 렌더 호출, 목차·상태바·줌·다크 모드,
  * 외부 변경 리로드. 파일 읽기는 전부 Rust `load_document`(mdeditor-core)로 간다.
+ * 제목 표시줄은 titlebar.ts, 탐색 영역은 nav.ts, 목차 폭은 resize.ts, 설정은 settings.ts(+ settings-dialog.ts).
  */
 
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
@@ -9,7 +10,12 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { initNav } from "./nav";
 import { highlightCodeBlocks, renderMarkdown } from "./render";
+import { initSidebarResize } from "./resize";
+import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
+import { initSettingsDialog } from "./settings-dialog";
+import { initTitlebar, setTitleText } from "./titlebar";
 import "./style.css";
 import "./theme/index.css";
 
@@ -40,6 +46,7 @@ const banner = $("#banner");
 const sidebar = $("#sidebar");
 const toc = $("#toc");
 const statusDefault = $<HTMLButtonElement>("#status-default");
+const app = $("#app");
 
 let current: DocumentPayload | null = null;
 let zoom = 1;
@@ -51,14 +58,47 @@ const toAssetUrl = IS_TAURI
 
 // ---- 열기 ---------------------------------------------------------------
 
+/** 브라우저 미리보기(`npm run dev`)에서는 Vite가 서빙하는 프로젝트 파일을 fetch로 읽는다 */
+async function fetchDocument(path: string): Promise<DocumentPayload> {
+  const res = await fetch(`/${path}`);
+  // 없는 경로도 Vite SPA 폴백이 index.html(200)을 준다
+  if (!res.ok || res.headers.get("content-type")?.includes("text/html")) throw new Error(`${path}: 찾을 수 없음`);
+  const text = await res.text();
+  const slash = path.lastIndexOf("/");
+  return {
+    path,
+    dir: slash < 0 ? "" : path.slice(0, slash),
+    name: path.slice(slash + 1),
+    text,
+    info: { encoding: "UTF-8", bom: false, eol: "LF", mixed_eol: false, final_newline: true, lossy: false, line_count: 0, byte_len: text.length },
+    hash: "",
+  };
+}
+
+const loadDocument = IS_TAURI
+  ? (path: string) => invoke<DocumentPayload>("load_document", { path })
+  : fetchDocument;
+
+async function fileExists(path: string): Promise<boolean> {
+  if (IS_TAURI) return invoke<boolean>("file_exists", { path });
+  return fetchDocument(path).then(
+    () => true,
+    () => false,
+  );
+}
+
+const nav = initNav({ open: (path) => openPath(path), exists: fileExists });
+
+/** keepScroll이 있으면 같은 문서 리로드(F5·외부 변경) — 최근 목록 순서는 건드리지 않는다 */
 async function openPath(path: string, keepScroll?: number): Promise<void> {
   try {
-    const doc = await invoke<DocumentPayload>("load_document", { path });
+    const doc = await loadDocument(path);
     current = doc;
     show(doc);
     if (keepScroll !== undefined) viewer.scrollTop = keepScroll;
+    else nav.remember(doc.path);
     hideBanner();
-    await invoke("watch_document", { path: doc.path, hash: doc.hash });
+    if (IS_TAURI) await invoke("watch_document", { path: doc.path, hash: doc.hash });
   } catch (e) {
     showError(String(e));
   }
@@ -87,6 +127,7 @@ function show(doc: DocumentPayload): void {
 
   const title = `${doc.name} — MdEditor`;
   document.title = title;
+  setTitleText(doc.name);
   if (IS_TAURI) void getCurrentWindow().setTitle(title);
   $("#status-path").textContent = doc.path;
   $("#status-path").title = doc.path;
@@ -141,13 +182,22 @@ article.addEventListener("click", (event) => {
   }
 });
 
-// ---- 목차 활성 제목 ---------------------------------------------------------
+// ---- 목차 -----------------------------------------------------------------------
+
+// 이동은 scrollIntoView — 제목의 scroll-margin-top(설정 '제목 이동 시 위쪽 여백')만큼 위를 남긴다
+toc.addEventListener("click", (event) => {
+  const a = (event.target as Element).closest<HTMLAnchorElement>("a[href^='#']");
+  if (!a) return;
+  event.preventDefault();
+  document.getElementById(decodeURIComponent(a.hash.slice(1)))?.scrollIntoView({ block: "start" });
+});
 
 let headingTick = 0;
 function updateActiveHeading(): void {
   const links = toc.querySelectorAll<HTMLAnchorElement>("a[href]");
   if (links.length === 0) return;
-  const top = viewer.getBoundingClientRect().top + 8;
+  // 이동한 제목은 여백만큼 아래에 멈춘다 — 그 선까지 온 제목을 현재 제목으로 본다. 여백은 본문 줌을 따라 커진다
+  const top = viewer.getBoundingClientRect().top + getSetting("headingScrollOffset") * zoom + 8;
   let activeId = "";
   for (const h of article.querySelectorAll<HTMLElement>("h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]")) {
     if (h.getBoundingClientRect().top <= top) activeId = h.id;
@@ -178,8 +228,28 @@ function toggleTheme(): void {
   const dark =
     root.dataset.theme === "dark" ||
     (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
-  root.dataset.theme = dark ? "light" : "dark";
+  setSetting("theme", dark ? "light" : "dark");
 }
+
+// ---- 설정 적용 -------------------------------------------------------------------
+
+function applySetting(key: SettingKey): void {
+  const root = document.documentElement;
+  if (key === "theme") {
+    const theme = getSetting("theme");
+    if (theme === "system") delete root.dataset.theme;
+    else root.dataset.theme = theme;
+  } else if (key === "bodyMaxWidth") {
+    root.style.setProperty("--body-max-width", `${getSetting("bodyMaxWidth")}px`);
+  } else if (key === "headingScrollOffset") {
+    root.style.setProperty("--heading-scroll-offset", `${getSetting("headingScrollOffset")}px`);
+    updateActiveHeading();
+  }
+}
+SETTING_KEYS.forEach(applySetting);
+onSettingChange(applySetting);
+const settingsDialog = initSettingsDialog();
+$("#open-settings").addEventListener("click", () => settingsDialog.open());
 
 window.addEventListener("keydown", (event) => {
   if (event.isComposing) return;
@@ -203,6 +273,12 @@ window.addEventListener("keydown", (event) => {
   } else if (ctrl && event.key === "\\") {
     event.preventDefault();
     sidebar.hidden = !sidebar.hidden;
+  } else if (ctrl && event.shiftKey && key === "e") {
+    event.preventDefault();
+    nav.toggle();
+  } else if (ctrl && event.key === ",") {
+    event.preventDefault();
+    settingsDialog.open();
   } else if (key === "f5" && current) {
     event.preventDefault();
     void openPath(current.path, viewer.scrollTop);
@@ -261,23 +337,14 @@ async function init(): Promise<void> {
   void refreshDefaultAppStatus();
 }
 
-/** Tauri 밖(브라우저에서 `npm run dev`)에서는 샘플을 직접 불러 렌더·테마를 눈으로 확인한다 */
-async function initBrowserPreview(): Promise<void> {
-  const file = new URLSearchParams(location.search).get("sample") ?? "samples/showcase.md";
-  const text = await (await fetch(`/${file}`)).text();
-  const name = file.split("/").pop() ?? file;
-  show({
-    path: file,
-    dir: file.includes("/") ? file.slice(0, file.lastIndexOf("/")) : "",
-    name,
-    text,
-    info: { encoding: "UTF-8", bom: false, eol: "LF", mixed_eol: false, final_newline: true, lossy: false, line_count: 0, byte_len: text.length },
-    hash: "",
-  });
-}
+initSidebarResize();
+// 저장된 열림 상태·폭을 적용한 첫 그림에서는 애니메이션을 끈다
+requestAnimationFrame(() => requestAnimationFrame(() => app.classList.remove("no-anim")));
 
 if (IS_TAURI) {
+  initTitlebar();
   void init();
 } else {
-  void initBrowserPreview();
+  // Tauri 밖(브라우저에서 `npm run dev`)에서는 샘플을 직접 불러 렌더·테마를 눈으로 확인한다
+  void openPath(new URLSearchParams(location.search).get("sample") ?? "samples/showcase.md");
 }
