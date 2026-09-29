@@ -117,6 +117,19 @@ body {
   overflow: hidden;
 }
 #statusbar .spacer { flex: 1; }
+#statusbar button {
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+#statusbar button[hidden] { display: none; }
+
+@media (max-width: 720px) {
+  #sidebar { display: none; }
+}
 #status-path { overflow: hidden; text-overflow: ellipsis; }
 #statusbar .warn { color: #d1242f; }
 
