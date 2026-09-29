@@ -14,7 +14,11 @@ type LanguageModule = { default: LanguageFn };
  * Vite가 빌드 시 언어별 청크로 쪼개는 지연 로더 맵 (`eager` 아님 — 전부 미리 싣지 않는다).
  * `exhaustive`가 없으면 Vite가 `node_modules`를 glob에서 제외한다. ESM 빌드(`es/`)를 써야 dev 서버가 CJS 변환 없이 서빙한다.
  */
-const loaders = import.meta.glob<LanguageModule>("/node_modules/highlight.js/es/languages/*.js", { exhaustive: true });
+const loaders = import.meta.glob<LanguageModule>(
+  // hljs 11은 `abnf.js.js` 같은 deprecation 심(shim, 경고 후 재export)을 함께 배포한다 — glob에서 빼야 빌드 청크가 두 배로 안 나온다
+  ["/node_modules/highlight.js/es/languages/*.js", "!**/*.js.js"],
+  { exhaustive: true },
+);
 
 const loaderByName = new Map<string, () => Promise<LanguageModule>>();
 for (const [path, load] of Object.entries(loaders)) {
@@ -22,8 +26,8 @@ for (const [path, load] of Object.entries(loaders)) {
   loaderByName.set(file.replace(/\.js$/, ""), load);
 }
 
-/** 펜스 info → hljs 파일명. 로드 전에는 hljs가 alias를 모르므로 흔한 것만 여기서 푼다 */
-const ALIASES: Record<string, string> = {
+/** 펜스 info → hljs 파일명. 로드 전에는 hljs가 alias를 모르므로 흔한 것만 여기서 푼다. Map이라 `constructor` 같은 프로토타입 이름에 안전 */
+const ALIASES = new Map<string, string>(Object.entries({
   ts: "typescript",
   tsx: "typescript",
   mts: "typescript",
@@ -64,7 +68,7 @@ const ALIASES: Record<string, string> = {
   jsonc: "json",
   json5: "json",
   docker: "dockerfile",
-};
+}));
 
 const PLAIN = new Set(["text", "txt", "plain", "plaintext", "none", "nohighlight"]);
 
@@ -72,18 +76,18 @@ const PLAIN = new Set(["text", "txt", "plain", "plaintext", "none", "nohighlight
 export function resolveLanguage(requested: string): string | undefined {
   const key = requested.trim().toLowerCase();
   if (key === "" || PLAIN.has(key)) return undefined;
-  return ALIASES[key] ?? key;
+  return ALIASES.get(key) ?? key;
 }
 
 const pending = new Map<string, Promise<boolean>>();
 
 /** 언어를 (필요하면 import해서) 등록한다. 모르는 언어·로드 실패는 `false` */
 async function ensureLanguage(name: string): Promise<boolean> {
+  const load = loaderByName.get(name);
+  if (!load) return false; // 배포 언어 파일에 없는 이름은 hljs에 묻지 않는다
   if (hljs.getLanguage(name)) return true;
   const inFlight = pending.get(name);
   if (inFlight) return inFlight;
-  const load = loaderByName.get(name);
-  if (!load) return false;
   const job = load()
     .then((mod) => {
       if (!hljs.getLanguage(name)) hljs.registerLanguage(name, mod.default);
@@ -100,12 +104,18 @@ export async function highlightCodeBlocks(root: HTMLElement): Promise<void> {
   await Promise.all(blocks.map(highlightBlock));
 }
 
+/** 한 블록의 실패(로드·하이라이트 예외)는 그 블록만 평문으로 남기고 나머지·호출자에게 번지지 않는다 */
 async function highlightBlock(code: HTMLElement): Promise<void> {
   if (code.classList.contains("hljs")) return;
   const requested = code.dataset.lang ?? /(?:^|\s)language-(\S+)/.exec(code.className)?.[1] ?? "";
   const name = resolveLanguage(requested);
-  if (!name || !(await ensureLanguage(name))) return;
-  const { value } = hljs.highlight(code.textContent ?? "", { language: name, ignoreIllegals: true });
-  code.innerHTML = value;
-  code.classList.add("hljs");
+  if (!name) return;
+  try {
+    if (!(await ensureLanguage(name))) return;
+    const { value } = hljs.highlight(code.textContent ?? "", { language: name, ignoreIllegals: true });
+    code.innerHTML = value;
+    code.classList.add("hljs");
+  } catch {
+    // 평문 유지
+  }
 }
