@@ -2,12 +2,12 @@
 
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
-**현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 0 진행 중 (2026-09-29). 0-2 바이트 보존 코어(`exp/core`)·0-3 시작 시간 측정(`exp/wpf-hello`)·0-4 픽스처(main) 완료. 0-1 IME 스파이크(`exp/ime-spike`)는 앱 준비 완료, 사용자 실측 대기 — 통과하면 스택 판정을 `ADOPT`로 올리고 Phase 1.**
+**현재 단계: Phase 0 통과 (2026-09-29, IME는 Win10 새 IME 기준 잠정). 스택 판정 `ADOPT`. 다음은 [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 MVP 스캐폴딩(`main`) — 시작 전.**
 열려 있는 결정은 [docs/next-session.md](docs/next-session.md) §2, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
 
-- 스택·엔진은 [docs/decisions/ideas/](docs/decisions/ideas/INDEX.md)에 `ADOPT_WITH_CHANGES`로 기록됐다. Phase 0 IME 스파이크(`exp/ime-spike`)가 통과하기 전에는 Phase 1 제품 스캐폴딩을 만들지 않는다. 스파이크·측정 코드는 `exp/*` 브랜치에만 둔다
+- 스택은 `ADOPT`, 엔진은 `ADOPT_WITH_CHANGES`로 [docs/decisions/ideas/](docs/decisions/ideas/INDEX.md)에 기록됐다. Phase 0 IME 스파이크는 2026-09-29 통과(Win10 새 IME). 이전 IME·Win11 실측은 Phase 1-7에서 보강한다. 실험·측정 코드는 `archived-exp/*` 브랜치에만 있고 main에 올리지 않는다
 - 확정된 결정은 system-crew 형식으로 `docs/decisions/` 아래에 남긴다 (아래 표). 대화로만 정한 것은 다음 세션에 사라진다
 - `samples/raw/`는 바이트 단위 테스트 픽스처다. 편집기로 열어 저장하거나 줄바꿈을 정규화하지 않는다
 - 커밋은 전역 `korean-git-commit` 룰을 따른다
@@ -45,10 +45,16 @@ docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 �
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
-crates/mdeditor-core   바이트 보존 파일 코어 (exp/core 브랜치. Phase 1에서 main 머지)
-spike/                 Phase 0 실험 앱·측정 (exp/* 브랜치에만. ime-spike, tauri-hello, wpf-hello, measure)
+crates/mdeditor-core   바이트 보존 파일 코어 (Rust, 테스트 23개). Phase 1 스캐폴딩 때 Cargo 워크스페이스 멤버로
+spike/                 (main에 없음) Phase 0 실험 앱·측정 — archived-exp/ime-spike, archived-exp/wpf-hello
 ```
 
 ## 빌드
 
-미정 — 스택 결정 후 작성.
+Phase 1 스캐폴딩 전까지는 코어만 있다.
+
+```powershell
+cd crates/mdeditor-core
+cargo test                                          # 단위 12 + samples/raw 픽스처 11
+cargo run --example roundtrip -- ../../samples/raw  # 제자리 무편집 저장 → git status 깨끗해야 함
+```

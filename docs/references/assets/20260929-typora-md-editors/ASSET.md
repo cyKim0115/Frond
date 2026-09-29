@@ -112,13 +112,14 @@
 | 프로세스 트리 메모리 (hello, WS / Private 합계, WebView2 6개 포함) | Tauri 300 / 153 MB · WPF 366 / 209 MB | Phase 0-3 | measured 0.9 |
 | chardetng 짧은 CP949 감지 | 121 B `cp949.md` → EUC-KR 정확 (`kr` TLD 힌트, UTF-8 후보 제외) | Phase 0-2 | measured 0.9 |
 | 무편집 저장 바이트 불변 (자체 코어) | `samples/raw` 6종 제자리 저장 → `git status` 깨끗, 한 줄 편집 시 삽입 바이트 외 불변 | Phase 0-2 | test 0.95 |
+| WebView2 153 + CM6 6.43 한국어 IME (Win10 19045 새 IME) | textarea / CM6 plain / CM6+데코 ①–⑧ 전부 통과. 포커스 이탈·Enter·Ctrl+S 시 조합 확정, 유실·중복 없음 | Phase 0-1 | measured 0.85 (이전 IME·Win11 미실측) |
 
 ## Decisions
 
 | Decision | Adopt | Defer | Reject | Rationale |
 |----------|-------|-------|--------|-----------|
 | 뷰어 우선 MVP (더블클릭 → 깔끔한 렌더) | ✓ 확정 2026-09-29 (V1 선택) | | | 콜아웃 2. Notepad·소형 MDView가 노리는 자리, 렌더 품질·바이트 보존으로 차별 (W9·W12·W14) |
-| 앱 스택 = Tauri 2 + Vite + TS | ✓ 확정 2026-09-29 (`ADOPT_WITH_CHANGES`) | | | `ideas/20260929-stack.md`. IME 스파이크 통과 조건 |
+| 앱 스택 = Tauri 2 + Vite + TS | ✓ 확정 2026-09-29 (`ADOPT`, Phase 0 IME 스파이크 통과) | | | `ideas/20260929-stack.md`. 이전 IME·Win11은 Phase 1-7에서 보강 |
 | 에디터 엔진 = CodeMirror 6 + 자체 데코레이션 + 바이트 보존 계층 | ✓ 확정 2026-09-29 (`ADOPT_WITH_CHANGES`) | | | `ideas/20260929-editor-engine.md` |
 | ProseMirror 계열(Milkdown·Tiptap)·Vditor·Muya를 편집 엔진으로 | | | ✓ 권고 | 재직렬화가 바이트 보존과 충돌 (E2–E5·O2·O17) |
 | WinUI 3 · Avalonia · Flutter | | | ✓ 권고 | 배포 부담·시작 성능 / HTML 렌더 없음 / 한국어 IME (S17·S18) |
@@ -133,7 +134,7 @@
 
 ## Open questions
 
-`reference-brief.md` "Open questions" 참조 — IME 한국어 재현(Phase 0-1 실측 대기), NSIS 훅 노출(Phase 1-6), Typora 픽스처 실측(선택), PDF 한글 폰트. **답한 것(2026-09-29)**: chardetng 짧은 파일 정확도 → 121 B `cp949.md` EUC-KR 정확(Phase 0-2), Windows 시작 시간·메모리 → Rules & numbers(Phase 0-3).
+`reference-brief.md` "Open questions" 참조 — NSIS 훅 노출(Phase 1-6), Typora 픽스처 실측(선택), PDF 한글 폰트. **답한 것(2026-09-29)**: IME 한국어 재현 → Win10 19045 새 IME에서 textarea/CM6 plain/CM6+데코 ①–⑧ 통과, #15436·#5475 미재현(Phase 0-1; 이전 IME·Win11은 Phase 1-7), chardetng 짧은 파일 정확도 → 121 B `cp949.md` EUC-KR 정확(Phase 0-2), Windows 시작 시간·메모리 → Rules & numbers(Phase 0-3).
 
 ## Artifact links
 
