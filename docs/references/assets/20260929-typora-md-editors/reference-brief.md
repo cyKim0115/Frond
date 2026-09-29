@@ -386,7 +386,7 @@ Ev# 접두: **T** Typora · **W** Windows 네이티브 · **F** 파일 충실도
 
 ## Open questions
 
-실측이 필요한 것(로드맵 Phase 0 스파이크 항목):
+실측이 필요한 것(로드맵 Phase 0 스파이크 항목). **2026-09-29 Phase 0 결과**: IME(Win10 새 IME ①–⑧ 통과, 이전 IME·Win11 미실측), 바이트 보존(chardetng 121 B 정확, 혼합 EOL 줄별 복원 테스트 통과), 성능(Tauri 371 ms / WPF 732 ms)은 `docs/decisions/ideas/20260929-stack.md` 기록란 참조. 파일 연결·레퍼런스 실측·렌더·OneDrive는 열림:
 
 - **IME**: #5625(첫 글자 유실)·tauri #15436(기존 텍스트 첫 포커스 TSF 프리즈)·#5475(조합 중 포커스 이탈 크래시)가 **한국어 두벌식 MS IME**에서 재현되는지 — 보고는 전부 중국어 IME. 현재 WebView2 Evergreen(150+)에서 #5625가 실제로 사라졌는지. textarea / CM6 plain / CM6+데코레이션 세 구성 × 새/이전 IME × Win10 19045/Win11
 - **파일 연결**: Tauri NSIS 기본 등록 + POSTINSTALL 훅(`OpenWithProgids`, `Capabilities`/`RegisteredApplications`)으로 Win11 '연결 프로그램' 추천 목록·설정 > 기본 앱에 나타나는지. `installer.nsi`가 `UPDATEFILEASSOC`를 정말 호출하지 않는지(두 조사 상충). `.md` 다중 선택 열기 시 single-instance가 N개 WM_COPYDATA를 모두 받는지(#3587 레이스 빈도)

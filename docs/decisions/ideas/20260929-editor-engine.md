@@ -51,5 +51,6 @@
 ## Follow-up
 
 - Spec / implementation owner: Implementer (Phase 2 소스 모드, Phase 5 라이브프리뷰)
-- Revisit when: IME 스파이크에서 CM6가 실패(→ textarea/EditContext 또는 Monaco) · code.haverbeke.berlin 이전 후 릴리스 정체 시 · MarkText 0.20 Muya TS 재작성이 round-trip identity를 달성했다고 확인될 때
+- Phase 0 결과 (2026-09-29): IME 스파이크에서 CM6 plain·CM6+데코 모두 시나리오 ①–⑧ 통과 (Win10 19045 새 IME, WebView2 153, @codemirror/view 6.43.13). 조합 중 데코 map-only 가드 ON으로 ⑧ 통과. 부가 발견: 다크 모드에서 `.cm-cursor` 기본색(검정)이 안 보이므로 테마에서 지정. 상세는 [`20260929-stack.md`](20260929-stack.md) 기록란
+- Revisit when: Phase 1-7 이전 IME·Win11 실측에서 CM6가 실패(→ textarea/EditContext 또는 Monaco) · code.haverbeke.berlin 이전 후 릴리스 정체 시 · MarkText 0.20 Muya TS 재작성이 round-trip identity를 달성했다고 확인될 때
 - Logged in INDEX: yes

@@ -18,6 +18,8 @@
 
 ## Phase 0 — 스파이크와 코어 (구현 전 검증)
 
+**상태: 완료 2026-09-29.** 0-1은 Win10 19045 새 IME 기준 잠정 통과(이전 IME·Win11은 1-7에서 보강). 결과와 수치는 [`decisions/ideas/20260929-stack.md`](decisions/ideas/20260929-stack.md) "Phase 0 결과 기록란". 코어는 `crates/mdeditor-core`(main), 스파이크·hello 앱은 `archived-exp/ime-spike`·`archived-exp/wpf-hello`.
+
 목표: 스택 판정의 조건(IME)을 실측으로 닫고, UI 없이도 검증 가능한 파일 충실도 코어를 만든다.
 
 | 작업 | 산출물 | 완료 조건 (EARS) |
