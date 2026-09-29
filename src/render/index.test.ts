@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import MarkdownIt from "markdown-it";
 import { describe, expect, it } from "vitest";
-import { renderMarkdown, slugify } from "./index";
+import { hasClosedFrontMatter, renderMarkdown, slugify } from "./index";
 import { sanitizeHtml } from "./sanitize";
 
 // vitest root(= 프로젝트 루트) 기준. jsdom 환경에서는 import.meta.url이 file 스킴이 아니라 URL 조립을 쓰지 않는다
@@ -19,6 +19,15 @@ function render(source: string) {
   const root = document.createElement("div");
   root.innerHTML = result.html;
   return { ...result, root };
+}
+
+/** 셸(main.ts) 클릭 핸들러와 같은 조건: `closest("a[href]")`에 잡히고, http(s)·mailto·#이 아니면 `dataset.localPath`로 앱 내 열기 */
+function localPathsAsShellSees(root: Element): (string | null)[] {
+  return Array.from(root.querySelectorAll<HTMLAnchorElement>("a[href]")).map((a) => {
+    const href = a.getAttribute("href") ?? "";
+    if (href.startsWith("#") || /^(https?|mailto):/i.test(href)) return null;
+    return a.dataset.localPath ?? null;
+  });
 }
 
 function assetPath(img: Element): string {
@@ -166,14 +175,15 @@ describe("보안", () => {
     expect(cleaned).not.toMatch(/<(script|iframe|form|style|object|embed)/);
   });
 
-  it("javascript:·vbscript:·data:·file: 링크와 이미지는 만들어지지 않는다", () => {
+  it("javascript:·vbscript:·data:·비문서 file: 링크와 이미지는 만들어지지 않는다", () => {
     const { html, root } = render(
-      "[a](javascript:alert(1)) [b](vbscript:x) [c](data:text/html,x) [d](file:///C:/a.md) [e](JAVASCRIPT:x) [f](%6Aavascript:x) [g](//evil.example)\n\n![i](data:image/png;base64,AAAA) ![j](file:///C:/x.png)",
+      "[a](javascript:alert(1)) [b](vbscript:x) [c](data:text/html,x) [d](file:///C:/a.exe) [e](JAVASCRIPT:x) [f](%6Aavascript:x) [g](//evil.example) [h](file:///C:/a.md.txt) [i](FILE:///C:/x.png) [k](%66ile:///C:/a.md) <file:///C:/run.bat>\n\n![i](data:image/png;base64,AAAA) ![j](file:///C:/x.png)",
     );
     expect(root.querySelectorAll("a")).toHaveLength(0);
     expect(root.querySelectorAll("img")).toHaveLength(0);
     expect(html).not.toMatch(/href=|src=/);
     expect(sanitizeHtml('<a href="javascript:alert(1)">j</a>')).toBe("<a>j</a>");
+    expect(sanitizeHtml('<a href="file:///C:/a.exe">f</a><a href="file:///C:/a.md.txt">g</a>')).toBe("<a>f</a><a>g</a>");
   });
 
   it("http(s) 이미지는 유지되고 asset URL은 새니타이즈를 통과한다", () => {
@@ -183,20 +193,46 @@ describe("보안", () => {
     expect(local.getAttribute("src")).toBe("http://asset.localhost/C%3A%5Cdocs%5Cpaths%5Cimg%5C%ED%95%9C%EA%B8%80%20%EA%B7%B8%EB%A6%BC.png");
   });
 
-  it("asset URL·data-local-path·target·checkbox 속성이 DOMPurify를 살아남는다", () => {
+  it("asset URL·data-local-path·target·checkbox·드라이브/file: 문서 href가 DOMPurify를 살아남는다", () => {
     const html =
       '<h2 id="title">T</h2><a href="http://x/" target="_blank" rel="noopener" data-local-path="C:\\a b\\x.md" data-line="3">x</a>' +
-      '<img src="http://asset.localhost/C%3A%5Cdocs%5C%ED%95%9C.png" alt="h"><input class="task-list-item-checkbox" type="checkbox" disabled="" checked="">';
+      '<img src="http://asset.localhost/C%3A%5Cdocs%5C%ED%95%9C.png" alt="h"><input class="task-list-item-checkbox" type="checkbox" disabled="" checked="">' +
+      '<a href="C:%5Cother%5Cz.md" data-local-path="C:\\other\\z.md">c</a><a href="D:/x/y.markdown#s" data-local-path="D:\\x\\y.markdown">d</a>' +
+      '<a href="file:///C:/a%20b.md#s" data-local-path="C:\\a b.md">e</a><a href="file://srv/share/x.MD?q=1" data-local-path="\\\\srv\\share\\x.MD">f</a>';
     expect(sanitizeHtml(html)).toBe(html);
   });
 });
 
 describe("링크 경로", () => {
-  it("상대 .md 링크는 ..·하위 폴더·퍼센트 인코딩·조각을 처리한다", () => {
-    const { root } = render("[a](../notes/plan.md#sec) [b](sub%20dir/한글.markdown?x=1) [c](C:\\other\\z.md) [d](notes/plan.txt) [e](mailto:x@y.z) [f](README.MD)");
-    const paths = Array.from(root.querySelectorAll("a")).map((a) => a.getAttribute("data-local-path"));
-    expect(paths).toEqual(["C:\\docs\\notes\\plan.md", "C:\\docs\\paths\\sub dir\\한글.markdown", "C:\\other\\z.md", null, null, "C:\\docs\\paths\\README.MD"]);
+  it("상대 .md 링크는 ..·하위 폴더·퍼센트 인코딩·조각을 처리하고, 셸의 a[href] 클릭 경로로 열린다", () => {
+    const { root } = render("[a](../notes/plan.md#sec) [b](sub%20dir/한글.markdown?x=1) [c](C:\\other\\z.md) [d](notes/plan.txt) [e](mailto:x@y.z) [f](README.MD) [g](c:/Other/z.md)");
+    expect(root.querySelectorAll("a")).toHaveLength(7);
+    // main.ts가 보는 그대로: href가 살아 있고(DOMPurify 통과) data-local-path가 있어야 열린다
+    expect(localPathsAsShellSees(root)).toEqual([
+      "C:\\docs\\notes\\plan.md",
+      "C:\\docs\\paths\\sub dir\\한글.markdown",
+      "C:\\other\\z.md",
+      null,
+      null,
+      "C:\\docs\\paths\\README.MD",
+      "C:\\Other\\z.md",
+    ]);
+    expect(root.querySelector("a[href='C:%5Cother%5Cz.md']")!.getAttribute("data-local-path")).toBe("C:\\other\\z.md");
     expect(root.querySelector("a[href='mailto:x@y.z']")!.hasAttribute("target")).toBe(false);
+  });
+
+  it("file: URL은 .md/.markdown 문서만 링크가 되고 절대 경로 data-local-path로 앱 내에서 연다 (스펙 §47·§152)", () => {
+    const { root } = render(
+      "[a](file:///C:/a.md) [b](<file:///C:/a b/한글.markdown#sec>) [c](file://server/share/x.md?q=1) [d](file://localhost/D:/x.MD) [e](FILE:///C:/y.md) <file:///C:/z.md> [g](file:///C:/a.md%23x) [h](file:///a.md)",
+    );
+    expect(localPathsAsShellSees(root)).toEqual(["C:\\a.md", "C:\\a b\\한글.markdown", "\\\\server\\share\\x.md", "D:\\x.MD", "C:\\y.md", "C:\\z.md"]);
+    const first = root.querySelector("a[href='file:///C:/a.md']")!;
+    expect(first.hasAttribute("target")).toBe(false);
+    expect(first.getAttribute("data-local-path")).toBe("C:\\a.md");
+    expect(root.querySelector("a[href^='file:///C:/a%20b/']")).not.toBeNull();
+    // 경로 안의 #(`.md%23x`)·드라이브 없는 file:///a.md는 링크가 아니다
+    expect(root.textContent).toContain("[g](file:///C:/a.md%23x)");
+    expect(root.textContent).toContain("[h](file:///a.md)");
   });
 
   it("파일명 같은 평문은 자동 링크하지 않는다 (GitHub과 동일)", () => {
@@ -229,5 +265,47 @@ describe("CJK·슬러그", () => {
     const { frontMatter, root } = render("\ufeff---\na: 1\n---\n\n# H");
     expect(frontMatter).toBe("a: 1");
     expect(root.firstElementChild!.tagName).toBe("H1");
+  });
+});
+
+describe("front matter 경계", () => {
+  it("첫 줄 --- 뒤에 닫는 표식이 없으면 front matter가 아니라 <hr>이고 본문이 렌더된다 (GitHub과 동일)", () => {
+    const { html, frontMatter, toc, root } = render("---\n\n# Title\n\nbody text");
+    expect(frontMatter).toBeUndefined();
+    expect(html).not.toBe("");
+    expect(root.firstElementChild!.outerHTML).toBe('<hr data-line="0">');
+    expect(toc).toEqual([{ level: 1, text: "Title", id: "title", line: 2 }]);
+    expect(root.querySelector("p")!.textContent).toBe("body text");
+  });
+
+  it("본문 중간의 ---는 닫는 표식이 아니라 두 번째 <hr>이다", () => {
+    const { frontMatter, root } = render("---\n\n# Title\n\nbody\n\n---\n\nafter");
+    expect(frontMatter).toBeUndefined();
+    expect(Array.from(root.children).map((el) => `${el.tagName}:${el.getAttribute("data-line")}`)).toEqual(["HR:0", "H1:2", "P:4", "HR:6", "P:8"]);
+    expect(root.querySelector("h1")!.textContent).toBe("Title");
+  });
+
+  it("닫힌 YAML 해시만 front matter다: CRLF·... 종결·빈 본문·중첩 키는 잡고, 짧은 닫는 줄·첫 줄 뒤 글자·키 없는 본문은 아니다", () => {
+    expect(hasClosedFrontMatter("---\na: 1\n---\n# H")).toBe(true);
+    expect(hasClosedFrontMatter("---\r\na: 1\r\n---\r\n# H")).toBe(true);
+    expect(hasClosedFrontMatter("---\na: 1\n...\n# H")).toBe(true);
+    expect(hasClosedFrontMatter("---\n---")).toBe(true);
+    expect(hasClosedFrontMatter("---\n\n---")).toBe(true);
+    expect(hasClosedFrontMatter("---   \na: 1\n---   ")).toBe(true);
+    expect(hasClosedFrontMatter("---\n# comment\nfoo:\n  bar: 1\n---")).toBe(true);
+    expect(hasClosedFrontMatter('---\n"quoted key": x\ntags: [a, b]\n---')).toBe(true);
+    expect(hasClosedFrontMatter("---\n# H")).toBe(false);
+    expect(hasClosedFrontMatter("----\na: 1\n---\n")).toBe(false);
+    expect(hasClosedFrontMatter("--- x\na: 1\n---\n")).toBe(false);
+    expect(hasClosedFrontMatter("# H\n---\n")).toBe(false);
+    expect(hasClosedFrontMatter("")).toBe(false);
+    // 닫는 줄은 있지만 YAML 해시가 아닌 것 — GitHub도 표가 아니라 <hr>로 그린다
+    expect(hasClosedFrontMatter("---\n\n# Title\n\nbody\n\n---\n\nafter")).toBe(false);
+    expect(hasClosedFrontMatter("---\n- a\n- b\n---")).toBe(false);
+    expect(hasClosedFrontMatter("---\nsee http://example.com and C:\\x\n---")).toBe(false);
+
+    const crlf = render("---\r\ntitle: x\r\n---\r\n\r\n# H\r\n\r\n---\r\n");
+    expect(crlf.frontMatter).toBe("title: x");
+    expect(Array.from(crlf.root.children).map((el) => el.tagName)).toEqual(["H1", "HR"]);
   });
 });

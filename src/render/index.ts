@@ -4,6 +4,7 @@
  * markdown-it 15 (`html: false`, linkify) + cjk-friendly + front-matter + anchor + 태스크 리스트 + footnote
  *   → `data-line` 부여 → 링크·이미지 재작성(스킴 허용 목록, 상대 경로 → 절대 경로 → `toAssetUrl`) → DOMPurify.
  * 코드 하이라이트는 DOM 삽입 뒤 `highlightCodeBlocks()`가 언어를 지연 로드해 처리한다.
+ * front matter는 닫는 줄이 있는 YAML 해시일 때만 인정한다(`hasClosedFrontMatter`) — 첫 줄 `---`만으로는 `<hr>`.
  *
  * `html: false`: 원문의 HTML 태그(`<details>`·`<img>`…)는 렌더하지 않고 글자 그대로 이스케이프한다.
  * GitHub와 다른 점이지만 뷰어로서 더 안전하고, 필요해지면 허용 태그 목록과 함께 다시 연다.
@@ -109,10 +110,37 @@ function plainText(children: Token[]): string {
 
 const md = createMarkdownIt();
 
+const FRONT_MATTER_OPEN_RE = /^(-{3,})[ \t]*(?:\r?\n|$)/;
+const FRONT_MATTER_CLOSE_RE = /^ {0,3}(-{3,}|\.\.\.)[ \t]*$/;
+/** 최상위 YAML 키(`title: x`·`foo:`). 주석(`#`)·리스트(`-`)·`http://`처럼 `:` 뒤에 공백이 없는 값은 키가 아니다 */
+const YAML_KEY_RE = /^[^\s#:-][^:]*:(?:[ \t]|$)/;
+
+/**
+ * 진짜 front matter인지. markdown-it-front-matter는 닫는 줄이 없으면 문서 끝까지 통째로 삼키므로(자동 닫힘) 여기서 먼저 거른다.
+ * GitHub처럼 (1) 닫는 `---`(여는 것 이상 길이)·`...` 줄이 있고 (2) 내용이 YAML 해시(최상위 키가 하나라도 있거나 비어 있음)일 때만 인정한다.
+ * 첫 줄이 수평선 `---`인 보통 문서(`---\n\n# 제목 …`)는 룰을 꺼서 `<hr>`+본문으로 렌더한다
+ */
+export function hasClosedFrontMatter(text: string): boolean {
+  const open = FRONT_MATTER_OPEN_RE.exec(text);
+  if (!open) return false;
+  const minLength = open[1].length;
+  const body: string[] = [];
+  for (const line of text.slice(open[0].length).split(/\r?\n/)) {
+    const close = FRONT_MATTER_CLOSE_RE.exec(line);
+    if (close && (close[1] === "..." || close[1].length >= minLength)) {
+      return body.every((l) => l.trim() === "") || body.some((l) => YAML_KEY_RE.test(l));
+    }
+    body.push(line);
+  }
+  return false;
+}
+
 /** 동기. 큰 문서의 예산 판단(2 MB·10 MB)은 셸이 한다 */
 export function renderMarkdown(source: string, options: RenderOptions): RenderResult {
   // 디코더가 BOM을 남겼어도 front matter·첫 제목이 깨지지 않게
   const text = source.charCodeAt(0) === 0xfeff ? source.slice(1) : source;
+  // 렌더는 동기이고 `md`는 싱글턴이라 렌더마다 토글해도 안전하다
+  md.block.ruler[hasClosedFrontMatter(text) ? "enable" : "disable"]("front_matter");
   const env: RenderEnv = { baseDir: options.baseDir, toAssetUrl: options.toAssetUrl, toc: [] };
   const html = sanitizeHtml(md.render(text, env));
   const result: RenderResult = { html, toc: env.toc };
