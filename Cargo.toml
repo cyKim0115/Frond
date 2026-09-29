@@ -1,0 +1,16 @@
+[workspace]
+resolver = "2"
+members = ["crates/mdeditor-core", "src-tauri"]
+
+[workspace.package]
+edition = "2021"
+authors = ["cyKim"]
+license = "MIT"
+repository = "https://github.com/cyKim0115/MdEditor"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
