@@ -16,7 +16,18 @@ desktop.ini
 .env
 .env.*
 
-# 빌드 산출물 — 스택 결정 후 해당 항목을 추가한다 (docs/next-session.md §3)
+# Node / Vite
+node_modules/
+dist/
+*.local
+npm-debug.log*
+
+# Tauri / Rust (루트 Cargo 워크스페이스)
+target/
+src-tauri/gen/schemas/
+
+# Phase 0 스파이크 잔여물 — 코드는 archived-exp/* 브랜치에만 있고 main에는 없다
+/spike/
 
 # 생성형 대용량 샘플 (samples/gen-large.ps1)
 samples/large/

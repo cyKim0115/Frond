@@ -1,0 +1,36 @@
+{
+  "name": "mdeditor",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "tauri": "tauri",
+    "app:dev": "tauri dev",
+    "app:build": "tauri build"
+  },
+  "dependencies": {
+    "@hedgedoc/markdown-it-task-lists": "2.0.1",
+    "@tauri-apps/api": "^2.12.0",
+    "@tauri-apps/plugin-dialog": "^2.8.0",
+    "@tauri-apps/plugin-opener": "^2.6.0",
+    "dompurify": "^3.4.16",
+    "highlight.js": "^11.12.0",
+    "markdown-it": "^15.0.2",
+    "markdown-it-anchor": "^10.0.0",
+    "markdown-it-cjk-friendly": "^3.0.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-front-matter": "^0.2.4"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.0",
+    "@types/markdown-it": "^14.2.0",
+    "jsdom": "^26.1.0",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3",
+    "vitest": "^3.2.4"
+  }
+}

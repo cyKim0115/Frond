@@ -1,0 +1,16 @@
+/* 문서 테마 — 스캐폴딩 단계의 임시 파일. 로드맵 1-4에서 github-markdown-css 기반 + Typora 수치 +
+   한국어 오버라이드 + D2Coding 번들로 교체한다. 셸(사이드바·상태바) 스타일은 src/style.css. */
+
+.markdown-body {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 40px 80px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.markdown-body pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: "D2Coding", Consolas, "Malgun Gothic", monospace;
+  font-size: 14px;
+}

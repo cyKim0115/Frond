@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>MdEditor</title>
+  </head>
+  <body>
+    <div id="app">
+      <aside id="sidebar" hidden>
+        <nav id="toc" aria-label="목차"></nav>
+      </aside>
+      <main id="viewer">
+        <section id="welcome">
+          <h1>MdEditor</h1>
+          <p>Markdown 파일을 여기에 끌어다 놓거나 <kbd>Ctrl</kbd>+<kbd>O</kbd>로 여세요.</p>
+        </section>
+        <article id="document" class="markdown-body" lang="ko" hidden></article>
+      </main>
+      <footer id="statusbar">
+        <span id="status-path" title=""></span>
+        <span class="spacer"></span>
+        <span id="status-encoding"></span>
+        <span id="status-eol"></span>
+        <span id="status-zoom">100%</span>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
