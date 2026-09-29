@@ -2,16 +2,16 @@
 
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
-**현재 단계: 조사·판정 초안·로드맵까지 작성. 스택(Tauri 2 권고)·엔진(CodeMirror 6 권고)·MVP 3안은 사용자 확인 대기.**
+**현재 단계: 스택 Tauri 2 + Vite + TS, 엔진 CodeMirror 6, MVP V1(리더 퍼스트) 확정(2026-09-29). 다음은 [docs/roadmap.md](docs/roadmap.md) Phase 0 (IME 스파이크·바이트 보존 코어·WPF 비교 측정).**
 열려 있는 결정은 [docs/next-session.md](docs/next-session.md) §2, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
 
-- 스택이 [docs/decisions/ideas/](docs/decisions/ideas/INDEX.md)에 `ADOPT`로 기록되기 전에는 앱 코드·스캐폴딩을 만들지 않는다
+- 스택·엔진은 [docs/decisions/ideas/](docs/decisions/ideas/INDEX.md)에 `ADOPT_WITH_CHANGES`로 기록됐다. Phase 0 IME 스파이크(`exp/ime-spike`)가 통과하기 전에는 Phase 1 제품 스캐폴딩을 만들지 않는다. 스파이크·측정 코드는 `exp/*` 브랜치에만 둔다
 - 확정된 결정은 system-crew 형식으로 `docs/decisions/` 아래에 남긴다 (아래 표). 대화로만 정한 것은 다음 세션에 사라진다
 - `samples/raw/`는 바이트 단위 테스트 픽스처다. 편집기로 열어 저장하거나 줄바꿈을 정규화하지 않는다
 - 커밋은 전역 `korean-git-commit` 룰을 따른다
-- 스택이 정해지면 이 파일의 `구조`·`빌드` 절을 채우고 `.gitignore`에 산출물 경로를 추가한다
+- Phase 1 스캐폴딩 시 이 파일의 `구조`·`빌드` 절을 채우고 `.gitignore`에 `node_modules/`·`dist/`·`src-tauri/target/`을 추가한다
 
 ## system-crew (호출형)
 

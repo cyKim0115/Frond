@@ -2,8 +2,8 @@
 
 - Date: 2026-09-29
 - Idea id: `20260929-editor-engine`
-- Status: `draft` — 사용자 확인 대기
-- Verdict: `(pending)` — **권고: `ADOPT_WITH_CHANGES` (CodeMirror 6 + 자체 라이브프리뷰 데코레이션 + 에디터 밖 바이트 보존 계층)**
+- Status: `decided` — 2026-09-29 사용자 승인
+- Verdict: `ADOPT_WITH_CHANGES` — CodeMirror 6 + 자체 라이브프리뷰 데코레이션 + 에디터 밖 바이트 보존 계층. MVP V1에서는 CM6 plain 소스 모드까지, 데코레이션은 Phase 5
 - Related: [`20260929-stack.md`](20260929-stack.md) · [`docs/references/assets/20260929-typora-md-editors/reference-brief.md`](../../references/assets/20260929-typora-md-editors/reference-brief.md) E·G 절 · [`docs/decisions/ideation/20260929-mvp-scope.md`](../ideation/20260929-mvp-scope.md)
 
 ## Proposal (user)
@@ -38,8 +38,8 @@
 
 ## Decision
 
-- Verdict: `(pending)` — 권고 `ADOPT_WITH_CHANGES`
-- What we will do now: 확인 전 구현 없음. 확인 후 Phase 0 스파이크에 CM6 plain + CM6+데코 구성 포함
+- Verdict: `ADOPT_WITH_CHANGES` (승인 2026-09-29, 배치 승인 항목 2)
+- What we will do now: Phase 0 스파이크에 `<textarea>` / CM6 plain / CM6 + replace 데코 세 구성을 넣어 한국어 IME 시나리오 ①–⑧ 실측. Phase 2에서 CM6 plain 소스 모드 + `FileDocument` 계층 구현
 - What we will not do: ProseMirror 계열·Vditor·Muya를 편집 엔진으로 도입. Typora 렌더 DOM을 contentEditable로 직접 편집하는 자체 엔진 작성
 - Modified approach:
   1. **계층 분리**: `FileDocument`(Rust: 원본 바이트, 인코딩, BOM, 줄별 EOL 맵, 끝 개행) ↔ `EditorState`(CM6, LF 정규화 텍스트). 저장 시 dirty 아니면 원본 바이트, dirty면 `sliceDoc()` 줄 배열을 EOL 맵으로 재결합(변경·추가 줄은 파일 지배 EOL) → 재인코딩 → `ReplaceFileW`
@@ -52,4 +52,4 @@
 
 - Spec / implementation owner: Implementer (Phase 2 소스 모드, Phase 5 라이브프리뷰)
 - Revisit when: IME 스파이크에서 CM6가 실패(→ textarea/EditContext 또는 Monaco) · code.haverbeke.berlin 이전 후 릴리스 정체 시 · MarkText 0.20 Muya TS 재작성이 round-trip identity를 달성했다고 확인될 때
-- Logged in INDEX: yes (`(pending)` 상태로)
+- Logged in INDEX: yes
