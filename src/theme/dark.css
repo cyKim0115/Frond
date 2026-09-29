@@ -1,0 +1,61 @@
+/* 다크 모드 보강 — 팔레트 자체는 github-markdown.css 상단 변수 블록이 두 모드 계약대로 전환한다.
+   여기는 그 변수로 못 덮는 것: 텍스트 선택 영역, 캐럿, (Phase 2) CodeMirror 커서·선택 색.
+   셀렉터 계약은 src/style.css 와 동일:
+     다크 = :root[data-theme="dark"]  또는  (prefers-color-scheme: dark) 이고 :root 가 [data-theme="light"] 가 아닐 때 */
+
+/* ---- 선택 영역 색 토큰 — 라이트 기본 ---- */
+.markdown-body,
+.cm-editor {
+  --selection-bg: rgba(9, 105, 218, 0.24);
+  --selection-bg-inactive: rgba(9, 105, 218, 0.14);
+}
+/* 다크 (수동) */
+:root[data-theme="dark"] .markdown-body,
+:root[data-theme="dark"] .cm-editor {
+  --selection-bg: rgba(88, 166, 255, 0.36);
+  --selection-bg-inactive: rgba(88, 166, 255, 0.2);
+}
+/* 다크 (시스템 설정, 수동 라이트가 아닐 때) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .markdown-body,
+  :root:not([data-theme="light"]) .cm-editor {
+    --selection-bg: rgba(88, 166, 255, 0.36);
+    --selection-bg-inactive: rgba(88, 166, 255, 0.2);
+  }
+}
+
+/* ---- 선택·캐럿 — 반투명 배경이라 코드 토큰 색이 선택 중에도 보인다 ---- */
+.markdown-body ::selection {
+  background-color: var(--selection-bg);
+}
+.markdown-body {
+  caret-color: var(--fgColor-default);
+}
+
+/* ---- Phase 2 CodeMirror 6 선행 정의 — 다크에서 CM6 기본 커서(검정 1.2 px)가 안 보인다
+        (docs/decisions/ideas/20260929-stack.md Phase 0 부가 발견: .cm-cursor·.cm-selectionBackground 색을 테마에서 반드시 정한다).
+        CM6 는 아직 없으므로 지금은 매칭되는 요소가 없다 ---- */
+.cm-editor .cm-cursor,
+.cm-editor .cm-dropCursor {
+  border-left-color: var(--fgColor-default, currentColor);
+}
+.cm-editor .cm-selectionBackground {
+  background-color: var(--selection-bg-inactive);
+}
+.cm-editor.cm-focused .cm-selectionBackground,
+.cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+  background-color: var(--selection-bg);
+}
+.cm-editor .cm-content ::selection {
+  background-color: var(--selection-bg);
+}
+
+/* ---- 다크에서 이미지·kbd 가장자리 ---- */
+:root[data-theme="dark"] .markdown-body kbd {
+  border-bottom-color: var(--borderColor-default);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .markdown-body kbd {
+    border-bottom-color: var(--borderColor-default);
+  }
+}

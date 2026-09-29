@@ -1,16 +1,21 @@
-/* 문서 테마 — 스캐폴딩 단계의 임시 파일. 로드맵 1-4에서 github-markdown-css 기반 + Typora 수치 +
-   한국어 오버라이드 + D2Coding 번들로 교체한다. 셸(사이드바·상태바) 스타일은 src/style.css. */
+/* 문서 테마 진입점 — src/main.ts 는 이 파일 하나만 import 한다. 셸(사이드바·상태바·창 배치)은 src/style.css.
+   대상: <main id="viewer"> 안의 <article id="document" class="markdown-body" lang="ko">.
+   순서가 곧 캐스케이드다. 나중 파일이 앞 파일을 덮는다.
 
-.markdown-body {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 32px 40px 80px;
-  font-size: 16px;
-  line-height: 1.6;
-}
-.markdown-body pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-family: "D2Coding", Consolas, "Malgun Gothic", monospace;
-  font-size: 14px;
-}
+   github-markdown.css  github-markdown-css 5.9.0 벤더본 + 두 모드 팔레트 계약 (로드맵 1-4, brief R21)
+   tokens.css           수치·폰트 스택 토큰 — 매직넘버는 여기에만 (system-spec §Tunables)
+   fonts.css            D2Coding @font-face (local() 우선 + woff2 번들), 본문·코드 스택 연결 (brief G23·G24)
+   base.css             Typora 수치(860 px / 16 px / 1.6) 레이아웃, 요소별 정리 (brief R22)
+   ko.css               :lang(ko) 한국어 줄바꿈 오버라이드 (brief G22)
+   highlight.css        highlight.js 토큰 색 → github-markdown 팔레트 변수 매핑
+   dark.css             선택 영역·캐럿·CodeMirror 커서 등 팔레트 변수로 못 덮는 다크 보강
+   print.css            인쇄: 셸 숨김, 전체 폭, @page 여백 */
+
+@import "./github-markdown.css";
+@import "./tokens.css";
+@import "./fonts.css";
+@import "./base.css";
+@import "./ko.css";
+@import "./highlight.css";
+@import "./dark.css";
+@import "./print.css";
