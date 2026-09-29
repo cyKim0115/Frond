@@ -2,8 +2,8 @@
 
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
-**현재 단계: 초기세팅만 끝났다. 기술 스택·MVP 범위 미정.**
-열려 있는 결정과 첫 세션 안건은 [docs/next-session.md](docs/next-session.md)를 먼저 본다.
+**현재 단계: 조사·판정 초안·로드맵까지 작성. 스택(Tauri 2 권고)·엔진(CodeMirror 6 권고)·MVP 3안은 사용자 확인 대기.**
+열려 있는 결정은 [docs/next-session.md](docs/next-session.md) §2, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
 
@@ -41,7 +41,9 @@ powershell -File .cursor/system-crew/scripts/sync-to-project.ps1 -Mode OnDemand
 .cursor/system-crew/   system-crew 서브모듈 (직접 고치지 않는다)
 .cursor/rules|skills/  sync 산출물 (Cursor용). 로컬 오버라이드는 .cursor/rules/local/
 docs/next-session.md   지금 열려 있는 것 (결정 대기·다음 할 일)
-docs/decisions/        확정된 결정 (system-crew 형식)
+docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
+docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
+docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
 samples/               렌더링·파일 처리 확인용 마크다운 샘플
 ```
 
