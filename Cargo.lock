@@ -2144,6 +2144,8 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
  "tauri-plugin-single-instance",
+ "windows 0.62.2",
+ "winreg",
 ]
 
 [[package]]
