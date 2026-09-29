@@ -139,7 +139,7 @@
 ## Artifact links
 
 - `reference-brief.md`: [reference-brief.md](reference-brief.md) — Evidence ledger T·W·F·R·O·S·E·A·G·V (약 170행), 규칙·수치, 파일 수명주기 엣지 케이스
-- `system-spec.md`: 없음 (스택·MVP 확정 후 Phase 1 스펙 작성)
+- `system-spec.md`: [system-spec.md](system-spec.md) — Phase 1 뷰어 MVP 스펙 (EARS 12건, 파일 열기 경로·렌더·UI·외부 변경·NSIS 훅, 상태표·엣지 케이스, 열린 결정 3건)
 - `fidelity-report.md`: 없음
 - Implementation / PR / scene notes: [`docs/roadmap.md`](../../../roadmap.md)
 
