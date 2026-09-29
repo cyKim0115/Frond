@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IME 스파이크</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header id="env">환경 정보 읽는 중…</header>
+
+    <main id="surfaces">
+      <section class="surface" data-surface="A">
+        <h2>A · <code>&lt;textarea&gt;</code> <span class="badge" data-lines></span><span class="badge" data-saves>Ctrl+S 0</span></h2>
+        <textarea id="ta" spellcheck="false"></textarea>
+      </section>
+      <section class="surface" data-surface="B">
+        <h2>B · CodeMirror 6 plain <span class="badge" data-lines></span><span class="badge" data-saves>Ctrl+S 0</span></h2>
+        <div id="cm-plain" class="cm-host"></div>
+      </section>
+      <section class="surface" data-surface="C">
+        <h2>C · CodeMirror 6 + replace 데코
+          <span class="badge" data-lines></span><span class="badge" data-saves>Ctrl+S 0</span>
+          <label class="opt"><input type="checkbox" id="opt-guard" checked /> 조합 중 데코 재빌드 금지(IME 가드)</label>
+          <label class="opt"><input type="checkbox" id="opt-reveal" checked /> 캐럿 줄 원문 노출</label>
+        </h2>
+        <div id="cm-deco" class="cm-host"></div>
+      </section>
+    </main>
+
+    <aside id="side">
+      <div id="toolbar">
+        <button id="btn-click" title="시나리오 ②: 한글 조합 도중 이 버튼을 클릭">조합 중 클릭 (0)</button>
+        <button id="btn-reset">샘플 다시 넣기</button>
+        <button id="btn-load-cp949">raw/cp949.md 불러오기</button>
+        <button id="btn-clear-log">로그 지우기</button>
+        <button id="btn-copy-log">로그 복사</button>
+      </div>
+      <section id="checklist"></section>
+      <section id="log-wrap"><h3>이벤트 로그 <span id="log-count"></span></h3><pre id="log"></pre></section>
+    </aside>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
