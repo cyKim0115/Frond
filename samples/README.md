@@ -4,6 +4,8 @@
 |---|---|
 | `showcase.md` | 렌더링 확인. 제목·표·코드·체크리스트·이미지·한글 등 흔한 문법을 한 파일에 모았다 |
 | `raw/` | 파일 처리 확인. 인코딩·줄바꿈이 다른 파일들. **바이트 단위 픽스처**라 `.gitattributes`에서 `-text`로 정규화를 막았다 |
+| `paths/` | 상대 이미지 경로 확인. 한글·공백·`[`·`#`가 든 폴더·파일명 (`paths.md`) |
+| `large/` | 대용량 성능 확인. **저장소에 없음** — `gen-large.ps1`로 `2mb.md`·`10mb.md`를 생성한다 (결정적, UTF-8 LF) |
 
 ## raw/ 픽스처
 
@@ -17,3 +19,11 @@
 | `no-final-newline.md` | UTF-8 | LF | **없음** |
 
 편집기로 열어 아무것도 고치지 않고 저장했을 때 `git status`에 변경이 없어야 한다.
+
+## large/ 생성
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File samples/gen-large.ps1
+```
+
+`crates/mdeditor-core`의 `roundtrip` 예제나 렌더러 성능 측정에 쓴다. 12 MB를 커밋하지 않으려고 생성식으로 뒀다.

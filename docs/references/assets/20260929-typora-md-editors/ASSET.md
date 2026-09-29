@@ -108,6 +108,10 @@
 | ProseMirror 계열 왕복 | Milkdown 빈 줄, Tiptap 이스케이프·표 파이프 손실 | E2·E3 | doc 0.9 |
 | .NET 지원 | 8/9 EOS 2026-11-10 → .NET 10 LTS | S13 | doc 0.95 |
 | Typora 렌더 한도 | ≈2 MB | T12 | seen 0.8 |
+| Windows 시작 시간 (hello, 유휴 첫 실행 / 웜 중앙값) | Tauri 383 / 371 ms · WPF+WebView2 744 / 732 ms (Win10 19045, WebView2 153) | Phase 0-3 | measured 0.9 (재부팅 콜드 미측정) |
+| 프로세스 트리 메모리 (hello, WS / Private 합계, WebView2 6개 포함) | Tauri 300 / 153 MB · WPF 366 / 209 MB | Phase 0-3 | measured 0.9 |
+| chardetng 짧은 CP949 감지 | 121 B `cp949.md` → EUC-KR 정확 (`kr` TLD 힌트, UTF-8 후보 제외) | Phase 0-2 | measured 0.9 |
+| 무편집 저장 바이트 불변 (자체 코어) | `samples/raw` 6종 제자리 저장 → `git status` 깨끗, 한 줄 편집 시 삽입 바이트 외 불변 | Phase 0-2 | test 0.95 |
 
 ## Decisions
 
@@ -129,7 +133,7 @@
 
 ## Open questions
 
-`reference-brief.md` "Open questions" 참조 — IME 한국어 재현, NSIS 훅 노출, chardetng 짧은 파일 정확도, Typora 픽스처 실측, PDF 한글 폰트, Windows 시작 시간·메모리 실측.
+`reference-brief.md` "Open questions" 참조 — IME 한국어 재현(Phase 0-1 실측 대기), NSIS 훅 노출(Phase 1-6), Typora 픽스처 실측(선택), PDF 한글 폰트. **답한 것(2026-09-29)**: chardetng 짧은 파일 정확도 → 121 B `cp949.md` EUC-KR 정확(Phase 0-2), Windows 시작 시간·메모리 → Rules & numbers(Phase 0-3).
 
 ## Artifact links
 
