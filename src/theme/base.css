@@ -1,0 +1,195 @@
+/* 문서 레이아웃·요소 정리 — github-markdown.css 위에 Typora 수치와 요소별 보강을 얹는다.
+   수치는 tokens.css 변수만 쓴다. 팔레트 색은 github-markdown.css 의 --fgColor-* / --bgColor-* / --borderColor-* 변수. */
+
+/* ---- 본문 컬럼 ---- */
+.markdown-body {
+  max-width: var(--body-max-width);
+  margin: 0 auto;
+  padding: var(--body-padding-top) var(--body-padding-x) var(--body-padding-bottom);
+  font-size: var(--base-font-size);
+  line-height: var(--line-height);
+  /* Chromium 117+: 문단 끝 고아 단어를 줄인다 (brief G22) */
+  text-wrap: pretty;
+}
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+/* ---- 제목 — 크기 배율은 GitHub 그대로 (h1 2em · h2 1.5em · h3 1.25em · h4 1em · h5 .875em · h6 .85em) ---- */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  text-wrap: balance;
+}
+/* markdown-it-anchor permalink 를 켜면 붙는 앵커 — 제목에 마우스를 올리거나 포커스할 때만 보인다 */
+.markdown-body .header-anchor {
+  margin-left: 0.25em;
+  font-weight: 400;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 80ms;
+}
+.markdown-body h1:hover .header-anchor,
+.markdown-body h2:hover .header-anchor,
+.markdown-body h3:hover .header-anchor,
+.markdown-body h4:hover .header-anchor,
+.markdown-body h5:hover .header-anchor,
+.markdown-body h6:hover .header-anchor,
+.markdown-body .header-anchor:focus-visible {
+  opacity: 1;
+}
+
+/* ---- 링크 — 포커스 링은 인라인 텍스트 바깥으로 ---- */
+.markdown-body a:focus-visible {
+  outline: 2px solid var(--focus-outlineColor);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.markdown-body a:not([class]):focus-visible {
+  outline-offset: 2px;
+}
+/* 스크롤되는 코드 블록·표는 Chromium 이 키보드 포커스 대상으로 삼는다 — 링크와 같은 링을 준다 */
+.markdown-body pre:focus-visible,
+.markdown-body table:focus-visible {
+  outline: 2px solid var(--focus-outlineColor);
+  outline-offset: 2px;
+}
+
+/* ---- 이미지 ---- */
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+}
+.markdown-body img[src=""],
+.markdown-body img:not([src]) {
+  display: none;
+}
+
+/* ---- 코드 — 인라인은 줄바꿈, 블록은 가로 스크롤 ---- */
+.markdown-body code,
+.markdown-body tt {
+  font-size: var(--code-font-size);
+}
+.markdown-body pre {
+  font-size: var(--code-font-size);
+  line-height: var(--code-line-height);
+  overflow-x: auto;
+  /* 긴 줄은 블록 안에서만 스크롤한다. 페이지 가로 스크롤은 절대 만들지 않는다 */
+  max-width: 100%;
+}
+.markdown-body pre code {
+  font-size: 100%;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* ---- 표 — 셀 안에서 접고, 그래도 넘치면 표 안에서만 스크롤 ---- */
+.markdown-body table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.markdown-body table th,
+.markdown-body table td {
+  overflow-wrap: anywhere;
+}
+.markdown-body table img {
+  background-color: transparent;
+}
+
+/* ---- 인용 ---- */
+.markdown-body blockquote {
+  margin: 0 0 var(--base-size-16);
+}
+.markdown-body blockquote > blockquote {
+  margin-top: var(--base-size-8);
+}
+
+/* ---- 구분선 ---- */
+.markdown-body hr {
+  height: 2px;
+  margin: var(--base-size-24) 0;
+  background-color: var(--borderColor-default);
+  border: 0;
+}
+
+/* ---- 할 일 목록 — @hedgedoc/markdown-it-task-lists 출력:
+        <ul class="contains-task-list"><li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" disabled checked> … */
+.markdown-body .task-list-item {
+  list-style-type: none;
+}
+.markdown-body .task-list-item + .task-list-item {
+  margin-top: var(--base-size-4);
+}
+.markdown-body .task-list-item input[type="checkbox"],
+.markdown-body .task-list-item-checkbox {
+  width: 1em;
+  height: 1em;
+  margin: 0 0.45em 0.2em -1.45em;
+  vertical-align: middle;
+  accent-color: var(--fgColor-accent);
+}
+/* 뷰어에서는 항상 disabled 로 렌더된다 — 흐리게 하지 않고 상태만 보인다 */
+.markdown-body input[type="checkbox"][disabled] {
+  opacity: 1;
+  cursor: default;
+}
+
+/* ---- 각주 — markdown-it-footnote 출력:
+        <sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup> …
+        <hr class="footnotes-sep"><section class="footnotes"><ol class="footnotes-list"><li id="fn1" class="footnote-item">…<a class="footnote-backref">↩︎</a> */
+.markdown-body .footnote-ref a,
+.markdown-body .footnote-backref {
+  text-decoration: none;
+}
+.markdown-body .footnote-ref a {
+  padding: 0 0.1em;
+}
+.markdown-body .footnotes-sep {
+  /* .footnotes 가 자기 윗선을 그린다 */
+  display: none;
+}
+.markdown-body .footnotes {
+  margin-top: var(--base-size-40);
+  padding-top: var(--base-size-16);
+  font-size: 85%;
+  color: var(--fgColor-muted);
+  border-top: 1px solid var(--borderColor-default);
+}
+.markdown-body .footnotes ol {
+  padding-left: var(--base-size-24);
+}
+.markdown-body .footnotes li + li {
+  margin-top: var(--base-size-4);
+}
+.markdown-body .footnotes li p {
+  margin-bottom: 0;
+}
+.markdown-body .footnotes li:target {
+  color: var(--fgColor-default);
+}
+.markdown-body .footnote-backref {
+  margin-left: 0.25em;
+}
+
+/* ---- 접기 ---- */
+.markdown-body details {
+  margin-bottom: var(--base-size-16);
+}
+.markdown-body details > summary {
+  cursor: pointer;
+  font-weight: var(--base-text-weight-semibold, 600);
+}
+.markdown-body details[open] > summary {
+  margin-bottom: var(--base-size-8);
+}
+
+/* ---- 앱 셸이 본문에 끼워 넣는 오류 문단 (src/main.ts showError) ---- */
+.markdown-body > .error {
+  padding: var(--base-size-8) var(--base-size-16);
+  color: var(--fgColor-danger);
+  border: 1px solid var(--borderColor-danger-emphasis);
+  border-radius: 6px;
+}

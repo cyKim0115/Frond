@@ -1,0 +1,113 @@
+/* 인쇄 — MVP 의 PDF 는 window.print() (stack 결정 Modified approach 7, brief G20·G21).
+   셸(사이드바·상태바·배너)을 숨기고, 스크롤 컨테이너를 풀어 문서가 여러 장으로 흐르게 한다.
+   팔레트는 github-markdown.css 의 @media print 블록이 항상 라이트로 고정한다.
+   코드 블록은 긴 코드가 여러 장에 걸쳐 나뉘어야 하므로 break-inside: avoid 를 걸지 않는다 (G21: 페이지보다 큰 요소에 avoid → 빈 페이지). */
+
+@page {
+  margin: 20mm;
+}
+
+@media print {
+  /* ---- 셸 해제: 고정 높이·overflow 를 풀어야 한 장 이상 인쇄된다 (src/style.css 의 html/body/#app/#viewer 덮음) ---- */
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+  #app {
+    display: block;
+    height: auto;
+  }
+  #sidebar,
+  #statusbar,
+  #banner,
+  #welcome {
+    display: none !important;
+  }
+  #viewer {
+    overflow: visible;
+    outline: none;
+  }
+
+  /* ---- 본문: 전체 폭, 여백은 @page 가 담당 ---- */
+  .markdown-body {
+    max-width: none;
+    padding: 0;
+    font-size: 12pt;
+    zoom: 1 !important;
+    background: #fff;
+  }
+
+  /* ---- 배경 유지: 코드 블록·인라인 코드·표 줄무늬·kbd·mark. 브라우저 '배경 그래픽' 옵션과 무관하게 찍는다 ---- */
+  .markdown-body pre,
+  .markdown-body code,
+  .markdown-body tt,
+  .markdown-body kbd,
+  .markdown-body mark,
+  .markdown-body table tr,
+  .markdown-body .hljs-addition,
+  .markdown-body .hljs-deletion {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---- 코드 블록: 종이에는 스크롤이 없으니 긴 줄을 접는다. 페이지 분할은 허용 (break-inside 지정 안 함) ---- */
+  .markdown-body pre {
+    overflow: visible;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    border: 1px solid var(--borderColor-default);
+  }
+  .markdown-body pre code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- 표: block+overflow 를 풀어 잘리지 않게. 행 단위로만 분할 ---- */
+  .markdown-body table {
+    display: table;
+    width: auto;
+    max-width: 100%;
+    overflow: visible;
+  }
+  .markdown-body table tr {
+    break-inside: avoid;
+  }
+  .markdown-body table thead {
+    display: table-header-group;
+  }
+
+  /* ---- 분할 규칙 ---- */
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4,
+  .markdown-body h5,
+  .markdown-body h6 {
+    break-after: avoid;
+  }
+  .markdown-body img,
+  .markdown-body figure,
+  .markdown-body blockquote,
+  .markdown-body li {
+    break-inside: avoid;
+  }
+  .markdown-body img {
+    max-width: 100%;
+  }
+
+  /* ---- 링크: 색은 유지, 밑줄로 링크임을 표시 ---- */
+  .markdown-body a {
+    text-decoration: underline;
+  }
+
+  /* ---- 접기: 인쇄에서는 모두 펼친다 ---- */
+  .markdown-body details:not([open]) > *:not(summary) {
+    display: block;
+  }
+  .markdown-body details > summary {
+    list-style: none;
+  }
+}
