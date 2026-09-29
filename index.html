@@ -7,18 +7,62 @@
     <title>MdEditor</title>
   </head>
   <body>
-    <div id="app">
+    <!-- 열(탐색·목차·본문)마다 머리 띠(.col-header)가 창 맨 위까지 올라가 제목 표시줄을 이룬다. 띠의 빈 곳은 창 드래그 영역 -->
+    <div id="app" data-nav="closed" class="no-anim">
+      <button id="nav-toggle" class="icon-btn" type="button" aria-controls="nav" aria-expanded="false" title="탐색 영역 열기 (Ctrl+Shift+E)">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2" /><path d="M6.25 2.75v10.5" /></svg>
+      </button>
+
+      <nav id="nav" aria-label="탐색" inert>
+        <div class="nav-inner">
+          <header class="col-header drag-region">
+            <div id="nav-tabs" role="tablist" aria-label="탐색 탭">
+              <button id="tab-recent" class="icon-btn nav-tab" type="button" role="tab" data-tab="recent" aria-controls="panel-recent" aria-selected="true" title="최근 파일">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" /><path d="M8 4.75V8l2.25 1.5" /></svg>
+              </button>
+            </div>
+          </header>
+          <section id="panel-recent" class="nav-panel" role="tabpanel" aria-labelledby="tab-recent">
+            <div class="panel-head">
+              <h2>최근 파일</h2>
+              <button id="recent-clear" class="icon-btn small" type="button" title="전체 지우기" aria-label="최근 파일 전체 지우기">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.75 4.25h10.5M6.25 4.25V2.75h3.5v1.5M4.25 4.25l.6 8.35a.75.75 0 0 0 .75.65h4.8a.75.75 0 0 0 .75-.65l.6-8.35" /></svg>
+              </button>
+            </div>
+            <ul id="recent-list"></ul>
+            <p id="recent-empty" class="panel-empty">최근에 연 파일이 없습니다.</p>
+          </section>
+        </div>
+      </nav>
+
       <aside id="sidebar" hidden>
+        <header class="col-header drag-region"></header>
         <nav id="toc" aria-label="목차"></nav>
       </aside>
-      <main id="viewer">
-        <div id="banner" role="status" hidden></div>
-        <section id="welcome">
-          <h1>MdEditor</h1>
-          <p>Markdown 파일을 여기에 끌어다 놓거나 <kbd>Ctrl</kbd>+<kbd>O</kbd>로 여세요.</p>
-        </section>
-        <article id="document" class="markdown-body" lang="ko" hidden></article>
-      </main>
+      <div id="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="목차 폭" tabindex="0" title="끌어서 폭 조절 · 두 번 클릭하면 기본 폭"></div>
+
+      <div id="main">
+        <header id="titlebar" class="col-header drag-region">
+          <span id="title-text">MdEditor</span>
+          <button id="open-settings" class="icon-btn" type="button" title="설정 (Ctrl+,)" aria-label="설정">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2" /><path d="M6.9 1.75h2.2l.35 1.7 1.2.7 1.65-.55 1.1 1.9-1.3 1.15v1.4l1.3 1.15-1.1 1.9-1.65-.55-1.2.7-.35 1.7H6.9l-.35-1.7-1.2-.7-1.65.55-1.1-1.9 1.3-1.15v-1.4l-1.3-1.15 1.1-1.9 1.65.55 1.2-.7z" /></svg>
+          </button>
+          <div id="window-controls">
+            <button id="win-min" type="button" title="최소화" aria-label="최소화">&#xE921;</button>
+            <button id="win-max" type="button" title="최대화" aria-label="최대화">&#xE922;</button>
+            <button id="win-close" type="button" title="닫기" aria-label="닫기">&#xE8BB;</button>
+          </div>
+        </header>
+        <main id="viewer">
+          <div id="banner" role="status" hidden></div>
+          <section id="welcome">
+            <h1>MdEditor</h1>
+            <p>Markdown 파일을 여기에 끌어다 놓거나 <kbd>Ctrl</kbd>+<kbd>O</kbd>로 여세요.</p>
+          </section>
+          <article id="document" class="markdown-body" lang="ko" hidden></article>
+        </main>
+      </div>
+
       <footer id="statusbar">
         <span id="status-path" title=""></span>
         <span class="spacer"></span>
@@ -27,6 +71,34 @@
         <button id="status-default" type="button" hidden title="Windows 기본 앱 설정 열기">기본 앱으로 설정</button>
         <span id="status-zoom">100%</span>
       </footer>
+
+      <dialog id="settings-dialog" class="modal" aria-labelledby="settings-title">
+        <form method="dialog">
+          <header class="modal-head">
+            <h2 id="settings-title">설정</h2>
+            <button class="icon-btn small" type="submit" value="close" title="닫기 (Esc)" aria-label="닫기">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
+            </button>
+          </header>
+          <div id="settings-body"></div>
+          <footer class="modal-foot">
+            <span class="modal-note">바꾼 값은 바로 적용되고 저장됩니다.</span>
+            <button id="settings-reset" type="button">모두 기본값으로</button>
+          </footer>
+        </form>
+      </dialog>
+
+      <dialog id="app-dialog" class="modal" aria-labelledby="dialog-title" aria-describedby="dialog-message">
+        <form method="dialog">
+          <h2 id="dialog-title"></h2>
+          <p id="dialog-message"></p>
+          <p id="dialog-detail" hidden></p>
+          <div class="dialog-actions">
+            <button id="dialog-cancel" type="submit" value="cancel">취소</button>
+            <button id="dialog-ok" type="submit" value="ok">확인</button>
+          </div>
+        </form>
+      </dialog>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

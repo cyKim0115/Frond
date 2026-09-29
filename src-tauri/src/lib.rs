@@ -89,6 +89,12 @@ fn load_document(app: AppHandle, path: String) -> Result<DocumentPayload, String
     })
 }
 
+/// 최근 파일 목록에서 고른 경로가 아직 파일로 있는지. 없으면 프런트가 알리고 목록에서 뺀다
+#[tauri::command]
+fn file_exists(path: String) -> bool {
+    Path::new(&path).is_file()
+}
+
 /// 두 번째 인스턴스가 넘긴 인수를 기존 창에 전달하고 창을 앞으로 가져온다.
 fn on_second_instance(app: &AppHandle, args: Vec<String>, cwd: String) {
     let paths = paths_from_args(args.into_iter().map(OsString::from), Some(Path::new(&cwd)));
@@ -113,8 +119,10 @@ pub fn run() {
         .setup(|app| {
             // 창은 코드로 만든다 — on_navigation 훅은 빌더에만 있다.
             // 웹뷰 안에서의 이동은 앱 자체 URL만 허용. 외부 링크는 프런트가 opener로 연다 (스택 판정 조건 5)
+            // 제목 표시줄은 프런트가 그린다(src/titlebar.ts) — 테두리 없는 창도 가장자리 리사이즈·그림자는 런타임이 준다
             WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("MdEditor")
+                .decorations(false)
                 .inner_size(1100.0, 800.0)
                 .min_inner_size(400.0, 300.0)
                 .center()
@@ -131,6 +139,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             take_pending_paths,
             load_document,
+            file_exists,
             watch::watch_document,
             watch::unwatch_document,
             assoc::open_default_apps_settings,
