@@ -3,7 +3,8 @@
 ; 이 파일은 UTF-8 **BOM 포함**이어야 한다. makensis 는 BOM 으로 인코딩을 판별한다
 ; (bundler 도 -INPUTCHARSET UTF8 로 호출하지만 !include 파일은 BOM 이 기준).
 ;
-; 삽입 위치 (tauri-bundler installer.nsi, tag tauri-cli-v2.12.0):
+; 삽입 위치 (tauri-bundler installer.nsi, tag tauri-cli-v2.12.0 소스 기준. 렌더된 target/release/nsis/x64/installer.nsi 는
+;   Handlebars 블록이 접혀 32행·649-650행·710행·769-770행·845행이 된다):
 ;   36행  !include "{{installer_hooks}}"        — 템플릿의 !define 들(41-72행)보다 앞. 그래서 이 파일의
 ;                                                최상위 !define 은 ${PRODUCTNAME} 등을 참조하지 않는다
 ;   734행 !insertmacro NSIS_HOOK_POSTINSTALL    — Section Install 끝. 매크로 본문은 이 시점에 전개되므로
@@ -38,11 +39,13 @@
   WriteRegStr SHCTX "Software\Classes\Applications\${MAINBINARYNAME}.exe\SupportedTypes" ".${EXT}" ""
 !macroend
 
-; 확장자 하나 정리: 우리 ProgId 값만 지운다. .ext 키 자체와 다른 앱의 값은 남긴다.
-; OpenWithProgids 하위 키는 비었을 때만(/ifempty) 정리한다
+; 확장자 하나 정리: 우리 ProgId 값만 지운다. 다른 앱의 값·기본값은 남긴다.
+; OpenWithProgids 하위 키와 .ext 키 자체는 비었을 때만(/ifempty) 정리한다 — .mdown 등은 ADD_EXT 가 키를 새로
+; 만들었을 수 있다. .md/.markdown 은 템플릿이 기본값·_backup 값을 남기므로 /ifempty 에 걸리지 않는다
 !macro MDEDITOR_REMOVE_EXT EXT
   DeleteRegValue SHCTX "Software\Classes\.${EXT}\OpenWithProgids" "${MDEDITOR_PROGID}"
   DeleteRegKey /ifempty SHCTX "Software\Classes\.${EXT}\OpenWithProgids"
+  DeleteRegKey /ifempty SHCTX "Software\Classes\.${EXT}"
 !macroend
 
 ; 셸에 연결 변경 알림 — 템플릿의 UPDATEFILEASSOC(SHCNE_ASSOCCHANGED | SHCNF_FLUSH)를 쓰고, 없으면 직접 호출
@@ -64,6 +67,8 @@
 
   ; 1) ProgId 보강 — 키는 템플릿(APP_ASSOCIATE)이 만들었다. 표시 이름을 붙이고, 실행 파일 경로를 따옴표로
   ;    감싼다 (템플릿 667행은 $INSTDIR 에 공백이 있으면 깨질 수 있는 무따옴표 명령을 쓴다)
+  ;    FriendlyTypeName 은 문서가 권하는 간접 문자열("@exe,-id")이 아닌 리터럴이다 — 실행 파일에 문자열 테이블
+  ;    리소스가 없고, SHLoadIndirectString 은 리터럴을 그대로 돌려주므로 탐색기 표시는 같다
   WriteRegStr SHCTX "Software\Classes\${MDEDITOR_PROGID}" "FriendlyTypeName" "Markdown 문서"
   WriteRegStr SHCTX "Software\Classes\${MDEDITOR_PROGID}\shell\open\command" "" '"$INSTDIR\${MAINBINARYNAME}.exe" "%1"'
 
