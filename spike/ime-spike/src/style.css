@@ -139,3 +139,11 @@ button:hover { border-color: var(--accent); }
   word-break: break-all;
 }
 .cm-frontmatter { background: rgba(128,128,128,.08); color: var(--muted); }
+
+/* CM6 기본 커서는 검정(1.2px)이라 다크 모드에서 안 보인다 — 제품 테마에서도 반드시 지정할 것 */
+.cm-host .cm-editor .cm-cursor,
+.cm-host .cm-editor .cm-dropCursor { border-left: 2px solid var(--fg); }
+@media (prefers-color-scheme: dark) {
+  .cm-host .cm-editor .cm-selectionBackground,
+  .cm-host .cm-editor.cm-focused .cm-selectionBackground { background: rgba(88, 166, 255, 0.35); }
+}
