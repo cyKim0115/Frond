@@ -43,6 +43,11 @@ const statusDefault = $<HTMLButtonElement>("#status-default");
 
 let current: DocumentPayload | null = null;
 let zoom = 1;
+const IS_TAURI = "__TAURI_INTERNALS__" in window;
+/** 브라우저 미리보기에서는 경로를 그대로 URL로 쓴다 (Vite가 프로젝트 파일을 서빙). `#`·공백은 조각으로 읽히지 않게 인코딩 */
+const toAssetUrl = IS_TAURI
+  ? convertFileSrc
+  : (absPath: string) => absPath.split(/[\\/]/).map(encodeURIComponent).join("/");
 
 // ---- 열기 ---------------------------------------------------------------
 
@@ -60,10 +65,7 @@ async function openPath(path: string, keepScroll?: number): Promise<void> {
 }
 
 function show(doc: DocumentPayload): void {
-  const { html, toc: entries } = renderMarkdown(doc.text, {
-    baseDir: doc.dir,
-    toAssetUrl: convertFileSrc,
-  });
+  const { html, toc: entries } = renderMarkdown(doc.text, { baseDir: doc.dir, toAssetUrl });
   article.innerHTML = html;
   article.hidden = false;
   welcome.hidden = true;
@@ -85,7 +87,7 @@ function show(doc: DocumentPayload): void {
 
   const title = `${doc.name} — MdEditor`;
   document.title = title;
-  void getCurrentWindow().setTitle(title);
+  if (IS_TAURI) void getCurrentWindow().setTitle(title);
   $("#status-path").textContent = doc.path;
   $("#status-path").title = doc.path;
   $("#status-encoding").textContent = doc.info.bom ? `${doc.info.encoding} BOM` : doc.info.encoding;
@@ -274,7 +276,7 @@ async function initBrowserPreview(): Promise<void> {
   });
 }
 
-if ("__TAURI_INTERNALS__" in window) {
+if (IS_TAURI) {
   void init();
 } else {
   void initBrowserPreview();
