@@ -18,6 +18,7 @@
 | MVP 범위 | **V1 리더 퍼스트** ([`decisions/ideation/20260929-mvp-scope.md`](decisions/ideation/20260929-mvp-scope.md)) = 로드맵 Phase 0–2 |
 | Phase 0 (스파이크·코어·측정·픽스처) | 완료 2026-09-29 — [`decisions/ideas/20260929-stack.md`](decisions/ideas/20260929-stack.md) "Phase 0 결과 기록란" |
 | Phase 1 뷰어 MVP — 1-1 스캐폴딩 · 1-2 열기 경로 · 1-3 렌더 · 1-4 UI/테마 · 1-5 외부 변경 · 1-6 설치기 | **구현 완료 2026-09-29** (`main`). 스펙: [`system-spec.md`](references/assets/20260929-typora-md-editors/system-spec.md) |
+| 셸 UI 보강 (사용자 요청 2026-09-29) | 커스텀 제목 표시줄(창 테두리 없음), 왼쪽 탐색 영역(최근 파일 탭, 열고 닫기 애니메이션), 목차 폭 조절, 설정 팝업(테마·본문 폭·제목 이동 여백·최근 파일 개수). 최근 파일은 로드맵 2-5를 앞당김 |
 | Phase 1-7 검증 | **실기 검증 대기** ← §2 |
 | Phase 2 (편집·저장) | 1-7 통과 후 |
 
@@ -35,6 +36,8 @@ Phase 1 구현 요약: `npm run app:build` → `target/release/bundle/nsis/MdEdi
 6. `samples/gen-large.ps1`로 만든 `samples/large/10mb.md` 열기 시간(목표: 렌더 ≤ 5 s)
 7. 제거 후 `.md` 우클릭 목록에서 MdEditor가 사라지는지, 다른 앱 연결이 남는지
 8. (가능하면) Win11 PC와 이전 IME에서 `archived-exp/ime-spike` 재실측 (§3)
+9. 제목 표시줄: 빈 곳 드래그로 창 이동·화면 끝 스냅, 두 번 클릭 최대화/복원, 창 가장자리 리사이즈, 최대화 상태에서 화면 밖으로 넘치지 않는지, 최소화·닫기. 위쪽에 흰 줄이 보이지 않는지(Win10 그림자)
+10. 탐색 영역(`Ctrl+Shift+E`)·최근 파일: 연 파일이 맨 위로, 지운 파일 클릭 → 알림 후 목록에서 제거, 항목 ×·전체 지우기. 목차 경계 끌기(절반 폭 상한·160 px 하한·80 px 아래로 끌면 접힘), 설정(`Ctrl+,`) 값이 재시작 뒤에도 남는지
 
 결과를 알려 주면 에이전트가 `fidelity-report.md`(readonly QA 형식)를 쓰고 로드맵 1-7을 닫는다. 문제가 나오면 그 항목만 고친다.
 
