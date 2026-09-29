@@ -47,7 +47,7 @@
 
 자유 메모:
 
-- 요청은 "조사 + 개발 계획"이었고, 스택·엔진·MVP는 사용자 확인이 필요한 결정이라 판정 문서는 `(pending)`으로 두었다.
+- 요청은 "조사 + 개발 계획"이었고, 스택·엔진·MVP는 2026-09-29 배치 승인으로 확정됐다 (스택·엔진 `ADOPT_WITH_CHANGES`, MVP V1, 유사도 `inspired`, Phase 0에 WPF hello 비교 측정 추가, RAG 캡처는 MVP 완료 후).
 
 ## Distilled analysis
 
@@ -113,9 +113,9 @@
 
 | Decision | Adopt | Defer | Reject | Rationale |
 |----------|-------|-------|--------|-----------|
-| 뷰어 우선 MVP (더블클릭 → 깔끔한 렌더) | ✓ 권고 | | | 콜아웃 2. Notepad·소형 MDView가 노리는 자리, 렌더 품질·바이트 보존으로 차별 (W9·W12·W14) |
-| 앱 스택 = Tauri 2 + Vite + TS | ✓ 권고 (조건부) | | | `ideas/20260929-stack.md`. IME 스파이크 통과 조건 |
-| 에디터 엔진 = CodeMirror 6 + 자체 데코레이션 + 바이트 보존 계층 | ✓ 권고 (조건부) | | | `ideas/20260929-editor-engine.md` |
+| 뷰어 우선 MVP (더블클릭 → 깔끔한 렌더) | ✓ 확정 2026-09-29 (V1 선택) | | | 콜아웃 2. Notepad·소형 MDView가 노리는 자리, 렌더 품질·바이트 보존으로 차별 (W9·W12·W14) |
+| 앱 스택 = Tauri 2 + Vite + TS | ✓ 확정 2026-09-29 (`ADOPT_WITH_CHANGES`) | | | `ideas/20260929-stack.md`. IME 스파이크 통과 조건 |
+| 에디터 엔진 = CodeMirror 6 + 자체 데코레이션 + 바이트 보존 계층 | ✓ 확정 2026-09-29 (`ADOPT_WITH_CHANGES`) | | | `ideas/20260929-editor-engine.md` |
 | ProseMirror 계열(Milkdown·Tiptap)·Vditor·Muya를 편집 엔진으로 | | | ✓ 권고 | 재직렬화가 바이트 보존과 충돌 (E2–E5·O2·O17) |
 | WinUI 3 · Avalonia · Flutter | | | ✓ 권고 | 배포 부담·시작 성능 / HTML 렌더 없음 / 한국어 IME (S17·S18) |
 | Electron | | ✓ | | IME 스파이크 실패 시 폴백 (S15·G3) |

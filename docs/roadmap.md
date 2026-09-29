@@ -3,16 +3,18 @@
 작성: 2026-09-29 · 근거: [참고 자산](references/assets/20260929-typora-md-editors/ASSET.md) · [스택 판정](decisions/ideas/20260929-stack.md) · [엔진 판정](decisions/ideas/20260929-editor-engine.md) · [MVP 3안](decisions/ideation/20260929-mvp-scope.md)
 
 이 문서는 **어느 MVP 안을 골라도 Phase 0–2가 같도록** 짰다. V1(리더 퍼스트)은 Phase 0–2, V2(Typora-lite 분할)는 + Phase 3–4, V3(인라인 하이브리드)는 + Phase 5다.
-전제 스택은 Tauri 2 + Vite + vanilla TS, 엔진은 CodeMirror 6 — 두 판정이 `ADOPT*`로 확정되기 전에는 Phase 0의 스파이크 코드도 만들지 않는다.
+스택 Tauri 2 + Vite + vanilla TS, 엔진 CodeMirror 6, MVP V1은 2026-09-29에 확정됐다. Phase 0 IME 스파이크가 통과하기 전에는 Phase 1 제품 스캐폴딩을 만들지 않는다.
 
-## 확정이 필요한 것 (게이트 0)
+## 확정된 것 (게이트 0, 2026-09-29)
 
-| 결정 | 권고 | 기록 |
+| 결정 | 확정 | 기록 |
 |------|------|------|
-| 앱 스택 | Tauri 2 + Vite + TS, 조건부 | `decisions/ideas/20260929-stack.md` → `ADOPT_WITH_CHANGES` |
-| 에디터 엔진 | CM6 + 자체 데코 + 바이트 보존 계층 | `decisions/ideas/20260929-editor-engine.md` → `ADOPT_WITH_CHANGES` |
-| MVP 범위 | V1 / V2 / V3 중 사용자 선택 | `decisions/ideation/20260929-mvp-scope.md` → Selection |
+| 앱 스택 | Tauri 2 + Vite + TS, `ADOPT_WITH_CHANGES` (IME 스파이크 통과 시 `ADOPT`) | `decisions/ideas/20260929-stack.md` |
+| 에디터 엔진 | CM6 + 자체 데코 + 바이트 보존 계층, `ADOPT_WITH_CHANGES` | `decisions/ideas/20260929-editor-engine.md` |
+| MVP 범위 | **V1 리더 퍼스트** (Phase 0–2) | `decisions/ideation/20260929-mvp-scope.md` |
 | 유사도 | `inspired` | `references/assets/…/ASSET.md` |
+| Phase 0 추가 | WPF + WebView2 hello 앱으로 Windows 시작 시간·메모리 비교 측정 | 사용자 선택 |
+| RAG 캡처 | MVP(Phase 2) 완료 후 `capture-to-rag` 검토 | 사용자 결정 |
 
 ## Phase 0 — 스파이크와 코어 (구현 전 검증)
 
@@ -23,7 +25,7 @@
 | 0-1 IME 스파이크 (`exp/ime-spike`) | Tauri 2 최소 앱: `<textarea>` / CM6 plain / CM6 + replace 데코 세 편집면 | When 한국어 MS IME(새·이전 각각)로 아래 시나리오를 Win10 19045·Win11에서 수행하면, the 세 편집면 중 최소 CM6 plain shall 글자 유실·중복·자소 분리 없이 입력을 받는다 |
 | | 시나리오: ① 기존 텍스트가 있는 편집면 첫 클릭 후 즉시 한글 입력(tauri #15436) ② 조합 중 버튼 클릭·Alt+Tab(#5475, G16) ③ 조합 중 Enter·Ctrl+S(G18) ④ 자동 줄바꿈 경계에서 입력(G17) ⑤ 선택+Backspace 후 입력(T20) ⑥ YAML front matter 직후 문단(T20) ⑦ 백틱·`**` 뒤 한글(#4251) ⑧ 데코 위젯 바로 앞에서 조합 | 결과표를 `docs/decisions/ideas/20260929-stack.md` Follow-up에 기록. 실패 시 플래그(G6) → textarea/EditContext(G7) → Electron 순으로 재판정 |
 | 0-2 파일 충실도 코어 (Rust crate `mdeditor-core`) | `FileDocument` 읽기/쓰기: BOM 스니핑 → UTF-8 검증 → chardetng(EUC-KR 후보) → 디코드, 줄별 EOL 맵·끝 개행 플래그, 무편집 저장 = 원본 바이트, 편집 저장 = 재결합·재인코딩(`*_without_replacement` 손실 검사) → 임시파일 + `ReplaceFileW`(실패 시 in-place) | When `samples/raw/*.md`를 열고 편집 없이 저장하면, the 코어 shall 바이트를 1도 바꾸지 않는다 (`git status` 깨끗, CI 테스트). When 한 줄만 편집해 저장하면, shall 그 줄 외의 바이트·EOL·BOM·끝 개행을 보존한다. When CP949로 표현 불가한 문자를 넣고 저장하면, shall 조용히 손상하지 않고 UTF-8 변환 여부를 묻는 오류를 돌려준다 |
-| 0-3 Windows 실측 | 시작 시간·프로세스 트리 메모리(Tauri hello vs 필요 시 WPF+WebView2) | 콜드 시작 < 1 s 목표치 확인. 수치는 ASSET "Rules & numbers"에 추가 |
+| 0-3 Windows 실측 | Tauri hello vs **WPF + .NET 10 + WebView2 hello** 같은 PC에서 콜드/웜 시작 시간·프로세스 트리 RSS(WebView2 프로세스 포함) 각 10회 중앙값 | 콜드 시작 < 1 s 목표치 확인. 수치는 ASSET "Rules & numbers"와 스택 판정 Follow-up에 기록. WPF 코드는 측정 후 폐기(`exp/wpf-hello`) |
 | 0-4 픽스처 보강 | `samples/raw/`에 한글·공백·`[`·`#` 경로 이미지 픽스처, 2 MB·10 MB 대용량 샘플 | (바이트 픽스처 규칙 유지: `-text`) |
 
 ## Phase 1 — 뷰어 MVP (더블클릭 → 깔끔한 렌더)
@@ -72,7 +74,7 @@
 - **핀**: tauri ≥ 2.12 / tao ≥ 0.35.4 / single-instance ≥ 2.4.5 / `@codemirror/view` 최신 / WebView2 ≥ 150. `webviewInstallMode: downloadBootstrapper`
 - **보안**: DOMPurify, 링크 스킴 허용 목록, `on_navigation` 가로채기, asset scope 문서 폴더 비재귀, CSP `img-src 'self' asset: http://asset.localhost`
 - **바이트 보존 CI**: `samples/raw` 왕복 테스트는 모든 Phase에서 필수 통과
-- **기록**: Phase마다 `docs/next-session.md` §1 갱신, 스펙은 `docs/references/assets/…/system-spec.md`, QA는 readonly 컨텍스트로 `fidelity-report.md`
+- **기록**: Phase마다 `docs/next-session.md` §1 갱신, 스펙은 `docs/references/assets/…/system-spec.md`, QA는 readonly 컨텍스트로 `fidelity-report.md`. MVP(Phase 2) 완료 시 Producer가 `capture-to-rag` 검토 제안
 
 ## 하지 않는 것
 

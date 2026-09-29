@@ -4,7 +4,7 @@
 
 | Ideation id | Prompt | Variants | Selected | Date | Path |
 |-------------|--------|----------|----------|------|------|
-| `20260929-mvp-scope` | 첫 릴리스 MVP 범위 — 리더 퍼스트 / Typora-lite 분할 / 인라인 하이브리드 | V1·V2·V3 | (대기) | 2026-09-29 | `20260929-mvp-scope.md` |
+| `20260929-mvp-scope` | 첫 릴리스 MVP 범위 — 리더 퍼스트 / Typora-lite 분할 / 인라인 하이브리드 | V1·V2·V3 | **V1** | 2026-09-29 | `20260929-mvp-scope.md` |
 
 ## How to add
 
