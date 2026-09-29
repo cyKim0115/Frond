@@ -4,7 +4,8 @@
 
 | Idea id | Title / summary | Verdict | Date | Path |
 |---------|-----------------|---------|------|------|
-|         |                 |         |      | `YYYYMMDD-slug.md` |
+| `20260929-stack` | 앱 스택 — Tauri 2 + Vite + TS (조건부: IME 스파이크·런타임 핀·자체 파일 I/O·NSIS 훅) | `(pending)` → 권고 `ADOPT_WITH_CHANGES` | 2026-09-29 | `20260929-stack.md` |
+| `20260929-editor-engine` | 에디터 엔진 — CodeMirror 6 + 자체 라이브프리뷰 데코 + 에디터 밖 바이트 보존 계층 (ProseMirror 계열·Vditor·Muya 제외) | `(pending)` → 권고 `ADOPT_WITH_CHANGES` | 2026-09-29 | `20260929-editor-engine.md` |
 
 ## How to add
 
