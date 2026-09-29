@@ -2,7 +2,7 @@
 
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
-**현재 단계: 스택 Tauri 2 + Vite + TS, 엔진 CodeMirror 6, MVP V1(리더 퍼스트) 확정(2026-09-29). 다음은 [docs/roadmap.md](docs/roadmap.md) Phase 0 (IME 스파이크·바이트 보존 코어·WPF 비교 측정).**
+**현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 0 진행 중 (2026-09-29). 0-2 바이트 보존 코어(`exp/core`)·0-3 시작 시간 측정(`exp/wpf-hello`)·0-4 픽스처(main) 완료. 0-1 IME 스파이크(`exp/ime-spike`)는 앱 준비 완료, 사용자 실측 대기 — 통과하면 스택 판정을 `ADOPT`로 올리고 Phase 1.**
 열려 있는 결정은 [docs/next-session.md](docs/next-session.md) §2, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
@@ -44,7 +44,9 @@ docs/next-session.md   지금 열려 있는 것 (결정 대기·다음 할 일)
 docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
-samples/               렌더링·파일 처리 확인용 마크다운 샘플
+samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
+crates/mdeditor-core   바이트 보존 파일 코어 (exp/core 브랜치. Phase 1에서 main 머지)
+spike/                 Phase 0 실험 앱·측정 (exp/* 브랜치에만. ime-spike, tauri-hello, wpf-hello, measure)
 ```
 
 ## 빌드
