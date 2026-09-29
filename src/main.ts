@@ -125,16 +125,17 @@ async function pickAndOpen(): Promise<void> {
 // ---- 링크 ------------------------------------------------------------------
 
 article.addEventListener("click", (event) => {
-  const a = (event.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
+  // 로컬 .md 링크는 DOMPurify가 href를 떼도 data-local-path로 열린다
+  const a = (event.target as HTMLElement).closest("a[href], a[data-local-path]") as HTMLAnchorElement | null;
   if (!a) return;
   const href = a.getAttribute("href") ?? "";
   event.preventDefault();
-  if (href.startsWith("#")) {
+  if (a.dataset.localPath) {
+    void openPath(a.dataset.localPath);
+  } else if (href.startsWith("#")) {
     document.getElementById(decodeURIComponent(href.slice(1)))?.scrollIntoView({ block: "start" });
   } else if (/^(https?|mailto):/i.test(href)) {
     void openUrl(href);
-  } else if (a.dataset.localPath) {
-    void openPath(a.dataset.localPath);
   }
 });
 
@@ -258,4 +259,23 @@ async function init(): Promise<void> {
   void refreshDefaultAppStatus();
 }
 
-void init();
+/** Tauri 밖(브라우저에서 `npm run dev`)에서는 샘플을 직접 불러 렌더·테마를 눈으로 확인한다 */
+async function initBrowserPreview(): Promise<void> {
+  const file = new URLSearchParams(location.search).get("sample") ?? "samples/showcase.md";
+  const text = await (await fetch(`/${file}`)).text();
+  const name = file.split("/").pop() ?? file;
+  show({
+    path: file,
+    dir: file.includes("/") ? file.slice(0, file.lastIndexOf("/")) : "",
+    name,
+    text,
+    info: { encoding: "UTF-8", bom: false, eol: "LF", mixed_eol: false, final_newline: true, lossy: false, line_count: 0, byte_len: text.length },
+    hash: "",
+  });
+}
+
+if ("__TAURI_INTERNALS__" in window) {
+  void init();
+} else {
+  void initBrowserPreview();
+}
