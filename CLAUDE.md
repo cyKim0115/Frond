@@ -2,7 +2,7 @@
 
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
-**현재 단계: Phase 0 통과 (2026-09-29, IME는 Win10 새 IME 기준 잠정). 스택 판정 `ADOPT`. 다음은 [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 MVP 스캐폴딩(`main`) — 시작 전.**
+**현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 MVP 구현 완료 (2026-09-29, 1-1~1-6). 남은 것은 1-7 실기 검증 — 설치기·파일 연결·더블클릭 열기는 사용자가 실기에서 확인한다 ([docs/next-session.md](docs/next-session.md) §2). 통과하면 Phase 2 편집·저장.**
 열려 있는 결정은 [docs/next-session.md](docs/next-session.md) §2, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙

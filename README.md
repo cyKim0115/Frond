@@ -4,5 +4,5 @@ Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
 ## 상태
 
-[docs/roadmap.md](docs/roadmap.md) Phase 0(스파이크·코어)를 마쳤습니다. 스택 Tauri 2 + CodeMirror 6 확정(`ADOPT`), MVP는 V1(리더 퍼스트), 바이트 보존 코어 `crates/mdeditor-core`가 main에 있습니다. 다음은 Phase 1 뷰어 MVP 스캐폴딩입니다.
+[docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 MVP를 구현했습니다(Tauri 2 + markdown-it + CodeMirror 6 예정). `.md` 더블클릭 → 렌더, 단일 인스턴스, 외부 변경 리로드, 한국어 타이포·다크 모드, NSIS 설치기·파일 연결. `npm run app:build`로 설치기를 만듭니다. 남은 것은 실기 검증(1-7)이며, 그다음이 Phase 2 편집·저장입니다.
 진행 상황은 [docs/next-session.md](docs/next-session.md)에 있습니다.
