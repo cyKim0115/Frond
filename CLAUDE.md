@@ -45,16 +45,28 @@ docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 �
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
-crates/mdeditor-core   바이트 보존 파일 코어 (Rust, 테스트 23개). Phase 1 스캐폴딩 때 Cargo 워크스페이스 멤버로
+Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
+crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
+src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·load_document), watch.rs(외부 변경),
+                       assoc.rs(파일 연결·기본 앱), nsis/hooks.nsh(설치기 레지스트리 훅), capabilities/(최소 권한)
+src/                   프런트(vanilla TS). main.ts 셸(열기 경로·목차·상태바·줌·다크), render/(markdown-it 파이프라인,
+                       types.ts가 계약), theme/(문서 CSS·폰트), style.css(셸 CSS·색 토큰)
+public/fonts/          D2Coding woff2 (OFL) 번들
 spike/                 (main에 없음) Phase 0 실험 앱·측정 — archived-exp/ime-spike, archived-exp/wpf-hello
 ```
 
 ## 빌드
 
-Phase 1 스캐폴딩 전까지는 코어만 있다.
-
 ```powershell
-cd crates/mdeditor-core
-cargo test                                          # 단위 12 + samples/raw 픽스처 11
-cargo run --example roundtrip -- ../../samples/raw  # 제자리 무편집 저장 → git status 깨끗해야 함
+npm install                       # 처음 한 번 (Rust는 cargo가 알아서)
+npm run app:dev -- -- 파일.md      # Tauri dev (Vite 1422 + cargo run). 인수는 argv 열기 경로 테스트
+npm run app:build                 # 릴리스 + NSIS 설치기 → target/release/bundle/nsis/
+npm test                          # vitest (src/**/*.test.ts, 렌더 파이프라인)
+npx tsc --noEmit                  # 타입 검사
+cargo test                        # 코어 + 백엔드 단위 테스트
+cd crates/mdeditor-core; cargo run --example roundtrip -- ../../samples/raw   # 제자리 무편집 저장 → git status 깨끗
 ```
+
+- Vite `server.watch.ignored`에 `src-tauri`·`target`이 빠지면 cargo가 쓰는 exe 때문에 dev 서버가 EBUSY로 죽는다
+- 창은 `lib.rs`에서 코드로 만든다 (`on_navigation` 훅 때문). `tauri.conf.json`의 `app.windows`는 비워 둔다
+- CM6·다크 모드에서 `.cm-cursor` 색은 반드시 테마에서 지정한다 (기본 검정이라 안 보임 — Phase 0 발견)
