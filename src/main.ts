@@ -1,6 +1,6 @@
 /**
- * 앱 셸 — 파일 열기 경로(argv·두 번째 인스턴스·드롭·Ctrl+O), 렌더 호출, 목차·상태바·줌·다크 모드.
- * 파일 읽기는 전부 Rust `load_document`(mdeditor-core)로 간다.
+ * 앱 셸 — 파일 열기 경로(argv·두 번째 인스턴스·드롭·Ctrl+O), 렌더 호출, 목차·상태바·줌·다크 모드,
+ * 외부 변경 리로드. 파일 읽기는 전부 Rust `load_document`(mdeditor-core)로 간다.
  */
 
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
@@ -36,19 +36,24 @@ const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)
 const viewer = $("#viewer");
 const article = $<HTMLElement>("#document");
 const welcome = $("#welcome");
+const banner = $("#banner");
 const sidebar = $("#sidebar");
 const toc = $("#toc");
+const statusDefault = $<HTMLButtonElement>("#status-default");
 
 let current: DocumentPayload | null = null;
 let zoom = 1;
 
 // ---- 열기 ---------------------------------------------------------------
 
-async function openPath(path: string): Promise<void> {
+async function openPath(path: string, keepScroll?: number): Promise<void> {
   try {
     const doc = await invoke<DocumentPayload>("load_document", { path });
     current = doc;
     show(doc);
+    if (keepScroll !== undefined) viewer.scrollTop = keepScroll;
+    hideBanner();
+    await invoke("watch_document", { path: doc.path, hash: doc.hash });
   } catch (e) {
     showError(String(e));
   }
@@ -74,6 +79,7 @@ function show(doc: DocumentPayload): void {
     }),
   );
   sidebar.hidden = entries.length === 0;
+  updateActiveHeading();
 
   const title = `${doc.name} — MdEditor`;
   document.title = title;
@@ -81,12 +87,13 @@ function show(doc: DocumentPayload): void {
   $("#status-path").textContent = doc.path;
   $("#status-path").title = doc.path;
   $("#status-encoding").textContent = doc.info.bom ? `${doc.info.encoding} BOM` : doc.info.encoding;
-  $("#status-eol").textContent = doc.info.mixed_eol ? `${doc.info.eol} (혼합)` : doc.info.eol;
   $("#status-encoding").classList.toggle("warn", doc.info.lossy);
+  $("#status-encoding").title = doc.info.lossy ? "일부 바이트를 해석하지 못했습니다 (손실 디코드)" : "";
+  $("#status-eol").textContent = doc.info.mixed_eol ? `${doc.info.eol} (혼합)` : doc.info.eol;
 }
 
 function showError(message: string): void {
-  article.innerHTML = "";
+  article.replaceChildren();
   const p = document.createElement("p");
   p.className = "error";
   p.textContent = `열 수 없습니다: ${message}`;
@@ -95,35 +102,65 @@ function showError(message: string): void {
   welcome.hidden = true;
 }
 
+function showBanner(message: string): void {
+  banner.textContent = message;
+  banner.hidden = false;
+}
+
+function hideBanner(): void {
+  banner.hidden = true;
+}
+
 async function pickAndOpen(): Promise<void> {
   const picked = await openDialog({
     multiple: false,
     directory: false,
-    filters: [{ name: "Markdown", extensions: ["md", "markdown", "mdown", "mkd", "txt"] }],
+    filters: [{ name: "Markdown", extensions: ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn", "txt"] }],
   });
   if (typeof picked === "string") await openPath(picked);
 }
 
-// ---- 링크·이미지 ------------------------------------------------------------
+// ---- 링크 ------------------------------------------------------------------
 
 article.addEventListener("click", (event) => {
   const a = (event.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
   if (!a) return;
   const href = a.getAttribute("href") ?? "";
-  if (href.startsWith("#")) {
-    event.preventDefault();
-    document.getElementById(decodeURIComponent(href.slice(1)))?.scrollIntoView({ block: "start" });
-    return;
-  }
   event.preventDefault();
-  if (/^(https?|mailto):/i.test(href)) {
+  if (href.startsWith("#")) {
+    document.getElementById(decodeURIComponent(href.slice(1)))?.scrollIntoView({ block: "start" });
+  } else if (/^(https?|mailto):/i.test(href)) {
     void openUrl(href);
-  } else if (current && a.dataset.localPath) {
+  } else if (a.dataset.localPath) {
     void openPath(a.dataset.localPath);
   }
 });
 
-// ---- 줌·테마 ---------------------------------------------------------------
+// ---- 목차 활성 제목 ---------------------------------------------------------
+
+let headingTick = 0;
+function updateActiveHeading(): void {
+  const links = toc.querySelectorAll<HTMLAnchorElement>("a[href]");
+  if (links.length === 0) return;
+  const top = viewer.getBoundingClientRect().top + 8;
+  let activeId = "";
+  for (const h of article.querySelectorAll<HTMLElement>("h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]")) {
+    if (h.getBoundingClientRect().top <= top) activeId = h.id;
+    else break;
+  }
+  for (const link of links) {
+    link.classList.toggle("active", decodeURIComponent(link.hash.slice(1)) === activeId);
+  }
+}
+viewer.addEventListener("scroll", () => {
+  if (headingTick) return;
+  headingTick = requestAnimationFrame(() => {
+    headingTick = 0;
+    updateActiveHeading();
+  });
+});
+
+// ---- 줌·테마·단축키 ----------------------------------------------------------
 
 function applyZoom(next: number): void {
   zoom = Math.min(3, Math.max(0.5, Math.round(next * 10) / 10));
@@ -133,14 +170,17 @@ function applyZoom(next: number): void {
 
 function toggleTheme(): void {
   const root = document.documentElement;
-  const dark = root.dataset.theme === "dark" || (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  const dark =
+    root.dataset.theme === "dark" ||
+    (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
   root.dataset.theme = dark ? "light" : "dark";
 }
 
 window.addEventListener("keydown", (event) => {
   if (event.isComposing) return;
   const ctrl = event.ctrlKey || event.metaKey;
-  if (ctrl && event.key.toLowerCase() === "o") {
+  const key = event.key.toLowerCase();
+  if (ctrl && key === "o") {
     event.preventDefault();
     void pickAndOpen();
   } else if (ctrl && (event.key === "=" || event.key === "+")) {
@@ -152,14 +192,35 @@ window.addEventListener("keydown", (event) => {
   } else if (ctrl && event.key === "0") {
     event.preventDefault();
     applyZoom(1);
-  } else if (ctrl && event.shiftKey && event.key.toLowerCase() === "d") {
+  } else if (ctrl && event.shiftKey && key === "d") {
     event.preventDefault();
     toggleTheme();
   } else if (ctrl && event.key === "\\") {
     event.preventDefault();
     sidebar.hidden = !sidebar.hidden;
+  } else if (key === "f5" && current) {
+    event.preventDefault();
+    void openPath(current.path, viewer.scrollTop);
   }
 });
+
+// ---- 기본 앱 (1-6) -----------------------------------------------------------
+
+async function refreshDefaultAppStatus(): Promise<void> {
+  try {
+    const progId = await invoke<string | null>("query_default_app");
+    const isDefault = progId === "MdEditor.Markdown";
+    statusDefault.hidden = isDefault;
+    statusDefault.title = progId ? `현재 .md 기본 앱: ${progId}` : "현재 .md 기본 앱이 없습니다";
+  } catch {
+    // 설치 모듈이 아직 없거나(개발 실행) 조회 실패 — 버튼을 숨긴다
+    statusDefault.hidden = true;
+  }
+}
+statusDefault.addEventListener("click", () => {
+  void invoke("open_default_apps_settings").catch((e) => showBanner(`설정을 열 수 없습니다: ${e}`));
+});
+window.addEventListener("focus", () => void refreshDefaultAppStatus());
 
 // ---- 열기 경로 연결 ---------------------------------------------------------
 
@@ -167,6 +228,15 @@ async function init(): Promise<void> {
   await listen<string[]>("open-file", (event) => {
     const [first] = event.payload;
     if (first) void openPath(first);
+  });
+
+  await listen<{ path: string; hash: string }>("file-changed", (event) => {
+    if (!current || event.payload.path.toLowerCase() !== current.path.toLowerCase()) return;
+    void openPath(current.path, viewer.scrollTop);
+  });
+
+  await listen<string>("file-missing", () => {
+    showBanner("파일이 삭제되거나 이동됐습니다. 마지막으로 읽은 내용을 보여 줍니다.");
   });
 
   await getCurrentWebview().onDragDropEvent((event) => {
@@ -183,6 +253,7 @@ async function init(): Promise<void> {
 
   const pending = await invoke<string[]>("take_pending_paths");
   if (pending[0]) await openPath(pending[0]);
+  void refreshDefaultAppStatus();
 }
 
 void init();

@@ -9,6 +9,8 @@ use std::sync::Mutex;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
+mod watch;
+
 /// 앱이 뜨기 전에 argv로 받은 파일들. 프런트가 준비되면 `take_pending_paths`로 가져간다.
 pub struct Pending(Mutex<Vec<PathBuf>>);
 
@@ -105,6 +107,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(Pending(Mutex::new(initial)))
+        .manage(watch::WatchState(Mutex::new(None)))
         .setup(|app| {
             // 창은 코드로 만든다 — on_navigation 훅은 빌더에만 있다.
             // 웹뷰 안에서의 이동은 앱 자체 URL만 허용. 외부 링크는 프런트가 opener로 연다 (스택 판정 조건 5)
@@ -123,7 +126,12 @@ pub fn run() {
                 .build()?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![take_pending_paths, load_document])
+        .invoke_handler(tauri::generate_handler![
+            take_pending_paths,
+            load_document,
+            watch::watch_document,
+            watch::unwatch_document,
+        ])
         .run(tauri::generate_context!())
         .expect("MdEditor 실행 실패");
 }
