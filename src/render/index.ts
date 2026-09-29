@@ -1,12 +1,121 @@
 /**
- * 렌더 파이프라인 — 스캐폴딩 단계의 임시 구현.
- * 로드맵 1-3에서 markdown-it 15 + cjk-friendly + anchor + task lists + footnote + front matter +
- * data-line + DOMPurify + highlight.js 로 교체한다. 계약은 `types.ts`.
+ * 렌더 파이프라인 (로드맵 1-3, 스택 판정 Modified approach 6).
+ *
+ * markdown-it 15 (`html: false`, linkify) + cjk-friendly + front-matter + anchor + 태스크 리스트 + footnote
+ *   → `data-line` 부여 → 링크·이미지 재작성(스킴 허용 목록, 상대 경로 → 절대 경로 → `toAssetUrl`) → DOMPurify.
+ * 코드 하이라이트는 DOM 삽입 뒤 `highlightCodeBlocks()`가 언어를 지연 로드해 처리한다.
+ *
+ * `html: false`: 원문의 HTML 태그(`<details>`·`<img>`…)는 렌더하지 않고 글자 그대로 이스케이프한다.
+ * GitHub와 다른 점이지만 뷰어로서 더 안전하고, 필요해지면 허용 태그 목록과 함께 다시 연다.
  */
 
-import type { RenderOptions, RenderResult } from "./types";
+import MarkdownIt from "markdown-it";
+import type { MarkdownIt as MarkdownItInstance, RendererRule, StateCore, Token } from "markdown-it";
+import anchor from "markdown-it-anchor";
+import cjkFriendly from "markdown-it-cjk-friendly";
+import footnote from "markdown-it-footnote";
+import frontMatter from "markdown-it-front-matter";
+import { dataLinePlugin } from "./data-line";
+import { isAllowedLink, rewriteInlineLinks } from "./links";
+import { sanitizeHtml } from "./sanitize";
+import { taskListsPlugin } from "./task-lists";
+import type { RenderOptions, RenderResult, TocEntry } from "./types";
 
-export function renderMarkdown(source: string, _options: RenderOptions): RenderResult {
-  const escaped = source.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return { html: `<pre data-line="0">${escaped}</pre>`, toc: [] };
+export type { RenderOptions, RenderResult, TocEntry } from "./types";
+export { highlightCodeBlocks } from "./highlight";
+export { resolvePath } from "./paths";
+
+/** 한 번의 `render` 동안 코어 룰이 읽고 쓰는 상태. `md`는 모듈 싱글턴이라 렌더별 데이터는 전부 env에 둔다 */
+type RenderEnv = {
+  baseDir: string;
+  toAssetUrl: (absPath: string) => string;
+  toc: TocEntry[];
+  frontMatter?: string;
+};
+
+/**
+ * GitHub식 슬러그: trim·소문자·공백→`-`·유니코드 문자/숫자/결합 부호/`-`/`_` 외 제거. 한글은 그대로 남는다.
+ * 중복은 markdown-it-anchor가 `-1`, `-2`를 붙여 푼다. 문장 부호뿐인 제목은 `section`
+ */
+export function slugify(text: string): string {
+  const slug = text.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\p{L}\p{N}\p{M}_-]/gu, "");
+  return slug === "" ? "section" : slug;
+}
+
+function createMarkdownIt(): MarkdownItInstance {
+  const md = new MarkdownIt({ html: false, linkify: true, typographer: false, breaks: false })
+    .use(cjkFriendly)
+    // 원문은 콜백 대신 토큰(`front_matter`.meta)에서 읽어 env에 넣는다 — 콜백은 env를 못 받는다
+    .use(frontMatter, () => {})
+    .use(anchor, { slugify, tabIndex: false })
+    .use(taskListsPlugin)
+    .use(footnote)
+    .use(dataLinePlugin);
+
+  // GitHub처럼 스킴 있는 URL과 이메일만 자동 링크. 퍼지 링크를 켜면 `paths.md` 같은 파일명이 `.md`(몰도바 TLD) 링크가 된다
+  md.linkify.set({ fuzzyLink: false, fuzzyIP: false });
+  md.validateLink = isAllowedLink;
+
+  const renderFence: RendererRule = (tokens, idx, _options, _env, renderer) => {
+    const token = tokens[idx];
+    const info = token.info ? md.utils.unescapeAll(token.info).trim() : "";
+    const lang = info.split(/\s+/)[0];
+    const attrs = renderer.renderAttrs(token); // data-line
+    const body = md.utils.escapeHtml(token.content);
+    if (lang === "") return `<pre${attrs}><code>${body}</code></pre>\n`;
+    const safeLang = md.utils.escapeHtml(lang);
+    return `<pre${attrs}><code class="language-${safeLang}" data-lang="${safeLang}">${body}</code></pre>\n`;
+  };
+  md.renderer.rules.fence = renderFence;
+
+  // 플러그인(anchor·linkify·footnote) 뒤에 push → 모든 토큰이 완성된 뒤 목차·front matter·링크 재작성
+  md.core.ruler.push("mdeditor_collect", collectRule);
+  return md;
+}
+
+function collectRule(state: StateCore): void {
+  const env = state.env as RenderEnv;
+  const tokens = state.tokens;
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    switch (token.type) {
+      case "front_matter":
+        env.frontMatter = typeof token.meta === "string" ? token.meta : "";
+        break;
+      case "heading_open": {
+        const inline = tokens[i + 1] as Token | undefined;
+        env.toc.push({
+          level: Number(token.tag.slice(1)),
+          text: inline?.type === "inline" ? plainText(inline.children ?? []) : "",
+          id: String(token.attrGet("id") ?? ""),
+          line: token.map?.[0] ?? 0,
+        });
+        break;
+      }
+      case "inline":
+        if (token.children) rewriteInlineLinks(token.children, env);
+        break;
+    }
+  }
+}
+
+/** 제목 인라인의 평문 — markdown-it-anchor가 슬러그에 쓰는 것과 같은 규칙 */
+function plainText(children: Token[]): string {
+  return children
+    .filter((child) => child.type === "text" || child.type === "code_inline")
+    .map((child) => child.content)
+    .join("");
+}
+
+const md = createMarkdownIt();
+
+/** 동기. 큰 문서의 예산 판단(2 MB·10 MB)은 셸이 한다 */
+export function renderMarkdown(source: string, options: RenderOptions): RenderResult {
+  // 디코더가 BOM을 남겼어도 front matter·첫 제목이 깨지지 않게
+  const text = source.charCodeAt(0) === 0xfeff ? source.slice(1) : source;
+  const env: RenderEnv = { baseDir: options.baseDir, toAssetUrl: options.toAssetUrl, toc: [] };
+  const html = sanitizeHtml(md.render(text, env));
+  const result: RenderResult = { html, toc: env.toc };
+  if (env.frontMatter !== undefined) result.frontMatter = env.frontMatter;
+  return result;
 }

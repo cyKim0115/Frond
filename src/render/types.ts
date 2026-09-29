@@ -3,8 +3,9 @@
 export interface TocEntry {
   /** 1–6 */
   level: number;
+  /** 제목의 평문 (인라인 마크업 제거) */
   text: string;
-  /** 본문 제목 요소의 id (markdown-it-anchor가 부여) */
+  /** 본문 제목 요소의 id (markdown-it-anchor가 부여, GitHub식 슬러그 — 한글 유지) */
   id: string;
   /** 소스 줄 번호 (0 기준). 스크롤 동기·복원용 */
   line: number;
@@ -18,7 +19,13 @@ export interface RenderOptions {
 }
 
 export interface RenderResult {
-  /** DOMPurify를 거친 안전한 HTML. 블록 요소에 `data-line="시작줄"` 속성이 있다 */
+  /**
+   * DOMPurify를 거친 안전한 HTML.
+   * - 블록 요소에 `data-line="시작줄"` (0 기준)
+   * - 상대 `.md`/`.markdown` 링크에 `data-local-path="절대 Windows 경로"` (셸이 앱 내에서 연다)
+   * - http(s) 링크에 `target="_blank" rel="noopener"`
+   * - 코드 펜스는 `<pre><code class="language-xxx" data-lang="xxx">` — 하이라이트는 `highlightCodeBlocks()`가 나중에
+   */
   html: string;
   toc: TocEntry[];
   /** `---` 블록이 있으면 그 원문 (YAML 파싱은 하지 않는다) */
