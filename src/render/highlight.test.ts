@@ -38,6 +38,22 @@ describe("highlightCodeBlocks", () => {
     expect(loaded.length).toBeLessThan(10);
   });
 
+  it("프로토타입 이름·.js.js 심(shim) 이름의 펜스 언어는 평문으로 두고 호출은 reject되지 않는다", async () => {
+    const root = document.createElement("div");
+    root.innerHTML =
+      '<pre><code class="language-constructor" data-lang="constructor">x</code></pre>' +
+      '<pre><code class="language-__proto__" data-lang="__proto__">y</code></pre>' +
+      '<pre><code class="language-toString" data-lang="toString">z</code></pre>' +
+      '<pre><code class="language-abnf.js" data-lang="abnf.js">w</code></pre>' +
+      '<pre><code class="language-json" data-lang="json">{"k": 1}</code></pre>';
+    await expect(highlightCodeBlocks(root)).resolves.toBeUndefined();
+    const codes = Array.from(root.querySelectorAll("code"));
+    expect(codes.slice(0, 4).map((c) => c.classList.contains("hljs"))).toEqual([false, false, false, false]);
+    expect(codes.slice(0, 4).map((c) => c.innerHTML)).toEqual(["x", "y", "z", "w"]);
+    expect(codes[4].classList.contains("hljs")).toBe(true);
+    expect(hljs.listLanguages()).not.toContain("constructor");
+  });
+
   it("두 번 불러도 이미 하이라이트한 블록은 다시 건드리지 않는다", async () => {
     const root = document.createElement("div");
     root.innerHTML = '<pre><code class="language-json" data-lang="json">{"a": 1}</code></pre>';
@@ -56,6 +72,8 @@ describe("resolveLanguage", () => {
     expect(resolveLanguage("html")).toBe("xml");
     expect(resolveLanguage("rust")).toBe("rust");
     expect(resolveLanguage("unknownlang")).toBe("unknownlang");
+    expect(resolveLanguage("constructor")).toBe("constructor");
+    expect(resolveLanguage("__proto__")).toBe("__proto__");
     expect(resolveLanguage("text")).toBeUndefined();
     expect(resolveLanguage("")).toBeUndefined();
   });
