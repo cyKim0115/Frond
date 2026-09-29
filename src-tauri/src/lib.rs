@@ -72,9 +72,10 @@ fn load_document(app: AppHandle, path: String) -> Result<DocumentPayload, String
     let path = path.canonicalize().map_err(|e| format!("{}: {e}", path.display()))?;
     let doc = mdeditor_core::FileDocument::open(&path).map_err(|e| format!("{}: {e}", path.display()))?;
     let dir = path.parent().map(Path::to_path_buf).unwrap_or_else(|| path.clone());
-    // 문서 폴더만(비재귀) asset 프로토콜에 허용 — 상대 이미지용 (스택 판정 조건 5)
+    // 문서 폴더(하위 폴더 포함)를 asset 프로토콜에 허용 — 상대 이미지용 (스택 판정 조건 5).
+    // `./images/x.png`처럼 하위 폴더가 흔해 재귀로 두되, 상위 폴더(`../`)는 열지 않는다
     app.asset_protocol_scope()
-        .allow_directory(&dir, false)
+        .allow_directory(&dir, true)
         .map_err(|e| format!("asset scope: {e}"))?;
     let hash = doc.content_hash().iter().map(|b| format!("{b:02x}")).collect();
     Ok(DocumentPayload {

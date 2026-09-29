@@ -9,7 +9,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { renderMarkdown } from "./render";
+import { highlightCodeBlocks, renderMarkdown } from "./render";
 import "./style.css";
 import "./theme/index.css";
 
@@ -68,6 +68,8 @@ function show(doc: DocumentPayload): void {
   article.hidden = false;
   welcome.hidden = true;
   viewer.scrollTop = 0;
+  // 2 MB(스펙 largeSoftLimit)를 넘는 문서는 하이라이트를 생략해 첫 렌더를 지킨다
+  if (doc.info.byte_len <= 2 * 1024 * 1024) void highlightCodeBlocks(article);
 
   toc.replaceChildren(
     ...entries.map((e) => {
