@@ -1,0 +1,141 @@
+:root {
+  --fg: #1f2328;
+  --bg: #ffffff;
+  --muted: #59636e;
+  --line: #d0d7de;
+  --accent: #0969da;
+  --pass: #1a7f37;
+  --fail: #cf222e;
+  --partial: #9a6700;
+  font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--fg);
+  background: var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #e6edf3;
+    --bg: #0d1117;
+    --muted: #9198a1;
+    --line: #30363d;
+    --accent: #58a6ff;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(520px, 1fr) minmax(420px, 46%);
+  grid-template-areas: "env env" "main side";
+  overflow: hidden;
+}
+#env {
+  grid-area: env;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#surfaces {
+  grid-area: main;
+  overflow: auto;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.surface h2 {
+  font-size: 13px;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.surface .badge {
+  font-weight: normal;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 7px;
+}
+.surface .opt { font-weight: normal; font-size: 12px; color: var(--muted); }
+textarea, .cm-host {
+  width: 100%;
+  height: 230px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: 15px/1.6 "D2Coding", "Pretendard", "Malgun Gothic", sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+}
+textarea { padding: 8px; resize: vertical; }
+.cm-host .cm-editor { height: 100%; }
+.cm-host .cm-editor.cm-focused { outline: 2px solid var(--accent); }
+.cm-host .cm-scroller { font: inherit; line-height: 1.6; }
+.cm-host .cm-content { padding: 8px; }
+.cm-md-strong { font-weight: 700; }
+.cm-md-em { font-style: italic; }
+.cm-md-strike { text-decoration: line-through; }
+.cm-md-code { font-family: "D2Coding", Consolas, monospace; background: rgba(128,128,128,.15); border-radius: 3px; padding: 0 3px; }
+.cm-image-widget {
+  display: inline-block;
+  border: 1px dashed var(--accent);
+  border-radius: 4px;
+  padding: 0 6px;
+  color: var(--accent);
+  background: rgba(9,105,218,.06);
+}
+.cm-hr-widget { height: 2px; background: var(--line); margin: 8px 0; }
+
+#side {
+  grid-area: side;
+  border-left: 1px solid var(--line);
+  display: grid;
+  grid-template-rows: auto 1fr minmax(180px, 38%);
+  overflow: hidden;
+}
+#toolbar { padding: 8px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--line); }
+button {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+#btn-click { border-color: var(--accent); font-weight: 600; }
+#checklist { overflow: auto; padding: 8px; font-size: 12px; }
+#checklist h3 { margin: 0 0 6px; font-size: 13px; }
+#checklist table { border-collapse: collapse; width: 100%; }
+#checklist th, #checklist td { border: 1px solid var(--line); padding: 3px 4px; vertical-align: top; }
+#checklist td small { color: var(--muted); display: block; font-size: 10px; }
+#checklist td.na { color: var(--muted); text-align: center; }
+#checklist select { width: 100%; font-size: 11px; }
+#checklist select.pass { color: var(--pass); font-weight: 600; }
+#checklist select.fail { color: var(--fail); font-weight: 600; }
+#checklist select.partial { color: var(--partial); font-weight: 600; }
+#checklist input { width: 100%; font-size: 11px; margin-top: 2px; }
+.export { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.export input { flex: 1 1 180px; font-size: 12px; padding: 4px; }
+#export-msg { font-size: 11px; color: var(--muted); word-break: break-all; }
+#log-wrap { border-top: 1px solid var(--line); display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+#log-wrap h3 { margin: 0; padding: 4px 8px; font-size: 12px; }
+#log {
+  margin: 0;
+  padding: 4px 8px;
+  overflow: auto;
+  font: 11px/1.4 Consolas, "D2Coding", monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.cm-frontmatter { background: rgba(128,128,128,.08); color: var(--muted); }
