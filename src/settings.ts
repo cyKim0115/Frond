@@ -10,8 +10,10 @@ import { listThemes, type ThemeBase } from "./theme/themes";
 /** 설정 팝업 왼쪽 탭 — id·라벨·순서는 여기 한 곳에서만 정한다. 자주 쓰는 것을 위에 둔다 */
 export const SETTING_CATEGORIES = [
   { id: "view", label: "보기" },
+  { id: "edit", label: "편집" },
   { id: "theme", label: "테마" },
   { id: "nav", label: "탐색" },
+  { id: "file", label: "파일" },
 ] as const;
 export type CategoryId = (typeof SETTING_CATEGORIES)[number]["id"];
 
@@ -93,6 +95,49 @@ export const SETTINGS = {
     max: 240,
     step: 4,
     unit: "px",
+  },
+  editorFontSize: {
+    kind: "number",
+    section: "edit",
+    label: "소스 글자 크기",
+    hint: "소스 모드(Ctrl+/) 편집기의 글자 크기. Ctrl+±로 늘리고 줄이는 배율은 따로 곱해집니다",
+    default: 15,
+    min: 11,
+    max: 28,
+    step: 1,
+    unit: "px",
+  },
+  editorLineWrap: {
+    kind: "select",
+    section: "edit",
+    label: "소스 줄바꿈",
+    hint: "줄바꿈을 켜면 본문처럼 '본문 최대 폭' 안에서 가운데 한 단으로 보입니다",
+    default: "wrap",
+    options: [
+      { value: "wrap", label: "창 폭에 맞춰 줄바꿈" },
+      { value: "nowrap", label: "줄바꿈 없음 (가로 스크롤)" },
+    ],
+  },
+  openMode: {
+    kind: "select",
+    section: "edit",
+    label: "파일을 열 때",
+    default: "view",
+    options: [
+      { value: "view", label: "보기 모드로" },
+      { value: "source", label: "소스 모드로" },
+    ],
+  },
+  draftIntervalSec: {
+    kind: "number",
+    section: "file",
+    label: "초안 백업 간격",
+    hint: "저장하지 않은 편집을 이 간격으로 %APPDATA%\\MdEditor\\drafts에 남깁니다. 강제 종료 뒤 같은 파일을 열면 복구를 제안합니다. 0이면 끕니다",
+    default: 60,
+    min: 0,
+    max: 300,
+    step: 15,
+    unit: "초",
   },
   recentMax: {
     kind: "number",

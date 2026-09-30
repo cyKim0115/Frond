@@ -53,21 +53,36 @@
             <button id="win-close" type="button" title="닫기" aria-label="닫기">&#xE8BB;</button>
           </div>
         </header>
+        <div id="banner" role="status" hidden><span id="banner-text"></span><span id="banner-actions"></span></div>
+        <div id="find-bar" role="search" hidden>
+          <input id="find-input" type="search" placeholder="문서에서 찾기" aria-label="찾을 내용" autocomplete="off" spellcheck="false" />
+          <span id="find-count" aria-live="polite"></span>
+          <button id="find-prev" class="icon-btn small" type="button" title="이전 (Shift+Enter)" aria-label="이전 찾기">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 10l4-4 4 4" /></svg>
+          </button>
+          <button id="find-next" class="icon-btn small" type="button" title="다음 (Enter)" aria-label="다음 찾기">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
+          </button>
+          <button id="find-close" class="icon-btn small" type="button" title="닫기 (Esc)" aria-label="찾기 닫기">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
+          </button>
+        </div>
         <main id="viewer">
-          <div id="banner" role="status" hidden></div>
           <section id="welcome">
             <h1>MdEditor</h1>
             <p>Markdown 파일을 여기에 끌어다 놓거나 <kbd>Ctrl</kbd>+<kbd>O</kbd>로 여세요.</p>
           </section>
           <article id="document" class="markdown-body" lang="ko" hidden></article>
         </main>
+        <div id="editor" lang="ko" hidden></div>
       </div>
 
       <footer id="statusbar">
         <span id="status-path" title=""></span>
         <span class="spacer"></span>
         <span id="status-elevated" class="warn" hidden title="이 창이 관리자 권한으로 실행 중이라 탐색기에서 더블클릭한 파일이 이 창에 전달되지 않습니다(UIPI). 앱을 일반 권한으로 다시 실행하거나 Ctrl+O·끌어다 놓기로 여세요.">관리자 권한 실행 중</span>
-        <span id="status-encoding"></span>
+        <button id="status-mode" type="button" hidden title="보기 ↔ 소스 전환 (Ctrl+/)">보기</button>
+        <button id="status-encoding" type="button" title="인코딩 — 눌러서 다른 인코딩으로 다시 열기·변환"></button>
         <span id="status-eol"></span>
         <button id="status-default" type="button" hidden title="Windows 기본 앱 설정 열기">기본 앱으로 설정</button>
         <span id="status-zoom">100%</span>
@@ -94,10 +109,7 @@
           <h2 id="dialog-title"></h2>
           <p id="dialog-message"></p>
           <p id="dialog-detail" hidden></p>
-          <div class="dialog-actions">
-            <button id="dialog-cancel" type="submit" value="cancel">취소</button>
-            <button id="dialog-ok" type="submit" value="ok">확인</button>
-          </div>
+          <div class="dialog-actions"></div>
         </form>
       </dialog>
     </div>
