@@ -2135,8 +2135,10 @@ name = "mdeditor"
 version = "0.1.0"
 dependencies = [
  "blake3",
+ "encoding_rs",
  "mdeditor-core",
  "notify-debouncer-full",
+ "percent-encoding",
  "serde",
  "serde_json",
  "tauri",
@@ -2144,6 +2146,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
  "tauri-plugin-single-instance",
+ "tempfile",
  "windows 0.62.2",
  "winreg",
 ]
