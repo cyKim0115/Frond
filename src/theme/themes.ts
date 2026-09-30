@@ -10,6 +10,8 @@
  * 내장 값은 github-markdown.css·style.css·dark.css의 CSS 팔레트와 같다 — 그쪽은 JS 적용 전 첫 그림과 인쇄용 대체값이다.
  */
 
+import { readPref, writePref } from "../prefs";
+
 export type ThemeBase = "light" | "dark";
 
 export const SHELL_TOKENS = [
@@ -235,16 +237,32 @@ export function isBuiltinTheme(id: string): boolean {
   return BUILTIN_THEMES.some((t) => t.id === id);
 }
 
-let userThemes: readonly ThemeDef[] = [];
+/**
+ * 사용자 테마 — 진짜 원본은 테마 폴더(`%APPDATA%\MdEditor\themes`, 백엔드 themes.rs)다.
+ * 폴더는 비동기로 읽히므로 마지막 목록을 localStorage에 캐시해 두고 시작할 때 동기로 쓴다 — 설정 모듈이
+ * 저장된 `theme: "내-테마"`를 읽는 순간 목록에 없으면 기본값으로 되돌려 버리기 때문이다
+ */
+const CACHE_KEY = "userThemes";
+const isArray = (v: unknown): v is unknown[] => Array.isArray(v);
+/** 처음 쓸 때 캐시에서 읽는다 — 모듈 초기화 중에 아래의 검증 상수를 쓰지 않게 */
+let userThemes: readonly ThemeDef[] | null = null;
+function users(): readonly ThemeDef[] {
+  userThemes ??= readPref(CACHE_KEY, [], isArray).flatMap((raw) => {
+    const parsed = validateTheme(raw, "");
+    return parsed.ok ? [parsed.theme] : [];
+  });
+  return userThemes;
+}
 
-/** 사용자 테마 목록을 바꾼다 (S-4 가져오기·삭제). 내장 id와 겹치는 항목은 버린다 */
+/** 사용자 테마 목록을 바꾸고 캐시한다 (S-4 가져오기·삭제·폴더 다시 읽기). 내장 id와 겹치는 항목은 버린다 */
 export function setUserThemes(list: readonly ThemeDef[]): void {
   userThemes = list.filter((t) => !isBuiltinTheme(t.id));
+  writePref(CACHE_KEY, userThemes);
 }
 
 /** 내장 → 사용자 순서 */
 export function listThemes(): readonly ThemeDef[] {
-  return [...BUILTIN_THEMES, ...userThemes];
+  return [...BUILTIN_THEMES, ...users()];
 }
 
 export function findTheme(id: string): ThemeDef | undefined {
@@ -319,4 +337,88 @@ export function registerColorTokens(): boolean {
 export function themeTransitionCss(ms: number): string {
   const list = COLOR_TOKEN_NAMES.map((n) => `${n} ${ms}ms ease`).join(", ");
   return `html.theme-anim, html.theme-anim .markdown-body, html.theme-anim .cm-editor { transition: ${list}; }\n`;
+}
+
+// ---- 테마 파일 (로드맵 S-4) ----------------------------------------------------------
+//
+// 형식(2026-09-30 에이전트 권장안, 사용자 확인 대기): 색 토큰만 담는 JSON.
+//   { "id": "sepia", "name": "세피아", "base": "light", "shell": { "bg": "#f4ecd8" }, "doc": { "bgColor-default": "#f4ecd8" } }
+// id가 없으면 파일 이름. 빠진 토큰은 base 내장 테마 값. 모르는 키는 무시(경고). 임의 CSS·url()·@import는 받지 않는다.
+
+export type ParsedTheme = { ok: true; theme: ThemeDef; warnings: string[] } | { ok: false; errors: string[] };
+
+const ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+const FORBIDDEN_RE = /url\(|@import|expression|[;{}<>\\]/i;
+
+/** CSS 색 값인지 — 웹뷰의 `CSS.supports`로 판정하고, 없으면(테스트) 흔한 형식만 받는다 */
+export function isColorValue(value: string): boolean {
+  if (FORBIDDEN_RE.test(value)) return false;
+  if (typeof CSS !== "undefined" && typeof CSS.supports === "function") return CSS.supports("color", value);
+  return /^(#[0-9a-f]{3,8}|(rgb|rgba|hsl|hsla|oklch|oklab|lab|lch|color)\([^()]*\)|[a-z]+)$/i.test(value.trim());
+}
+
+function tokenGroup<T extends string>(
+  raw: unknown,
+  known: readonly T[],
+  group: string,
+  errors: string[],
+  warnings: string[],
+): Partial<Record<T, string>> {
+  if (raw === undefined) return {};
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    errors.push(`${group}: 객체여야 합니다`);
+    return {};
+  }
+  const out: Partial<Record<T, string>> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (!(known as readonly string[]).includes(key)) {
+      warnings.push(`${group}.${key}: 모르는 토큰이라 무시합니다`);
+      continue;
+    }
+    if (typeof value !== "string" || !isColorValue(value)) {
+      errors.push(`${group}.${key}: 색 값이 아닙니다 (${JSON.stringify(value)})`);
+      continue;
+    }
+    out[key as T] = value.trim();
+  }
+  return out;
+}
+
+/** 이미 JSON으로 읽은 값을 테마 정의로 검증한다. `fallbackId`는 파일 이름 */
+export function validateTheme(raw: unknown, fallbackId: string): ParsedTheme {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return { ok: false, errors: ["최상위가 JSON 객체가 아닙니다"] };
+  const obj = raw as Record<string, unknown>;
+  const id = typeof obj.id === "string" && obj.id.trim() !== "" ? obj.id.trim() : fallbackId;
+  if (!ID_RE.test(id)) errors.push(`id: 영문·숫자로 시작하고 영문·숫자·-·_만 쓸 수 있습니다 (${JSON.stringify(id)})`);
+  else if (isBuiltinTheme(id)) errors.push(`id: 내장 테마 이름(${id})은 쓸 수 없습니다`);
+  const name = typeof obj.name === "string" ? obj.name.trim() : "";
+  if (name === "" || name.length > 60) errors.push("name: 1–60자 이름이 필요합니다");
+  const base = obj.base;
+  if (base !== "light" && base !== "dark") errors.push(`base: "light" 또는 "dark"여야 합니다 (${JSON.stringify(base)})`);
+  for (const key of Object.keys(obj)) {
+    if (!["id", "name", "base", "shell", "doc", "$schema", "description"].includes(key)) warnings.push(`${key}: 모르는 키라 무시합니다`);
+  }
+  const shell = tokenGroup(obj.shell, SHELL_TOKENS, "shell", errors, warnings);
+  const doc = tokenGroup(obj.doc, DOC_TOKENS, "doc", errors, warnings);
+  if (errors.length > 0) return { ok: false, errors };
+  return { ok: true, theme: { id, name, base: base as ThemeBase, shell, doc }, warnings };
+}
+
+/** 테마 파일 텍스트를 읽는다 */
+export function parseThemeFile(text: string, fallbackId: string): ParsedTheme {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
+  } catch (e) {
+    return { ok: false, errors: [`JSON 문법 오류: ${(e as Error).message}`] };
+  }
+  return validateTheme(raw, fallbackId);
+}
+
+/** 저장·내보내기용 JSON. `full`이면 빠진 토큰까지 모두 채운다(내장 테마 내보내기·복제의 출발점) */
+export function themeToJson(theme: ThemeDef, full = false): string {
+  const t = full ? resolveTheme(theme) : theme;
+  return `${JSON.stringify({ id: t.id, name: t.name, base: t.base, shell: t.shell ?? {}, doc: t.doc ?? {} }, null, 2)}\n`;
 }
