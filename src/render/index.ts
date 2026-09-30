@@ -30,6 +30,7 @@ export { resolvePath } from "./paths";
 type RenderEnv = {
   baseDir: string;
   toAssetUrl: (absPath: string) => string;
+  lazyImages?: boolean;
   toc: TocEntry[];
   frontMatter?: string;
 };
@@ -135,13 +136,16 @@ export function hasClosedFrontMatter(text: string): boolean {
   return false;
 }
 
+/** 스펙 `largeSoftLimit` — 이 바이트를 넘는 문서는 셸이 하이라이트를 생략하고 큰 문서 모드(style.css `large-doc`)로 그린다 */
+export const LARGE_SOFT_LIMIT = 2 * 1024 * 1024;
+
 /** 동기. 큰 문서의 예산 판단(2 MB·10 MB)은 셸이 한다 */
 export function renderMarkdown(source: string, options: RenderOptions): RenderResult {
   // 디코더가 BOM을 남겼어도 front matter·첫 제목이 깨지지 않게
   const text = source.charCodeAt(0) === 0xfeff ? source.slice(1) : source;
   // 렌더는 동기이고 `md`는 싱글턴이라 렌더마다 토글해도 안전하다
   md.block.ruler[hasClosedFrontMatter(text) ? "enable" : "disable"]("front_matter");
-  const env: RenderEnv = { baseDir: options.baseDir, toAssetUrl: options.toAssetUrl, toc: [] };
+  const env: RenderEnv = { baseDir: options.baseDir, toAssetUrl: options.toAssetUrl, lazyImages: options.lazyImages, toc: [] };
   const html = sanitizeHtml(md.render(text, env));
   const result: RenderResult = { html, toc: env.toc };
   if (env.frontMatter !== undefined) result.frontMatter = env.frontMatter;

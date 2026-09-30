@@ -159,6 +159,15 @@ describe("samples/paths/paths.md", () => {
   it("인코딩 없는 공백 경로는 CommonMark대로 이미지가 아니다 (Open decision 1: GitHub과 동일)", () => {
     expect(root.textContent).toContain("![한글 raw](한글 폴더/한글 그림.png)");
   });
+
+  it("lazyImages(큰 문서)면 모든 이미지가 loading=lazy로 DOMPurify를 통과하고, 기본은 붙지 않는다", () => {
+    expect(Array.from(root.querySelectorAll("img")).some((i) => i.hasAttribute("loading"))).toBe(false);
+    const lazy = document.createElement("div");
+    lazy.innerHTML = renderMarkdown(pathsMd, { ...OPTIONS, lazyImages: true }).html;
+    const images = Array.from(lazy.querySelectorAll("img"));
+    expect(images).toHaveLength(10);
+    expect(images.every((i) => i.getAttribute("loading") === "lazy")).toBe(true);
+  });
 });
 
 describe("보안", () => {

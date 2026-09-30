@@ -22,6 +22,7 @@ const DOC_EXT_RE = /\.(?:md|markdown)$/i;
 export interface LinkContext {
   baseDir: string;
   toAssetUrl: (absPath: string) => string;
+  lazyImages?: boolean;
 }
 
 /**
@@ -94,6 +95,7 @@ function rewriteLink(token: Token, ctx: LinkContext): void {
 }
 
 function rewriteImage(token: Token, ctx: LinkContext): void {
+  if (ctx.lazyImages) token.attrSet("loading", "lazy");
   const src = stringAttr(token, "src");
   if (src === "") {
     removeAttr(token, "src");

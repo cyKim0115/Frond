@@ -19,6 +19,10 @@
     display: block;
     height: auto;
   }
+  /* 큰 문서 모드(style.css large-doc)의 건너뛰기를 풀어 모든 블록을 인쇄한다 */
+  #app.large-doc #document > * {
+    content-visibility: visible;
+  }
   #nav,
   #nav-toggle,
   #sidebar,
