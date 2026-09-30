@@ -44,6 +44,8 @@
 
 ## Phase 2 — 편집·저장 (V1 완성)
 
+**상태: 구현 완료 2026-09-30(야간), 실기 검증 대기 — [`next-session.md`](next-session.md) §2 B.** 뺀 것: 2-3 [비교], 2-2 줄바꿈 클릭 변환(인코딩 다시 열기·변환은 구현) → 백로그.
+
 | 작업 | 내용 | 완료 조건 |
 |------|------|-----------|
 | 2-1 소스 모드 | CM6 plain(`@codemirror/lang-markdown`, GFM), `Ctrl+/` 렌더 ↔ 소스 전환 시 스크롤 위치 보존(T1), `lineSeparator`는 파일 지배 EOL, 저장 경로는 `sliceDoc()` + EOL 맵 | 전환 왕복 후 커서·스크롤 유지 |
@@ -55,6 +57,7 @@
 ## 셸 트랙 — 설정·테마 (사용자 요청 2026-09-30)
 
 Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이 들어간다. 1-7 통과 후 Phase 2와 병행할 수 있고, 순서는 S-1 → S-2 → S-3 → S-4다.
+**상태: S-1~S-4 구현 완료 2026-09-30(야간), 실기 검증 대기 — [`next-session.md`](next-session.md) §2 C.** 테마 파일 형식은 에이전트 권장안([`decisions/ideas/20260930-theme-file-format.md`](decisions/ideas/20260930-theme-file-format.md)) — 사용자 확인 대기.
 설정 항목·카테고리를 추가할 때는 [`add-setting` 스킬](../.claude/skills/add-setting/SKILL.md)을 따른다.
 
 | 작업 | 내용 | 완료 조건 (EARS) |
@@ -104,4 +107,6 @@ Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이
 - fixedRuntime 비상 절차 문서화(G4)
 - Typora `github.user.css` 호환 레이어
 - 10 MB 초과 텍스트 뷰(스펙 `largeHardLimit`) — 2026-09-30 백로그. 큰 문서 모드로 10 MB도 렌더되므로 더 큰 파일을 실측한 뒤 상한을 정한다
+- 외부 변경 배너의 [비교] — 디스크 내용과 편집 중 내용의 차이 보기 (2-3에서 뺌)
+- 줄바꿈 변환(LF ↔ CRLF) — 상태바 줄바꿈 클릭. 코어에 "모든 줄 EOL 강제" API가 필요 (2-2에서 뺌)
 - 큰 문서 블록 묶음 — 최상위 블록을 100개씩 래퍼로 묶어 `content-visibility`를 걸면 폭 변경 재배치(10 MB 기준 ~250 ms)가 더 준다. 묶음 경계의 여백 겹침(margin collapse)을 처리해야 한다
