@@ -16,6 +16,8 @@ export interface RenderOptions {
   baseDir: string;
   /** 절대 파일 경로 → 웹뷰에서 쓸 URL (Tauri `convertFileSrc`). 테스트에서는 그대로 돌려줘도 된다 */
   toAssetUrl: (absPath: string) => string;
+  /** 이미지에 `loading="lazy"` — 셸이 큰 문서(스펙 `largeSoftLimit` 초과)에 켠다. 기본 false */
+  lazyImages?: boolean;
 }
 
 export interface RenderResult {

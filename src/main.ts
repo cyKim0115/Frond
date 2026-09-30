@@ -11,7 +11,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { initNav } from "./nav";
-import { highlightCodeBlocks, renderMarkdown } from "./render";
+import { highlightCodeBlocks, LARGE_SOFT_LIMIT, renderMarkdown } from "./render";
 import { initSidebarResize } from "./resize";
 import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
 import { initSettingsDialog } from "./settings-dialog";
@@ -105,23 +105,30 @@ async function openPath(path: string, keepScroll?: number): Promise<void> {
 }
 
 function show(doc: DocumentPayload): void {
-  const { html, toc: entries } = renderMarkdown(doc.text, { baseDir: doc.dir, toAssetUrl });
+  // 2 MB(스펙 largeSoftLimit)를 넘는 문서는 하이라이트를 생략하고, 이미지는 지연 로드,
+  // 큰 문서 모드(화면 밖 레이아웃 생략·패널 애니메이션 끔)로 그린다
+  const large = doc.info.byte_len > LARGE_SOFT_LIMIT;
+  const { html, toc: entries } = renderMarkdown(doc.text, { baseDir: doc.dir, toAssetUrl, lazyImages: large });
+  app.classList.toggle("large-doc", large);
   article.innerHTML = html;
   article.hidden = false;
   welcome.hidden = true;
   viewer.scrollTop = 0;
-  // 2 MB(스펙 largeSoftLimit)를 넘는 문서는 하이라이트를 생략해 첫 렌더를 지킨다
-  if (doc.info.byte_len <= 2 * 1024 * 1024) void highlightCodeBlocks(article);
+  if (!large) void highlightCodeBlocks(article);
 
+  tocLinks.clear();
+  activeLink = null;
   toc.replaceChildren(
     ...entries.map((e) => {
       const a = document.createElement("a");
       a.href = `#${e.id}`;
       a.textContent = e.text;
       a.dataset.level = String(e.level);
+      tocLinks.set(e.id, a);
       return a;
     }),
   );
+  headings = Array.from(article.querySelectorAll<HTMLElement>("h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]"));
   sidebar.hidden = entries.length === 0;
   updateActiveHeading();
 
@@ -192,20 +199,29 @@ toc.addEventListener("click", (event) => {
   document.getElementById(decodeURIComponent(a.hash.slice(1)))?.scrollIntoView({ block: "start" });
 });
 
+/** 문서 순서의 본문 제목과 목차 링크(제목 id → 링크). `show()`가 채운다 */
+let headings: HTMLElement[] = [];
+const tocLinks = new Map<string, HTMLAnchorElement>();
+let activeLink: HTMLAnchorElement | null = null;
+
 let headingTick = 0;
 function updateActiveHeading(): void {
-  const links = toc.querySelectorAll<HTMLAnchorElement>("a[href]");
-  if (links.length === 0) return;
+  if (headings.length === 0) return;
   // 이동한 제목은 여백만큼 아래에 멈춘다 — 그 선까지 온 제목을 현재 제목으로 본다. 여백은 본문 줌을 따라 커진다
-  const top = viewer.getBoundingClientRect().top + getSetting("headingScrollOffset") * zoom + 8;
-  let activeId = "";
-  for (const h of article.querySelectorAll<HTMLElement>("h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]")) {
-    if (h.getBoundingClientRect().top <= top) activeId = h.id;
-    else break;
+  const line = viewer.getBoundingClientRect().top + getSetting("headingScrollOffset") * zoom + 8;
+  // 제목 위치는 문서 순서대로 커진다 — 선을 넘지 않은 첫 제목을 이진 탐색 (10 MB 샘플은 제목 2만 3천 개라 스크롤마다 전부 재면 끊긴다)
+  let lo = 0;
+  let hi = headings.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (headings[mid].getBoundingClientRect().top <= line) lo = mid + 1;
+    else hi = mid;
   }
-  for (const link of links) {
-    link.classList.toggle("active", decodeURIComponent(link.hash.slice(1)) === activeId);
-  }
+  const next = lo > 0 ? (tocLinks.get(headings[lo - 1].id) ?? null) : null;
+  if (next === activeLink) return;
+  activeLink?.classList.remove("active");
+  next?.classList.add("active");
+  activeLink = next;
 }
 viewer.addEventListener("scroll", () => {
   if (headingTick) return;

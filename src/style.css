@@ -336,6 +336,12 @@ body {
   font-size: 12px;
 }
 #document[hidden], #welcome[hidden] { display: none; }
+/* 큰 문서(main.ts `large-doc`, 2 MB 초과) — 화면 밖 블록·목차 줄은 레이아웃·페인트를 건너뛴다. 탐색 영역·목차·창 폭이
+   바뀔 때 문서 전체를 다시 줄바꿈하지 않는다(10 MB 샘플, 브라우저 미리보기: 첫 레이아웃 7.6 s → 0.9 s, 폭 변경 1회 380 → ~250 ms).
+   높이는 한 번 그린 값을 기억(auto)하고 그 전에는 추정값. 패널 애니메이션은 프레임마다 다시 배치하므로 끈다 */
+#app.large-doc { --panel-dur: 0ms; }
+#app.large-doc #document > * { content-visibility: auto; contain-intrinsic-size: auto 48px; }
+#app.large-doc #toc > a { content-visibility: auto; contain-intrinsic-size: auto 24px; }
 /* 목차·문서 안 링크로 이동한 제목·각주 위에 남기는 간격 — 설정 '제목 이동 시 위쪽 여백'(main.ts가 변수를 채운다) */
 #document [id] { scroll-margin-top: var(--heading-scroll-offset, 24px); }
 
