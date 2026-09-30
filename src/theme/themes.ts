@@ -289,3 +289,34 @@ export function applyTheme(theme: ResolvedTheme): void {
   style.textContent = themeCss(theme);
   document.documentElement.dataset.theme = theme.base;
 }
+
+// ---- 전환 연출 (로드맵 S-3) --------------------------------------------------------
+
+/** 셸·문서 색 토큰 CSS 변수 이름 전부 */
+export const COLOR_TOKEN_NAMES: readonly string[] = [...SHELL_TOKENS, ...DOC_TOKENS].map((k) => `--${k}`);
+
+let registered = false;
+
+/**
+ * 색 토큰을 `<color>`로 등록한다 — 등록된 커스텀 속성만 transition으로 보간된다.
+ * 한 번만 하고, 지원하지 않는 환경(테스트 jsdom)에서는 아무것도 하지 않는다
+ */
+export function registerColorTokens(): boolean {
+  if (registered) return true;
+  if (typeof CSS === "undefined" || typeof CSS.registerProperty !== "function") return false;
+  for (const name of COLOR_TOKEN_NAMES) {
+    try {
+      CSS.registerProperty({ name, syntax: "<color>", inherits: true, initialValue: "transparent" });
+    } catch {
+      // 이미 등록됨 (HMR 등)
+    }
+  }
+  registered = true;
+  return true;
+}
+
+/** 전환 중(`html.theme-anim`)에 토큰을 보간하는 규칙. 토큰 값이 바뀌는 요소(:root·본문·편집기)마다 건다 */
+export function themeTransitionCss(ms: number): string {
+  const list = COLOR_TOKEN_NAMES.map((n) => `${n} ${ms}ms ease`).join(", ");
+  return `html.theme-anim, html.theme-anim .markdown-body, html.theme-anim .cm-editor { transition: ${list}; }\n`;
+}
