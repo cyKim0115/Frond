@@ -103,3 +103,5 @@ Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이
 - Shiki dual theme, Mermaid ELK
 - fixedRuntime 비상 절차 문서화(G4)
 - Typora `github.user.css` 호환 레이어
+- 10 MB 초과 텍스트 뷰(스펙 `largeHardLimit`) — 2026-09-30 백로그. 큰 문서 모드로 10 MB도 렌더되므로 더 큰 파일을 실측한 뒤 상한을 정한다
+- 큰 문서 블록 묶음 — 최상위 블록을 100개씩 래퍼로 묶어 `content-visibility`를 걸면 폭 변경 재배치(10 MB 기준 ~250 ms)가 더 준다. 묶음 경계의 여백 겹침(margin collapse)을 처리해야 한다

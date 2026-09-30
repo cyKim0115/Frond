@@ -48,10 +48,12 @@ samples/               렌더링·파일 처리 확인용 마크다운 샘플 (r
 Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
 crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
 src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·load_document), watch.rs(외부 변경),
-                       assoc.rs(파일 연결·기본 앱), nsis/hooks.nsh(설치기 레지스트리 훅), capabilities/(최소 권한)
+                       assoc.rs(파일 연결·기본 앱), elevation.rs(관리자 권한 감지), nsis/hooks.nsh(설치기 레지스트리 훅),
+                       capabilities/(최소 권한)
 src/                   프런트(vanilla TS). main.ts 셸(열기 경로·목차·상태바·줌·설정 적용), render/(markdown-it 파이프라인,
                        types.ts가 계약), theme/(문서 CSS·폰트), style.css(셸 CSS·색 토큰)
                        titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), nav.ts(왼쪽 탐색 영역·최근 파일),
+                       recent.ts(최근 목록 순수 함수·문서 제목 추출),
                        resize.ts(목차 폭), settings.ts(설정 스키마 — 항목을 더하면 팝업에 자동 표시), settings-dialog.ts,
                        dialog.ts(알림·확인 팝업), prefs.ts(UI 상태 localStorage)
 public/fonts/          D2Coding woff2 (OFL) 번들
