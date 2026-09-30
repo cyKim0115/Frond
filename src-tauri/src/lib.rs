@@ -9,8 +9,11 @@ use std::sync::Mutex;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
+mod assets;
 mod assoc;
+mod drafts;
 mod elevation;
+mod save;
 mod watch;
 
 /// 앱이 뜨기 전에 argv로 받은 파일들. 프런트가 준비되면 `take_pending_paths`로 가져간다.
@@ -57,6 +60,11 @@ where
         .collect()
 }
 
+/// blake3 해시 → 소문자 hex. 저장 etag·외부 변경 비교(watch.rs)와 같은 표기
+pub fn hash_hex(hash: &[u8; 32]) -> String {
+    hash.iter().map(|b| format!("{b:02x}")).collect()
+}
+
 fn strip_verbatim(path: &Path) -> String {
     let s = path.to_string_lossy();
     s.strip_prefix(r"\\?\").unwrap_or(&s).to_owned()
@@ -68,18 +76,22 @@ fn take_pending_paths(pending: State<'_, Pending>) -> Vec<String> {
     guard.drain(..).map(|p| strip_verbatim(&p)).collect()
 }
 
+/// `encoding`을 주면 감지 대신 그 인코딩으로 해석한다 ("해석만 바꾸기", Encode in — 바이트는 그대로)
 #[tauri::command]
-fn load_document(app: AppHandle, path: String) -> Result<DocumentPayload, String> {
+fn load_document(app: AppHandle, path: String, encoding: Option<String>) -> Result<DocumentPayload, String> {
     let path = PathBuf::from(&path);
     let path = path.canonicalize().map_err(|e| format!("{}: {e}", path.display()))?;
-    let doc = mdeditor_core::FileDocument::open(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let mut doc = mdeditor_core::FileDocument::open(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    if let Some(label) = encoding {
+        doc.reinterpret(save::encoding_for(&label)?);
+    }
     let dir = path.parent().map(Path::to_path_buf).unwrap_or_else(|| path.clone());
     // 문서 폴더(하위 폴더 포함)를 asset 프로토콜에 허용 — 상대 이미지용 (스택 판정 조건 5).
     // `./images/x.png`처럼 하위 폴더가 흔해 재귀로 두되, 상위 폴더(`../`)는 열지 않는다
     app.asset_protocol_scope()
         .allow_directory(&dir, true)
         .map_err(|e| format!("asset scope: {e}"))?;
-    let hash = doc.content_hash().iter().map(|b| format!("{b:02x}")).collect();
+    let hash = hash_hex(&doc.content_hash());
     Ok(DocumentPayload {
         path: strip_verbatim(&path),
         dir: strip_verbatim(&dir),
@@ -147,6 +159,14 @@ pub fn run() {
             assoc::query_default_app,
             assoc::is_registered,
             elevation::is_elevated,
+            save::save_document,
+            save::save_document_as,
+            drafts::write_draft,
+            drafts::read_draft,
+            drafts::delete_draft,
+            drafts::list_drafts,
+            assets::save_pasted_image,
+            assets::copy_image_to_assets,
         ])
         .run(tauri::generate_context!())
         .expect("MdEditor 실행 실패");
