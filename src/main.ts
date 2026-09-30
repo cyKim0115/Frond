@@ -359,6 +359,8 @@ async function init(): Promise<void> {
   const pending = await invoke<string[]>("take_pending_paths");
   if (pending[0]) await openPath(pending[0]);
   void refreshDefaultAppStatus();
+  // 관리자 권한 창에는 탐색기 더블클릭이 전달되지 않는다(UIPI) — 막을 수 없으니 상태바로 알린다 (스펙 경계 사례)
+  $("#status-elevated").hidden = !(await invoke<boolean>("is_elevated").catch(() => false));
 }
 
 initSidebarResize();
