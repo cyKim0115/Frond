@@ -1,0 +1,31 @@
+{
+  "id": "sepia",
+  "name": "세피아",
+  "base": "light",
+  "shell": {
+    "bg": "#f4ecd8",
+    "sidebar-bg": "#ebe0c8",
+    "fg": "#3b3228",
+    "muted": "#7a6a58",
+    "line": "#d8c9ad",
+    "accent": "#9a5b13",
+    "on-accent": "#ffffff"
+  },
+  "doc": {
+    "bgColor-default": "#f4ecd8",
+    "bgColor-muted": "#ebe0c8",
+    "fgColor-default": "#3b3228",
+    "fgColor-muted": "#7a6a58",
+    "fgColor-accent": "#9a5b13",
+    "borderColor-default": "#d8c9ad",
+    "borderColor-muted": "#d8c9adb3",
+    "selection-bg": "rgba(154, 91, 19, 0.24)",
+    "selection-bg-inactive": "rgba(154, 91, 19, 0.14)",
+    "color-prettylights-syntax-keyword": "#a33c2b",
+    "color-prettylights-syntax-string": "#4d6b2a",
+    "color-prettylights-syntax-comment": "#8a7a66",
+    "color-prettylights-syntax-constant": "#2f5f8a",
+    "color-prettylights-syntax-entity": "#6b3fa0",
+    "color-prettylights-syntax-markup-heading": "#7a4a12"
+  }
+}

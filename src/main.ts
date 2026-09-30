@@ -25,6 +25,7 @@ import { initSidebarResize } from "./resize";
 import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
 import { initSettingsDialog } from "./settings-dialog";
 import { applyTheme, findTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
+import { createThemePanel } from "./theme-panel";
 import { initTitlebar, setTitleText } from "./titlebar";
 import "./style.css";
 import "./theme/index.css";
@@ -934,6 +935,18 @@ themeReady = true; // 여기부터 테마 변경은 연출한다 — 시작 시 
 onSettingChange(applySetting);
 const settingsDialog = initSettingsDialog();
 $("#open-settings").addEventListener("click", () => settingsDialog.open());
+
+// 설정 '테마' 탭의 테마 목록·가져오기 (S-4). 폴더 목록이 바뀌면 선택지를 다시 채우고 적용 테마를 다시 고른다
+const themePanel = createThemePanel({
+  isTauri: IS_TAURI,
+  currentThemeId: () => effectiveTheme().id,
+  onListChanged() {
+    for (const key of ["theme", "themeLight", "themeDark"] as const) settingsDialog.refreshOptions(key);
+    applyEffectiveTheme();
+  },
+});
+settingsDialog.addPanel("theme", themePanel.element);
+void themePanel.reload();
 
 async function pickAndOpen(): Promise<void> {
   const picked = await openDialog({
