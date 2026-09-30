@@ -44,7 +44,7 @@ fn current_build() -> Option<u32> {
 }
 
 /// `ShellExecuteW(hwnd, "open", target)`. `ms-settings:` 같은 URI 스킴은 이 경로로만 열린다.
-fn shell_open(hwnd: Option<HWND>, target: &str) -> Result<(), String> {
+pub(crate) fn shell_open(hwnd: Option<HWND>, target: &str) -> Result<(), String> {
     use windows::core::{HSTRING, PCWSTR};
     use windows::Win32::UI::Shell::ShellExecuteW;
     use windows::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;

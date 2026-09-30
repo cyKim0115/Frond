@@ -14,6 +14,7 @@ mod assoc;
 mod drafts;
 mod elevation;
 mod save;
+mod themes;
 mod watch;
 
 /// 앱이 뜨기 전에 argv로 받은 파일들. 프런트가 준비되면 `take_pending_paths`로 가져간다.
@@ -167,6 +168,12 @@ pub fn run() {
             drafts::list_drafts,
             assets::save_pasted_image,
             assets::copy_image_to_assets,
+            themes::list_user_themes,
+            themes::read_theme_file,
+            themes::save_user_theme,
+            themes::delete_user_theme,
+            themes::export_theme,
+            themes::open_themes_folder,
         ])
         .run(tauri::generate_context!())
         .expect("MdEditor 실행 실패");
