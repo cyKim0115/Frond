@@ -94,8 +94,8 @@ render/: markdown-it(plugins, data-line) → 이미지 src: dir 기준 절대경
 | `watchDebounceMs` | 2000 | 500–5000 | `src-tauri/src/watcher.rs` | tauri-plugin-fs 기본값과 동일 (brief F19) |
 | `openRenderBudgetMs` | 1000 | — | 측정값 | 더블클릭 → 첫 페인트 (성공 기준 2) |
 | `reloadBudgetMs` | 3000 | — | 측정값 | 외부 저장 → 갱신 (성공 기준 6) |
-| `largeSoftLimit` | 2 MB | — | `src/render/index.ts` | 초과 시 hljs 생략·이미지 `loading=lazy` (brief T12) |
-| `largeHardLimit` | 10 MB | — | 같은 파일 | 초과 시 `<pre>` 텍스트 뷰 + 배너. 이하는 렌더 ≤ 5 s·창 무응답 없음 (brief F27 권고) |
+| `largeSoftLimit` | 2 MB | — | `src/render/index.ts` `LARGE_SOFT_LIMIT` | 초과 시 hljs 생략·이미지 `loading=lazy`·큰 문서 모드(`#app.large-doc`: 블록·목차 줄 `content-visibility: auto`, 패널 애니메이션 끔) (brief T12, 1-7 실측 2026-09-30) |
+| `largeHardLimit` | **미구현 — 백로그** (2026-09-30 결정) | — | — | 원안: 10 MB 초과 시 `<pre>` 텍스트 뷰 + 배너. 큰 문서 모드로 10 MB 샘플(10,485,959 B)도 렌더 대상이 됐다. 상한값·텍스트 뷰는 더 큰 파일 실측 후 정한다 (brief F27 권고) |
 | `minWindowWidth` | 400 px | — | `tauri.conf.json` | 성공 기준 5 |
 | `sidebarWidth` | 260 px | 200–400 | `tokens.css` | 드래그 조절은 Phase 3 |
 | `linkSchemes` | `http` `https` `mailto` | — | `src/render/links.ts` | 허용 목록, 그 외 차단 (brief W10·G15) |
@@ -105,8 +105,8 @@ render/: markdown-it(plugins, data-line) → 이미지 src: dir 기준 절대경
 
 ### Events / messages
 
-- Rust → JS: `open-file {paths: string[]}` (single-instance 콜백·드롭) · `file-changed {path, hash}` · `file-removed {path}` · `elevated-warning` (시작 시 토큰이 관리자면 1회)
-- JS → Rust 커맨드: `load_document(path) → DocumentInfo {text, encoding, bom, eol: "lf"|"crlf"|"mixed", finalNewline, lossy, dir, size}` · `take_pending_paths() → string[]` · `open_default_apps_settings()` (Win11: `ms-settings:defaultapps?registeredAppUser=MdEditor`, Win10: `ms-settings:defaultapps`, brief A4) · `query_default_app() → string | null` (ProgId. `IApplicationAssociationRegistration::QueryCurrentDefault`, brief A1·A3; `=== "MdEditor.Markdown"` 비교는 TS) · `is_registered() → boolean` · `watch_document(path, hash)` / `unwatch_document()` (외부 변경) · 외부 링크는 JS가 `@tauri-apps/plugin-opener`로 연다
+- Rust → JS: `open-file {paths: string[]}` (single-instance 콜백·드롭) · `file-changed {path, hash}` · `file-removed {path}`
+- JS → Rust 커맨드: `load_document(path) → DocumentInfo {text, encoding, bom, eol: "lf"|"crlf"|"mixed", finalNewline, lossy, dir, size}` · `take_pending_paths() → string[]` · `open_default_apps_settings()` (Win11: `ms-settings:defaultapps?registeredAppUser=MdEditor`, Win10: `ms-settings:defaultapps`, brief A4) · `query_default_app() → string | null` (ProgId. `IApplicationAssociationRegistration::QueryCurrentDefault`, brief A1·A3; `=== "MdEditor.Markdown"` 비교는 TS) · `is_registered() → boolean` · `is_elevated() → boolean` (시작 시 1회, 토큰 `TokenElevation`) · `watch_document(path, hash)` / `unwatch_document()` (외부 변경) · 외부 링크는 JS가 `@tauri-apps/plugin-opener`로 연다
 - 프론트 내부: `render:done {headings, ms}` → TOC·상태바 · `theme:changed` → `<html data-theme>`
 
 ## Implementation sketch
@@ -121,7 +121,8 @@ render/: markdown-it(plugins, data-line) → 이미지 src: dir 기준 절대경
   - `src/theme/base.css`(github-markdown-css `.markdown-body`, brief R21) · `tokens.css`(860/16/1.6/30 px, `--bg-color` 등 Typora 변수명 차용) · `ko.css`(`:lang(ko) { word-break: keep-all; overflow-wrap: break-word }`, 표 `overflow-wrap: anywhere`, `pre { word-break: normal }`, brief G22) · `fonts.css`(본문 `"Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", sans-serif`; 코드 `"D2Coding"` woff2 번들 `@font-face src: local("D2Coding"), url(...)` → `"Sarasa Mono K"`, `"Cascadia Mono"`, Consolas, monospace, brief R23·G23·G24) · `dark.css`(`@media (prefers-color-scheme: dark)` + `[data-theme="dark"]`, brief T5)
   - `src-tauri/src/lib.rs` — 플러그인 등록 순서: single-instance **첫 번째**(brief S3) → dialog → opener. 커맨드 `load_document`(`mdeditor_core::FileDocument` → LF `text()` + 메타, `asset_protocol_scope().allow_directory(dir, false)`(brief R17). fs 플러그인 `readTextFile`은 쓰지 않음, brief F25) · `take_pending_paths`(`std::env::args_os().skip(1)`, `-`로 시작하는 인자 스킵, `file://`는 `Url::to_file_path`, brief S4·A13) · single-instance 콜백(`open-file` emit + `set_focus`)
   - `src-tauri/src/watcher.rs` — notify-debouncer-full 2 s, 이벤트 후 파일 재읽기 → blake3 내용 해시, 이전과 같으면 무시(mtime-only·자기 저장 제외, brief F17·F19·F20). 삭제·이동은 `file-removed`
-  - `src-tauri/src/assoc.rs` — `open_default_apps_settings`·`query_default_app`·`is_registered` (관리자 토큰 검사는 백로그)
+  - `src-tauri/src/assoc.rs` — `open_default_apps_settings`·`query_default_app`·`is_registered`
+  - `src-tauri/src/elevation.rs` — `is_elevated` (`OpenProcessToken` + `GetTokenInformation(TokenElevation)`, 조회 실패는 `false`)
   - `src-tauri/tauri.conf.json` — `bundle.fileAssociations [{ext:["md","markdown"], name:"MdEditor.Markdown", description:"Markdown 문서", mimeType:"text/markdown", role:"Editor"}]`(brief S1·W7) · `bundle.windows { webviewInstallMode:{type:"downloadBootstrapper"}, nsis:{ installMode:"currentUser", installerHooks:"nsis/hooks.nsh", minimumWebview2Version:"150" } }`(brief S5·G4) · `app.security { csp:"default-src 'self'; img-src 'self' asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self'", assetProtocol:{enable:true, scope:[]} }`(정적 scope 비움, 런타임 `allow_directory`로만 확장, brief R16) · `windows[0] { dragDropEnabled:true, minWidth:400, minHeight:300 }` · `capabilities/default.json`은 `core:default`·`dialog:allow-open`·`opener:allow-open-url`(http/https/mailto)만
   - `src-tauri/nsis/hooks.nsh` — `NSIS_HOOK_POSTINSTALL`: `Software\Classes\.md`·`.markdown`에 `OpenWithProgids\MdEditor.Markdown`, `.mdown/.mkd/.mkdn/.mdwn`은 `OpenWithProgids`만(brief A8·A19) · `Software\Classes\Applications\mdeditor.exe\SupportedTypes`·`FriendlyAppName`(brief A11) · `Software\MdEditor\Capabilities`(`ApplicationName`·`ApplicationDescription` 필수·`FileAssociations\.md=MdEditor.Markdown`) + `Software\RegisteredApplications\MdEditor`(brief A5) · `!insertmacro UPDATEFILEASSOC`(SHChangeNotify, brief A14·S2). `NSIS_HOOK_POSTUNINSTALL`: 자기 ProgId·`OpenWithProgids` 값·Capabilities·RegisteredApplications만 삭제, `.ext` 기본값은 건드리지 않음(brief A9·A10)
   - 루트 `Cargo.toml` 워크스페이스에 `crates/mdeditor-core` + `src-tauri`. `.gitignore`에 `node_modules/ dist/ src-tauri/target/`. Vite `server.watch.ignored: ["**/src-tauri/**"]`(next-session §2). `CLAUDE.md` 구조·빌드 절 채우기
@@ -146,13 +147,13 @@ render/: markdown-it(plugins, data-line) → 이미지 src: dir 기준 절대경
 | 보는 중 파일 삭제·이동 | Missing 배너, 렌더 유지, 폴더 감시로 재등장 시 자동 복귀 | brief F20 |
 | 손실 디코드(깨진 바이트) | 렌더는 하되 Lossy 배너 "읽기 전용", 상태바 인코딩에 ⚠. Phase 2에서도 편집 저장 금지 | core `SaveError::LossyDocument` |
 | CP949·UTF-8 BOM·혼합 EOL | 상태바에 그대로 표시, 바이트는 건드리지 않음 | brief F10·F11, core README |
-| 10 MB(`samples/large/10mb.md`) | 2 MB 초과 hljs 생략·이미지 lazy, 10 MB 초과 `<pre>` 텍스트 뷰 + 배너. 창 무응답 없음 | brief T12·F27 |
+| 10 MB(`samples/large/10mb.md`) | 2 MB 초과 hljs 생략·이미지 lazy·큰 문서 모드. 렌더 ≤ 5 s, 이후 탐색 영역·목차 토글에 긴 멈춤 없음. 10 MB 초과 텍스트 뷰는 백로그 | brief T12·F27, 1-7 실측 |
 | 보는 중 외부 변경 | 해시 다르면 조용히 재렌더, `scrollTop` 복원. mtime만 바뀐 경우 무시 | brief F16·F17 |
 | 한글·공백·`[`·`#` 이미지 경로 | 퍼센트 인코딩·꺾쇠 8종 모두 표시. scope는 glob이 아닌 `allow_directory`라 `[`에 안전 | brief G13·G14 |
 | 상대 `.md`·`file:` `.md` 링크 클릭 | `on_navigation`이 웹뷰 이동을 막고(`false` 반환) 앱 내 `load_document`로 연다(`Url::to_file_path`) | brief G15 |
 | `file:`(비 `.md`)·`javascript:`·`data:`·`vbscript:` 링크 | 렌더 단계에서 `href` 제거(비활성 표시), `on_navigation`에서 2차 차단. 셸 실행 없음 | brief W10·R4·W15 |
 | 문서 폴더 밖 이미지(`../`) | 비재귀 scope 밖 → 깨진 이미지 + `title="문서 폴더 밖"`. 열려는 시도 없음 | brief R17·R18 |
-| 관리자 권한으로 실행된 인스턴스 | 시작 시 토큰 검사 → 상태바 경고 "관리자 권한 실행 중: 탐색기 더블클릭이 이 창에 전달되지 않음(UIPI)". 두 번째 프로세스는 창을 띄우지 않고 종료 | brief S3 #3643 |
+| 관리자 권한으로 실행된 인스턴스 | 시작 시 `is_elevated` → 상태바 경고 "관리자 권한 실행 중"(툴팁: 탐색기 더블클릭이 이 창에 전달되지 않음(UIPI), 일반 권한 재실행·Ctrl+O·끌어다 놓기 안내). 두 번째 프로세스는 single-instance 규칙대로 창을 띄우지 않고 종료 | brief S3 #3643 |
 | WebView2 런타임 없음·< 150 | NSIS `downloadBootstrapper`가 설치·갱신, 오프라인이면 설치기 안내. 앱은 시작 시 버전 검사 후 150 미만이면 배너 | brief S6·W17·G1 |
 | 창 400–1920 px | 본문 `max-width: 860px; width: 100%`, 표·긴 URL은 `overflow-wrap: anywhere`, 코드 블록은 내부 가로 스크롤 | brief G22 |
 | 한글 줄바꿈 | `<html lang="ko">` + `:lang(ko) keep-all` → 음절 중간 끊김 없음, 영문 긴 단어는 `break-word` | brief G22 |
