@@ -103,9 +103,11 @@ export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement
         }
 
         const info = el("span", "theme-info");
+        info.title = isBuiltinTheme(theme.id) ? "내장 테마" : `테마 폴더의 ${theme.id}.json`;
         info.append(el("span", "theme-name", theme.name));
-        const kind = isBuiltinTheme(theme.id) ? "내장" : `파일 ${theme.id}.json`;
-        info.append(el("span", "theme-meta", `${theme.base === "dark" ? "다크" : "라이트"} · ${kind}${theme.id === current ? " · 사용 중" : ""}`));
+        const kind = isBuiltinTheme(theme.id) ? "내장" : "파일";
+        // 사용 중인 테마는 항목 테두리(aria-current)로 보인다
+        info.append(el("span", "theme-meta", `${theme.base === "dark" ? "다크" : "라이트"} · ${kind}`));
 
         const actions = el("span", "theme-item-actions");
         const apply = button("적용", () => setSetting("theme", theme.id), "이 테마로 고정합니다 (설정 '테마')");
