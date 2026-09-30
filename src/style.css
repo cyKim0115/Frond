@@ -385,7 +385,7 @@ body {
   padding: 0;
   cursor: pointer;
 }
-#statusbar button[hidden] { display: none; }
+#statusbar [hidden] { display: none; }
 #status-path { overflow: hidden; text-overflow: ellipsis; }
 #statusbar .warn { color: #d1242f; }
 

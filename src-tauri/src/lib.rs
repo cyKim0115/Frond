@@ -10,6 +10,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 mod assoc;
+mod elevation;
 mod watch;
 
 /// 앱이 뜨기 전에 argv로 받은 파일들. 프런트가 준비되면 `take_pending_paths`로 가져간다.
@@ -145,6 +146,7 @@ pub fn run() {
             assoc::open_default_apps_settings,
             assoc::query_default_app,
             assoc::is_registered,
+            elevation::is_elevated,
         ])
         .run(tauri::generate_context!())
         .expect("MdEditor 실행 실패");
