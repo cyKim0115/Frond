@@ -6,7 +6,7 @@
 import { showDialog } from "./dialog";
 import { ICON_CLOSE, icon } from "./icons";
 import { isBoolean, isString, readPref, writePref } from "./prefs";
-import { loadRecent, pushRecent, removeRecent, samePath, saveRecent, splitPath } from "./recent";
+import { loadRecent, pushRecent, type RecentEntry, removeRecent, retitleRecent, samePath, saveRecent, splitPath } from "./recent";
 import { getSetting, onSettingChange } from "./settings";
 
 export interface NavHooks {
@@ -18,7 +18,9 @@ export interface NavHooks {
 
 export interface Nav {
   /** 문서를 새로 열었을 때 — 최근 목록 맨 앞에 넣고 현재 파일로 표시 */
-  remember(path: string): void;
+  remember(path: string, title?: string): void;
+  /** 같은 문서를 다시 읽었을 때(F5·외부 변경) — 순서는 두고 제목만 갱신 */
+  retitle(path: string, title?: string): void;
   toggle(): void;
 }
 
@@ -64,19 +66,26 @@ export function initNav(hooks: NavHooks): Nav {
 
   // ---- 최근 파일 ---------------------------------------------------------------
 
-  function setRecent(next: string[]): void {
+  function setRecent(next: RecentEntry[]): void {
     recent = next;
     saveRecent(recent);
     renderRecent();
   }
 
   /** 설정 개수만 보인다. 줄였다 늘려도 잃지 않도록 저장본은 다음 열기 때 자른다 */
-  const visible = (): string[] => recent.slice(0, getSetting("recentMax"));
+  const visible = (): RecentEntry[] => recent.slice(0, getSetting("recentMax"));
+
+  function span(className: string, text: string): HTMLSpanElement {
+    const el = document.createElement("span");
+    el.className = className;
+    el.textContent = text;
+    return el;
+  }
 
   function renderRecent(): void {
     const shown = visible();
     list.replaceChildren(
-      ...shown.map((path) => {
+      ...shown.map(({ path, title }) => {
         const { name, dir } = splitPath(path);
         const li = document.createElement("li");
         li.dataset.path = path;
@@ -84,21 +93,22 @@ export function initNav(hooks: NavHooks): Nav {
         const open = document.createElement("button");
         open.type = "button";
         open.className = "recent-open";
-        open.title = path;
+        open.title = title ? `${title}\n${path}` : path;
         if (currentPath && samePath(path, currentPath)) open.setAttribute("aria-current", "true");
-        const nameEl = document.createElement("span");
-        nameEl.className = "name";
-        nameEl.textContent = name;
-        const dirEl = document.createElement("span");
-        dirEl.className = "dir";
-        dirEl.textContent = dir;
-        open.append(nameEl, dirEl);
+        // 두 줄 — 제목이 있으면 [제목] / [파일 이름 폴더], 없으면 [파일 이름] / [폴더]. 첫 줄이 현재 파일 강조를 받는다
+        if (title) {
+          const meta = span("meta", "");
+          meta.append(span("name", name), span("dir", dir));
+          open.append(span("title", title), meta);
+        } else {
+          open.append(span("name", name), span("dir", dir));
+        }
 
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "recent-remove icon-btn small";
         remove.title = "목록에서 제거";
-        remove.setAttribute("aria-label", `${name} 목록에서 제거`);
+        remove.setAttribute("aria-label", `${title ?? name} 목록에서 제거`);
         remove.append(icon(ICON_CLOSE));
 
         li.append(open, remove);
@@ -151,9 +161,12 @@ export function initNav(hooks: NavHooks): Nav {
   });
 
   return {
-    remember(path) {
+    remember(path, title) {
       currentPath = path;
-      setRecent(pushRecent(recent, path, getSetting("recentMax")));
+      setRecent(pushRecent(recent, title ? { path, title } : { path }, getSetting("recentMax")));
+    },
+    retitle(path, title) {
+      setRecent(retitleRecent(recent, path, title));
     },
     toggle,
   };
