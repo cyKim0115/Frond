@@ -1,5 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getSetting, normalizeSetting, onSettingChange, reloadSettings, resetSettings, setSetting, SETTINGS } from "./settings";
+import {
+  getSetting,
+  normalizeSetting,
+  onSettingChange,
+  reloadSettings,
+  resetSettings,
+  SETTING_CATEGORIES,
+  SETTING_KEYS,
+  setSetting,
+  SETTINGS,
+} from "./settings";
+
+describe("카테고리", () => {
+  it("모든 항목의 section이 SETTING_CATEGORIES에 있는 id다", () => {
+    const ids = new Set<string>(SETTING_CATEGORIES.map((c) => c.id));
+    for (const key of SETTING_KEYS) expect(ids, `${key}.section`).toContain(SETTINGS[key].section);
+  });
+
+  it("카테고리 id·라벨은 겹치지 않는다", () => {
+    expect(new Set(SETTING_CATEGORIES.map((c) => c.id)).size).toBe(SETTING_CATEGORIES.length);
+    expect(new Set(SETTING_CATEGORIES.map((c) => c.label)).size).toBe(SETTING_CATEGORIES.length);
+  });
+});
 
 describe("normalizeSetting", () => {
   const offset = SETTINGS.headingScrollOffset;

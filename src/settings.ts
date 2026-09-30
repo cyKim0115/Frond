@@ -1,13 +1,22 @@
 /**
- * 사용자 설정 — `SETTINGS`에 항목을 하나 더하면 설정 팝업(settings-dialog.ts)에 자동으로 나타난다.
+ * 사용자 설정 — `SETTINGS`에 항목을 하나 더하면 설정 팝업(settings-dialog.ts)의 해당 카테고리 탭에 자동으로 나타난다.
  * 값은 localStorage 한 곳(`mdeditor.settings`)에 모아 두고, 범위·선택지를 벗어난 값은 읽을 때 바로잡는다.
- * 적용은 구독자(main.ts `applySetting`)가 맡는다.
+ * 적용은 구독자(main.ts `applySetting`)가 맡는다. 항목·탭을 더할 때는 `add-setting` 스킬을 따른다.
  */
 
 import { readPref, writePref } from "./prefs";
 
+/** 설정 팝업 왼쪽 탭 — id·라벨·순서는 여기 한 곳에서만 정한다. 자주 쓰는 것을 위에 둔다 */
+export const SETTING_CATEGORIES = [
+  { id: "view", label: "보기" },
+  { id: "theme", label: "테마" },
+  { id: "nav", label: "탐색" },
+] as const;
+export type CategoryId = (typeof SETTING_CATEGORIES)[number]["id"];
+
 interface BaseDef {
-  section: string;
+  /** `SETTING_CATEGORIES`의 id — 이 항목이 보일 탭 */
+  section: CategoryId;
   label: string;
   hint?: string;
 }
@@ -19,17 +28,22 @@ export interface NumberDef extends BaseDef {
   step: number;
   unit?: string;
 }
+export interface SelectOption {
+  value: string;
+  label: string;
+}
 export interface SelectDef extends BaseDef {
   kind: "select";
   default: string;
-  options: readonly { value: string; label: string }[];
+  /** 고정 목록, 또는 읽을 때마다 새로 만드는 동적 목록(예: 내장 + 가져온 테마) */
+  options: readonly SelectOption[] | (() => readonly SelectOption[]);
 }
 export type SettingDef = NumberDef | SelectDef;
 
 export const SETTINGS = {
   theme: {
     kind: "select",
-    section: "보기",
+    section: "theme",
     label: "테마",
     hint: "Ctrl+Shift+D로도 바꿀 수 있습니다",
     default: "system",
@@ -41,7 +55,7 @@ export const SETTINGS = {
   },
   bodyMaxWidth: {
     kind: "number",
-    section: "보기",
+    section: "view",
     label: "본문 최대 폭",
     hint: "창이 넓어도 본문 줄 길이를 이 폭으로 제한합니다",
     default: 860,
@@ -52,7 +66,7 @@ export const SETTINGS = {
   },
   headingScrollOffset: {
     kind: "number",
-    section: "탐색",
+    section: "nav",
     label: "제목 이동 시 위쪽 여백",
     hint: "목차나 문서 안 링크로 제목에 이동할 때 제목 위에 남길 간격",
     default: 24,
@@ -63,7 +77,7 @@ export const SETTINGS = {
   },
   recentMax: {
     kind: "number",
-    section: "탐색",
+    section: "nav",
     label: "최근 파일 개수",
     default: 20,
     min: 1,
@@ -88,7 +102,8 @@ export function normalizeSetting(def: SettingDef, raw: unknown): number | string
     const stepped = def.min + Math.round((n - def.min) / def.step) * def.step;
     return Math.min(def.max, Math.max(def.min, stepped));
   }
-  return def.options.some((o) => o.value === raw) ? (raw as string) : undefined;
+  const options = typeof def.options === "function" ? def.options() : def.options;
+  return options.some((o) => o.value === raw) ? (raw as string) : undefined;
 }
 
 function defaults(): Values {
