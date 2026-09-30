@@ -1,6 +1,6 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-09-29 (Phase 1 구현 완료, 1-7 실기 검증 대기)
+작성: 2026-09-28 · 갱신: 2026-09-30 (셸 트랙 S-1~S-4 계획 추가, 1-7 실기 검증 대기)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
 이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
@@ -21,6 +21,7 @@
 | 셸 UI 보강 (사용자 요청 2026-09-29) | 커스텀 제목 표시줄(창 테두리 없음), 왼쪽 탐색 영역(최근 파일 탭, 열고 닫기 애니메이션), 목차 폭 조절, 설정 팝업(테마·본문 폭·제목 이동 여백·최근 파일 개수). 최근 파일은 로드맵 2-5를 앞당김 |
 | Phase 1-7 검증 | **실기 검증 대기** ← §2 |
 | Phase 2 (편집·저장) | 1-7 통과 후 |
+| 셸 트랙 — 설정·테마 (사용자 요청 2026-09-30) | **계획만** — [`roadmap.md`](roadmap.md) "셸 트랙": S-1 설정 카테고리 탭 → S-2 테마 모델 → S-3 테마 전환 연출 → S-4 사용자 테마 가져오기·관리. 1-7 통과 후 Phase 2와 병행 가능. 설정 추가 규칙은 `add-setting` 스킬 |
 
 Phase 1 구현 요약: `npm run app:build` → `target/release/bundle/nsis/MdEditor_0.1.0_x64-setup.exe`(4.2 MB). 확인된 것 — argv·두 번째 인스턴스 열기(릴리스 exe), 외부 변경 감지(내용 해시, 삭제 배너), vitest 34건(렌더: 경로·링크 허용 목록·DOMPurify·하이라이트), cargo 테스트 34건(코어 23 + 백엔드 11), 브라우저 미리보기(`npm run dev` → `http://localhost:1422/?sample=samples/showcase.md`)에서 목차·제목 id·표·체크리스트·각주·코드 하이라이트·한글 keep-all·D2Coding·가로 스크롤 없음. NSIS 훅은 makensis 컴파일과 문자열 검사까지만 됐고 **설치·레지스트리 실측은 안 했다**.
 
@@ -52,6 +53,7 @@ Phase 1 구현 요약: `npm run app:build` → `target/release/bundle/nsis/MdEdi
 - **원문 HTML 태그**: 렌더는 `html: false`라 `<details>`·`<img>` 같은 원문 HTML이 글자 그대로 보인다(GitHub과 다름, 뷰어라 안전 우선). 허용 태그 목록과 함께 열지 결정 필요 (`src/render/index.ts`)
 - **`www.example.com` 자동 링크**: 파일명(`paths.md`) 오탐을 막으려고 스킴 있는 URL만 자동 링크. GitHub과 다른 점
 - **대용량 샘플 커밋 여부**: 생성 스크립트 유지. 커밋 원하면 `.gitignore`의 `samples/large/`를 뺀다
+- **사용자 테마 파일 형식** (S-4 착수 전): 권장은 색 토큰만 담는 JSON(`id`·`name`·`base`·`shell`·`doc` 토큰, 빠진 값은 `base`로 채움) — 검증이 쉽고 S-3 색 보간과 맞는다. 임의 CSS는 `url()`·`@import`로 바깥을 부를 수 있고 보간도 안 돼서 뺐다(Typora CSS 호환은 백로그). 확장자(`.json` / `.mdtheme.json`)와 토큰 키 목록 공개 범위도 그때 정한다
 - **EOL 재대응 정책**: `crates/mdeditor-core/src/eol.rs` `remap` (편집 줄은 자기 EOL 유지, 새 줄만 지배 EOL)
 
 ## 5. 열린 질문 (갱신)
