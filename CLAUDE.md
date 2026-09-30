@@ -2,7 +2,7 @@
 
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
-**현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 MVP 구현 완료 (2026-09-29, 1-1~1-6). 남은 것은 1-7 실기 검증 — 설치기·파일 연결·더블클릭 열기는 사용자가 실기에서 확인한다 ([docs/next-session.md](docs/next-session.md) §2). 통과하면 Phase 2 편집·저장.**
+**현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30). 남은 것은 실기 검증 — 사용자가 [docs/next-session.md](docs/next-session.md) §2 체크리스트로 확인한다. 통과하면 MVP(V1) 완료.**
 열려 있는 결정은 [docs/next-session.md](docs/next-session.md) §2, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
@@ -48,10 +48,13 @@ samples/               렌더링·파일 처리 확인용 마크다운 샘플 (r
 Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
 crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
 src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·load_document), watch.rs(외부 변경),
-                       assoc.rs(파일 연결·기본 앱), elevation.rs(관리자 권한 감지), nsis/hooks.nsh(설치기 레지스트리 훅),
-                       capabilities/(최소 권한)
-src/                   프런트(vanilla TS). main.ts 셸(열기 경로·목차·상태바·줌·설정 적용), render/(markdown-it 파이프라인,
-                       types.ts가 계약), theme/(문서 CSS·폰트), style.css(셸 CSS·색 토큰)
+                       assoc.rs(파일 연결·기본 앱), elevation.rs(관리자 권한 감지), save.rs(저장·etag 충돌·인코딩 변환),
+                       drafts.rs(초안 백업), assets.rs(붙여넣은 이미지), themes.rs(사용자 테마 폴더),
+                       nsis/hooks.nsh(설치기 레지스트리 훅), capabilities/(최소 권한)
+src/                   프런트(vanilla TS). main.ts 셸(열기·보기/소스 모드·저장·초안·외부 변경·목차·상태바·줌·설정 적용),
+                       editor.ts(CM6 소스 편집기), find.ts(보기 모드 찾기), render/(markdown-it 파이프라인, types.ts가 계약),
+                       theme/(문서 CSS·폰트, themes.ts 테마 모델·토큰·테마 파일 검증), theme-panel.ts(설정 테마 목록),
+                       style.css(셸 CSS·대체 색 토큰)
                        titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), nav.ts(왼쪽 탐색 영역·최근 파일),
                        recent.ts(최근 목록 순수 함수·문서 제목 추출),
                        resize.ts(목차 폭), settings.ts(설정 스키마 — 항목을 더하면 팝업에 자동 표시), settings-dialog.ts,
@@ -75,6 +78,7 @@ cd crates/mdeditor-core; cargo run --example roundtrip -- ../../samples/raw   # 
 - Vite `server.watch.ignored`에 `src-tauri`·`target`이 빠지면 cargo가 쓰는 exe 때문에 dev 서버가 EBUSY로 죽는다
 - 창은 `lib.rs`에서 코드로 만든다 (`on_navigation` 훅 때문). `tauri.conf.json`의 `app.windows`는 비워 둔다
 - 창은 `decorations(false)`. 제목 표시줄 버튼·드래그는 프런트가 그리고, 창 API를 새로 쓰면 `capabilities/default.json`에 권한을 더한다
+- 색은 테마 토큰(`src/theme/themes.ts` 셸 8·문서 48)만 쓴다. 새 색이 필요하면 토큰을 늘리고 내장 라이트·다크 둘 다 채운다
 - 사용자 조절 값은 `src/settings.ts`의 `SETTINGS`에 추가하고 `main.ts` `applySetting`에서 적용한다 (하드코딩 금지).
   설정 팝업은 왼쪽 카테고리 탭 구조 — 항목·기능을 더할 때는 `add-setting` 스킬(`.claude/skills/add-setting/`)을 따른다
 - CM6·다크 모드에서 `.cm-cursor` 색은 반드시 테마에서 지정한다 (기본 검정이라 안 보임 — Phase 0 발견)
