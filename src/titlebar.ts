@@ -10,9 +10,14 @@ const GLYPH_RESTORE = "";
 
 const titleText = document.querySelector<HTMLElement>("#title-text")!;
 
-export function setTitleText(text: string): void {
-  titleText.textContent = text;
-  titleText.title = text;
+/** `dirty`면 앞에 저장하지 않은 변경 표시(●)를 붙인다 */
+export function setTitleText(text: string, dirty = false): void {
+  const mark = document.createElement("span");
+  mark.className = "dirty";
+  mark.textContent = "●";
+  mark.title = "저장하지 않은 변경";
+  titleText.replaceChildren(...(dirty ? [mark] : []), text);
+  titleText.title = dirty ? `${text} (저장하지 않은 변경)` : text;
 }
 
 export function initTitlebar(): void {
