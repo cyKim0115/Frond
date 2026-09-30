@@ -24,7 +24,7 @@ import { highlightCodeBlocks, LARGE_SOFT_LIMIT, renderMarkdown, type TocEntry } 
 import { initSidebarResize } from "./resize";
 import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
 import { initSettingsDialog } from "./settings-dialog";
-import { applyTheme, findTheme, resolveTheme, type ThemeDef } from "./theme/themes";
+import { applyTheme, findTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
 import { initTitlebar, setTitleText } from "./titlebar";
 import "./style.css";
 import "./theme/index.css";
@@ -853,12 +853,53 @@ function effectiveTheme(): ThemeDef {
   return findTheme(wanted) ?? findTheme(systemDark.matches ? "dark" : "light")!;
 }
 
+// 전환 연출(S-3): 보통 문서는 등록한 색 토큰(@property <color>)을 transition으로 보간하고, 큰 문서(노드 수십만)는
+// 프레임마다 전체 스타일을 다시 계산하지 않도록 View Transitions 크로스페이드로 바꾼다. 첫 적용·0 ms·동작 줄이기는 즉시
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const canInterpolate = registerColorTokens();
+let themeReady = false;
+let themeAnimTimer = 0;
+
+function themeTransitionMs(): number {
+  return reducedMotion.matches ? 0 : getSetting("themeTransitionMs");
+}
+
 function applyEffectiveTheme(): void {
-  applyTheme(resolveTheme(effectiveTheme()));
+  const theme = resolveTheme(effectiveTheme());
+  const ms = themeTransitionMs();
+  const root = document.documentElement;
+  if (!themeReady || ms === 0) {
+    applyTheme(theme);
+    return;
+  }
+  if (app.classList.contains("large-doc") && typeof document.startViewTransition === "function") {
+    root.style.setProperty("--theme-transition-ms", `${ms}ms`);
+    document.startViewTransition(() => applyTheme(theme));
+    return;
+  }
+  if (!canInterpolate) {
+    applyTheme(theme);
+    return;
+  }
+  root.classList.add("theme-anim");
+  applyTheme(theme);
+  window.clearTimeout(themeAnimTimer);
+  themeAnimTimer = window.setTimeout(() => root.classList.remove("theme-anim"), ms + 80);
+}
+
+function applyThemeTransition(): void {
+  let style = document.getElementById("theme-anim") as HTMLStyleElement | null;
+  if (!style) {
+    style = document.createElement("style");
+    style.id = "theme-anim";
+    document.head.append(style);
+  }
+  style.textContent = themeTransitionCss(themeTransitionMs());
 }
 systemDark.addEventListener("change", () => {
   if (getSetting("theme") === "system") applyEffectiveTheme();
 });
+reducedMotion.addEventListener("change", applyThemeTransition);
 
 /** Ctrl+Shift+D — 지금 테마의 반대쪽(라이트 ↔ 다크) 쌍 테마로 고정한다 */
 function toggleTheme(): void {
@@ -871,6 +912,8 @@ function applySetting(key: SettingKey): void {
   const root = document.documentElement;
   if (key === "theme" || key === "themeLight" || key === "themeDark") {
     applyEffectiveTheme();
+  } else if (key === "themeTransitionMs") {
+    applyThemeTransition();
   } else if (key === "bodyMaxWidth") {
     root.style.setProperty("--body-max-width", `${getSetting("bodyMaxWidth")}px`);
     editor?.view.requestMeasure();
@@ -887,6 +930,7 @@ function applySetting(key: SettingKey): void {
   }
 }
 SETTING_KEYS.forEach(applySetting);
+themeReady = true; // 여기부터 테마 변경은 연출한다 — 시작 시 첫 적용은 즉시
 onSettingChange(applySetting);
 const settingsDialog = initSettingsDialog();
 $("#open-settings").addEventListener("click", () => settingsDialog.open());

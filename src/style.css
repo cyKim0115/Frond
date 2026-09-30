@@ -52,6 +52,9 @@
 @media (prefers-reduced-motion: reduce) {
   :root { --panel-dur: 0ms; }
 }
+/* 큰 문서의 테마 전환 — 화면 전체 크로스페이드 (main.ts applyEffectiveTheme, 로드맵 S-3) */
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: var(--theme-transition-ms, 250ms); }
 
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }

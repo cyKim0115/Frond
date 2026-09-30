@@ -74,6 +74,17 @@ export const SETTINGS = {
     default: "dark",
     options: themeOptions("dark"),
   },
+  themeTransitionMs: {
+    kind: "number",
+    section: "theme",
+    label: "테마 전환 시간",
+    hint: "테마를 바꿀 때 색이 서서히 바뀌는 시간. 0이면 바로 바뀝니다. Windows에서 애니메이션 효과를 끄면 항상 바로 바뀝니다",
+    default: 250,
+    min: 0,
+    max: 1000,
+    step: 50,
+    unit: "ms",
+  },
   bodyMaxWidth: {
     kind: "number",
     section: "view",
