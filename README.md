@@ -1,6 +1,6 @@
 # MdEditor
 
-Markdown(`.md`) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱입니다. Tauri 2 기반이라 설치기가 작고(약 4 MB) 빨리 뜹니다.
+Markdown(`.md`) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱입니다. Tauri 2 기반이라 설치기가 작고(약 5 MB) 빨리 뜹니다.
 
 ![MdEditor 기본 화면 — 왼쪽 목차, 오른쪽 본문](docs/screenshots/main.png)
 
