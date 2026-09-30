@@ -16,6 +16,7 @@ import { highlightCodeBlocks, LARGE_SOFT_LIMIT, renderMarkdown, type RenderResul
 import { initSidebarResize } from "./resize";
 import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
 import { initSettingsDialog } from "./settings-dialog";
+import { applyTheme, findTheme, resolveTheme, type ThemeDef } from "./theme/themes";
 import { initTitlebar, setTitleText } from "./titlebar";
 import "./style.css";
 import "./theme/index.css";
@@ -247,22 +248,34 @@ function applyZoom(next: number): void {
   $("#status-zoom").textContent = `${Math.round(zoom * 100)}%`;
 }
 
+// 테마(S-2) — 설정 `theme`이 `system`이면 Windows 모드에 따라 라이트·다크 쌍(`themeLight`·`themeDark`) 중 하나
+const systemDark = matchMedia("(prefers-color-scheme: dark)");
+
+function effectiveTheme(): ThemeDef {
+  const id = getSetting("theme");
+  const wanted = id === "system" ? getSetting(systemDark.matches ? "themeDark" : "themeLight") : id;
+  // 지워진 사용자 테마 등으로 못 찾으면 시스템 모드 쪽 내장 테마
+  return findTheme(wanted) ?? findTheme(systemDark.matches ? "dark" : "light")!;
+}
+
+function applyEffectiveTheme(): void {
+  applyTheme(resolveTheme(effectiveTheme()));
+}
+systemDark.addEventListener("change", () => {
+  if (getSetting("theme") === "system") applyEffectiveTheme();
+});
+
+/** Ctrl+Shift+D — 지금 테마의 반대쪽(라이트 ↔ 다크) 쌍 테마로 고정한다 */
 function toggleTheme(): void {
-  const root = document.documentElement;
-  const dark =
-    root.dataset.theme === "dark" ||
-    (!root.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
-  setSetting("theme", dark ? "light" : "dark");
+  setSetting("theme", effectiveTheme().base === "dark" ? getSetting("themeLight") : getSetting("themeDark"));
 }
 
 // ---- 설정 적용 -------------------------------------------------------------------
 
 function applySetting(key: SettingKey): void {
   const root = document.documentElement;
-  if (key === "theme") {
-    const theme = getSetting("theme");
-    if (theme === "system") delete root.dataset.theme;
-    else root.dataset.theme = theme;
+  if (key === "theme" || key === "themeLight" || key === "themeDark") {
+    applyEffectiveTheme();
   } else if (key === "bodyMaxWidth") {
     root.style.setProperty("--body-max-width", `${getSetting("bodyMaxWidth")}px`);
   } else if (key === "headingScrollOffset") {

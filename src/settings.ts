@@ -5,6 +5,7 @@
  */
 
 import { readPref, writePref } from "./prefs";
+import { listThemes, type ThemeBase } from "./theme/themes";
 
 /** 설정 팝업 왼쪽 탭 — id·라벨·순서는 여기 한 곳에서만 정한다. 자주 쓰는 것을 위에 둔다 */
 export const SETTING_CATEGORIES = [
@@ -40,18 +41,36 @@ export interface SelectDef extends BaseDef {
 }
 export type SettingDef = NumberDef | SelectDef;
 
+/** 테마 목록(내장 + 가져온 테마) — `base`를 주면 그쪽 테마만 */
+const themeOptions = (base?: ThemeBase) => (): SelectOption[] =>
+  listThemes()
+    .filter((t) => base === undefined || t.base === base)
+    .map((t) => ({ value: t.id, label: t.name }));
+
 export const SETTINGS = {
   theme: {
     kind: "select",
     section: "theme",
     label: "테마",
-    hint: "Ctrl+Shift+D로도 바꿀 수 있습니다",
+    hint: "Ctrl+Shift+D로 아래 라이트·다크 테마 사이를 오갑니다",
     default: "system",
-    options: [
-      { value: "system", label: "시스템 설정 따르기" },
-      { value: "light", label: "라이트" },
-      { value: "dark", label: "다크" },
-    ],
+    options: () => [{ value: "system", label: "시스템 설정 따르기" }, ...themeOptions()()],
+  },
+  themeLight: {
+    kind: "select",
+    section: "theme",
+    label: "라이트 테마",
+    hint: "'시스템 설정 따르기'에서 Windows가 라이트 모드일 때 쓰는 테마",
+    default: "light",
+    options: themeOptions("light"),
+  },
+  themeDark: {
+    kind: "select",
+    section: "theme",
+    label: "다크 테마",
+    hint: "'시스템 설정 따르기'에서 Windows가 다크 모드일 때 쓰는 테마",
+    default: "dark",
+    options: themeOptions("dark"),
   },
   bodyMaxWidth: {
     kind: "number",
