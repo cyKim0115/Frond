@@ -188,6 +188,7 @@ body {
 }
 .recent-open:hover { background: var(--hover); }
 .recent-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.recent-open .title,
 .recent-open .name,
 .recent-open .dir {
   max-width: 100%;
@@ -196,7 +197,11 @@ body {
   text-overflow: ellipsis;
 }
 .recent-open .dir { font-size: 11px; color: var(--muted); }
-.recent-open[aria-current="true"] .name { color: var(--accent); font-weight: 600; }
+/* 제목이 있을 때 둘째 줄 — 파일 이름을 먼저 보이고 폴더가 남는 폭을 쓴다 */
+.recent-open .meta { display: flex; gap: 6px; min-width: 0; font-size: 11px; color: var(--muted); }
+.recent-open .meta .name { flex: none; max-width: 70%; }
+.recent-open .meta .dir { flex: 1; min-width: 0; }
+.recent-open[aria-current="true"] > :first-child { color: var(--accent); font-weight: 600; }
 .recent-remove {
   position: absolute;
   top: 50%;

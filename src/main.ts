@@ -11,7 +11,8 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { initNav } from "./nav";
-import { highlightCodeBlocks, LARGE_SOFT_LIMIT, renderMarkdown } from "./render";
+import { docTitle } from "./recent";
+import { highlightCodeBlocks, LARGE_SOFT_LIMIT, renderMarkdown, type RenderResult } from "./render";
 import { initSidebarResize } from "./resize";
 import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
 import { initSettingsDialog } from "./settings-dialog";
@@ -94,9 +95,14 @@ async function openPath(path: string, keepScroll?: number): Promise<void> {
   try {
     const doc = await loadDocument(path);
     current = doc;
-    show(doc);
-    if (keepScroll !== undefined) viewer.scrollTop = keepScroll;
-    else nav.remember(doc.path);
+    const { toc: entries, frontMatter } = show(doc);
+    const title = docTitle(entries, frontMatter);
+    if (keepScroll !== undefined) {
+      viewer.scrollTop = keepScroll;
+      nav.retitle(doc.path, title);
+    } else {
+      nav.remember(doc.path, title);
+    }
     hideBanner();
     if (IS_TAURI) await invoke("watch_document", { path: doc.path, hash: doc.hash });
   } catch (e) {
@@ -104,11 +110,12 @@ async function openPath(path: string, keepScroll?: number): Promise<void> {
   }
 }
 
-function show(doc: DocumentPayload): void {
+function show(doc: DocumentPayload): RenderResult {
   // 2 MB(스펙 largeSoftLimit)를 넘는 문서는 하이라이트를 생략하고, 이미지는 지연 로드,
   // 큰 문서 모드(화면 밖 레이아웃 생략·패널 애니메이션 끔)로 그린다
   const large = doc.info.byte_len > LARGE_SOFT_LIMIT;
-  const { html, toc: entries } = renderMarkdown(doc.text, { baseDir: doc.dir, toAssetUrl, lazyImages: large });
+  const result = renderMarkdown(doc.text, { baseDir: doc.dir, toAssetUrl, lazyImages: large });
+  const { html, toc: entries } = result;
   app.classList.toggle("large-doc", large);
   article.innerHTML = html;
   article.hidden = false;
@@ -142,6 +149,7 @@ function show(doc: DocumentPayload): void {
   $("#status-encoding").classList.toggle("warn", doc.info.lossy);
   $("#status-encoding").title = doc.info.lossy ? "일부 바이트를 해석하지 못했습니다 (손실 디코드)" : "";
   $("#status-eol").textContent = doc.info.mixed_eol ? `${doc.info.eol} (혼합)` : doc.info.eol;
+  return result;
 }
 
 function showError(message: string): void {
