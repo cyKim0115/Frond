@@ -2,7 +2,7 @@
 
 작성: 2026-09-29 · 근거: [참고 자산](references/assets/20260929-typora-md-editors/ASSET.md) · [스택 판정](decisions/ideas/20260929-stack.md) · [엔진 판정](decisions/ideas/20260929-editor-engine.md) · [MVP 3안](decisions/ideation/20260929-mvp-scope.md)
 
-이 문서는 **어느 MVP 안을 골라도 Phase 0–2가 같도록** 짰다. V1(리더 퍼스트)은 Phase 0–2, V2(Typora-lite 분할)는 + Phase 3–4, V3(인라인 하이브리드)는 + Phase 5다.
+이 문서는 **어느 MVP 안을 골라도 Phase 0–2가 같도록** 짰다. V1(리더 퍼스트)은 Phase 0–2, V2(Typora-lite 분할)는 + Phase 3–4, V3(인라인 하이브리드)는 + Phase 5다. 설정·테마는 Phase와 따로 가는 **셸 트랙**(S-1~S-4)이다.
 스택 Tauri 2 + Vite + vanilla TS, 엔진 CodeMirror 6, MVP V1은 2026-09-29에 확정됐다. Phase 0 IME 스파이크가 통과하기 전에는 Phase 1 제품 스캐폴딩을 만들지 않는다.
 
 ## 확정된 것 (게이트 0, 2026-09-29)
@@ -52,6 +52,18 @@
 | 2-4 초안 백업 | 자동 저장 off 기본, `%APPDATA%\MdEditor\drafts`에 30 s~2 min 주기 dirty 스냅샷, 크래시 후 복구 제안. 창 닫기 전 compositionend flush(G17) | 강제 종료 후 재시작 시 미저장 내용 복구 |
 | 2-5 편집 보조 | 찾기/바꾸기, 이미지 붙여넣기 → `./assets` 복사 + 상대경로(T11), ~~최근 파일~~(2026-09-29 셸 보강에서 먼저 구현 — 왼쪽 탐색 영역) | |
 
+## 셸 트랙 — 설정·테마 (사용자 요청 2026-09-30)
+
+Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이 들어간다. 1-7 통과 후 Phase 2와 병행할 수 있고, 순서는 S-1 → S-2 → S-3 → S-4다.
+설정 항목·카테고리를 추가할 때는 [`add-setting` 스킬](../.claude/skills/add-setting/SKILL.md)을 따른다.
+
+| 작업 | 내용 | 완료 조건 (EARS) |
+|------|------|------------------|
+| S-1 설정 카테고리 탭 | 설정 팝업을 **왼쪽 세로 탭(카테고리) + 오른쪽 선택된 카테고리의 항목만** 보이는 구조로 바꾼다. 카테고리 id·라벨·순서는 `SETTING_CATEGORIES` 한 곳에서 정하고 `SettingDef.section`이 그 id를 가리킨다. 스키마로 못 그리는 UI(테마 목록 등)는 카테고리별 커스텀 패널로 붙인다. 탭은 ARIA `tablist`(세로, ↑↓ 이동), 마지막으로 연 탭은 `prefs`에 기억 | When 설정(`Ctrl+,`)을 열면, the 팝업 shall 왼쪽에 카테고리 탭을, 오른쪽에 선택한 카테고리의 항목만 보인다. When `SETTINGS`에 없는 카테고리 id를 쓰면, the 테스트 shall 실패한다 (vitest) |
+| S-2 테마 모델 | 내장 라이트·다크를 사용자 테마와 같은 **테마 정의 형식**(`id`·`name`·`base: light\|dark`·셸 토큰·문서 팔레트 토큰, 빠진 토큰은 `base` 값으로 채움)으로 옮긴다. 적용은 `<style id="theme-vars">`에 `:root`·`.markdown-body` 변수 한 벌을 쓰는 방식. 설정 `theme` = `system` \| 테마 id, `system`일 때 쓸 **라이트 쪽·다크 쪽 테마 쌍**을 설정에 둔다. `Ctrl+Shift+D`는 쌍 사이 토글. `SelectDef`에 동적 선택지(테마 목록) 지원 추가 | When 테마를 바꾸면, the 셸·본문·코드 하이라이트·선택 영역 shall 모두 새 테마 색을 쓴다. `print.css`는 테마와 관계없이 라이트 유지 |
+| S-3 테마 전환 연출 | 테마가 바뀌면 요소 색이 새 테마 색으로 **서서히 변한다**. 기본안: 색 토큰을 `@property`(`<color>`)로 등록해 토큰 자체를 보간한다. 10 MB 샘플에서 프레임이 떨어지면 View Transitions 크로스페이드로 바꾼다(S-3 착수 때 측정해 결정). 지속 시간은 설정 `themeTransitionMs`(0 = 끔), `prefers-reduced-motion`이면 0. 앱 시작 시 첫 적용은 연출 없이(`no-anim` 패턴). 설정 팝업·`Ctrl+Shift+D`·OS 다크 모드 전환 모두 같은 연출 | When 테마를 바꾸면, the 앱 shall 설정한 시간 동안 색을 보간하고 끝나면 새 테마 색과 정확히 같다. When 지속 시간이 0이거나 동작 줄이기가 켜져 있으면, shall 즉시 바꾼다 |
+| S-4 사용자 테마 가져오기·관리 | 설정 "테마" 탭에 테마 목록(색 칩 미리보기·선택·이름·삭제·내보내기·복제해서 새로 만들기)과 **가져오기** 버튼. 파일 대화상자로 테마 파일을 골라 검증(값마다 `CSS.supports('color', v)`, `url(`·`@import`·`expression` 거부, 모르는 키 무시) 후 `%APPDATA%\MdEditor\themes\`에 복사. 읽기·쓰기는 백엔드 커맨드(코어 경유, fs 플러그인 금지). "테마 폴더 열기"로 직접 넣은 파일도 목록에 뜬다. 내장 테마는 삭제 불가, 선택된 테마를 지우면 `base` 쪽 내장 테마로 | When 올바른 테마 파일을 가져오면, the 목록 shall 즉시 그 테마를 보이고 선택하면 S-3 연출로 적용된다. When 잘못된 파일이면, shall 알림 팝업에 이유(어느 키·값)를 보이고 아무것도 저장하지 않는다. 재시작 후에도 가져온 테마와 선택이 남는다 |
+
 ## Phase 3 — 탐색 (V2 요소)
 
 - 탭(문서당 CM6 state 보존, 두 번째 더블클릭은 새 탭), 폴더 트리 + TOC 동시 표시(Typora 최다 요구 T16·T23), 분할 뷰(소스 | 미리보기) + `data-line` 스크롤 동기(R2·R3), 파일 트리 감시(notify recursive), 세션 복원
@@ -80,7 +92,7 @@
 
 ## 하지 않는 것
 
-- 크로스플랫폼 빌드 · 노트 앱 기능(볼트·백링크·동기화) · 플러그인 시스템 · MSI/MSIX 패키징 · Typora 테마 100% 호환(변수명 `--bg-color` 등은 따르되 보장 안 함) · 클라우드 동기화 충돌 병합
+- 크로스플랫폼 빌드 · 노트 앱 기능(볼트·백링크·동기화) · 플러그인 시스템 · MSI/MSIX 패키징 · Typora 테마 100% 호환(변수명 `--bg-color` 등은 따르되 보장 안 함. 사용자 테마는 S-4의 자체 토큰 형식) · 임의 CSS 테마 가져오기(S-4는 색 토큰만) · 클라우드 동기화 충돌 병합
 
 ## 백로그
 
