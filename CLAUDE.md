@@ -54,6 +54,7 @@ src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·loa
 src/                   프런트(vanilla TS). main.ts 셸(열기·보기/소스 모드·저장·초안·외부 변경·목차·상태바·줌·설정 적용),
                        editor.ts(CM6 소스 편집기), find.ts(보기 모드 찾기), render/(markdown-it 파이프라인, types.ts가 계약),
                        theme/(문서 CSS·폰트, themes.ts 테마 모델·토큰·테마 파일 검증), theme-panel.ts(설정 테마 목록),
+                       theme/recommended.ts·recommended-dialog.ts(추천 테마 — 세피아·웨딩 팔레트, 팔레트→토큰 파생),
                        style.css(셸 CSS·대체 색 토큰)
                        titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), nav.ts(왼쪽 탐색 영역·최근 파일),
                        recent.ts(최근 목록 순수 함수·문서 제목 추출),
