@@ -755,7 +755,12 @@ function showBanner(message: string, actions: BannerAction[] = [], warn = false)
 }
 
 function hideBanner(): void {
+  // 배너 버튼으로 닫으면 누른 버튼이 숨으면서 포커스가 body로 빠진다 — 보던 화면으로 돌려 바로 이어서 입력하게
+  const hadFocus = banner.contains(document.activeElement);
   banner.hidden = true;
+  if (!hadFocus) return;
+  if (mode === "source" && editor) editor.focus();
+  else viewer.focus({ preventScroll: true });
 }
 
 /** 인코딩 메뉴 — "다시 열기"는 바이트를 두고 해석만(Encode in), "변환"은 저장 바이트를 바꾼다(Convert to) */
