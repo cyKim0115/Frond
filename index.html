@@ -104,6 +104,22 @@
         </form>
       </dialog>
 
+      <dialog id="recommended-dialog" class="modal" aria-labelledby="recommended-title">
+        <form method="dialog">
+          <header class="modal-head">
+            <h2 id="recommended-title">추천 테마</h2>
+            <button class="icon-btn small" type="submit" value="close" title="닫기 (Esc)" aria-label="닫기">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
+            </button>
+          </header>
+          <div id="recommended-body"></div>
+          <footer class="modal-foot">
+            <span class="modal-note">추가한 테마는 설정 테마 목록에 들어가 복제·내보내기·삭제할 수 있습니다.</span>
+            <button id="recommended-add-all" type="button">모두 추가</button>
+          </footer>
+        </form>
+      </dialog>
+
       <dialog id="app-dialog" class="modal" aria-labelledby="dialog-title" aria-describedby="dialog-message">
         <form method="dialog">
           <h2 id="dialog-title"></h2>
