@@ -14,7 +14,7 @@
 | MVP 범위 | **V1 리더 퍼스트** (Phase 0–2) | `decisions/ideation/20260929-mvp-scope.md` |
 | 유사도 | `inspired` | `references/assets/…/ASSET.md` |
 | Phase 0 추가 | WPF + WebView2 hello 앱으로 Windows 시작 시간·메모리 비교 측정 | 사용자 선택 |
-| RAG 캡처 | MVP(Phase 2) 완료 후 `capture-to-rag` 검토 | 사용자 결정 |
+| RAG 캡처 | MVP(Phase 2) 완료 후 `capture-to-rag` — 2026-10-01 위임으로 MVP 닫을 때 묻지 않고 실행 | 사용자 결정 · `decisions/ideas/20261001-v1-open-decisions.md` D6 |
 
 ## Phase 0 — 스파이크와 코어 (구현 전 검증)
 
@@ -32,6 +32,8 @@
 
 ## Phase 1 — 뷰어 MVP (더블클릭 → 깔끔한 렌더)
 
+**상태: 구현 완료 2026-09-29, 1-7 실기 2026-09-30·10-01 — 8번(이전 IME·Win11, 환경 없음) 빼고 통과.** 10 MB는 열기 통과·조작 2 s+ 지연(알려진 한계), 큰 문서 인쇄는 확인 팝업으로 가드(결정 D7).
+
 | 작업 | 내용 | 완료 조건 |
 |------|------|-----------|
 | 1-1 스캐폴딩 | tauri ≥ 2.12(tao ≥ 0.35.4), Vite 6, vanilla TS, `tauri-plugin-single-instance` ≥ 2.4.5(첫 플러그인), `capabilities/` 최소 권한, `.gitignore`에 `node_modules/ dist/ src-tauri/target/`, `CLAUDE.md` 구조·빌드 절 | `pnpm tauri dev`로 창 표시 |
@@ -44,7 +46,7 @@
 
 ## Phase 2 — 편집·저장 (V1 완성)
 
-**상태: 구현 완료 2026-09-30(야간), 실기 검증 대기 — [`next-session.md`](next-session.md) §2 B.** 뺀 것: 2-3 [비교], 2-2 줄바꿈 클릭 변환(인코딩 다시 열기·변환은 구현) → 백로그.
+**상태: 구현 완료 2026-09-30(야간), 실기 검증 대기 — [`next-session.md`](next-session.md) §2 B.** 뺀 것: 2-3 [비교], 2-2 줄바꿈 클릭 변환(인코딩 다시 열기·변환은 구현) → 백로그(결정 D5: 변환 먼저, 비교는 Phase 3 분할 뷰와).
 
 | 작업 | 내용 | 완료 조건 |
 |------|------|-----------|
@@ -109,4 +111,4 @@ Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이
 - 10 MB 초과 텍스트 뷰(스펙 `largeHardLimit`) — 2026-09-30 백로그. 큰 문서 모드로 10 MB도 렌더되므로 더 큰 파일을 실측한 뒤 상한을 정한다
 - 외부 변경 배너의 [비교] — 디스크 내용과 편집 중 내용의 차이 보기 (2-3에서 뺌)
 - 줄바꿈 변환(LF ↔ CRLF) — 상태바 줄바꿈 클릭. 코어에 "모든 줄 EOL 강제" API가 필요 (2-2에서 뺌)
-- 큰 문서 블록 묶음 — 최상위 블록을 100개씩 래퍼로 묶어 `content-visibility`를 걸면 폭 변경 재배치(10 MB 기준 ~250 ms)가 더 준다. 묶음 경계의 여백 겹침(margin collapse)을 처리해야 한다
+- 큰 문서 블록 묶음 — 최상위 블록을 100개씩 래퍼로 묶어 `content-visibility`를 걸면 폭 변경 재배치(10 MB 기준 ~250 ms)가 더 준다. 묶음 경계의 여백 겹침(margin collapse)을 처리해야 한다. 2026-10-01 실기: 10 MB 조작 2 s+ 지연 — 이 항목이 개선 후보
