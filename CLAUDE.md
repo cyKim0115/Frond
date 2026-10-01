@@ -61,6 +61,7 @@ src/                   프런트(vanilla TS). main.ts 셸(열기·보기/소스 
                        resize.ts(목차 폭), settings.ts(설정 스키마 — 항목을 더하면 팝업에 자동 표시), settings-dialog.ts,
                        dialog.ts(알림·확인 팝업), prefs.ts(UI 상태 localStorage)
 public/fonts/          D2Coding woff2 (OFL) 번들
+integrations/          AI 앱 연동 — open-new-md.ps1(Claude Code·Codex PostToolUse 훅: 새 md를 MdEditor로 열기). UTF-8 BOM 유지
 spike/                 (main에 없음) Phase 0 실험 앱·측정 — archived-exp/ime-spike, archived-exp/wpf-hello
 ```
 
