@@ -2,7 +2,7 @@
 
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
-**현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. 남은 것은 Phase 2 실기([docs/next-session.md](docs/next-session.md) §2 B) — B-2 한글 IME는 사용자가, 나머지는 에이전트가 컴퓨터 제어·CDP로 확인하고, 에이전트는 §3 순서로 진행한다. 통과하면 MVP(V1) 완료.**
+**현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이고, 에이전트는 §3 순서로 진행한다. 통과하면 MVP(V1) 완료.**
 할 일·열린 결정은 [docs/next-session.md](docs/next-session.md) §2·§3, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
@@ -44,6 +44,7 @@ docs/next-session.md   지금 열려 있는 것 (결정 대기·다음 할 일)
 docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
+docs/qa/               실기 증거 — <날짜>-<범위>/ 캡처·바이트 로그 (판정 표는 next-session.md)
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
 Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
 crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지

@@ -1,0 +1,49 @@
+MdEditor Phase 2 실기 B — 바이트 증거 (2026-10-01, 설치본 0.1.0, 시험 파일은 samples/raw 복사본)
+시험 중에만 확인할 수 있었던 판정(당시 출력 그대로):
+  B-4 취소 뒤 파일 == 외부 프로그램이 쓴 바이트: True
+  B-4 덮어쓰기 뒤 파일 == 편집기 텍스트(UTF-8·LF) 바이트: True (142B, CR 0)
+  B-4 다시 읽기 뒤 파일 == 외부 내용 바이트: True
+  B-5 표현 불가 팝업 취소 뒤 파일 == cp949.md 픽스처: True (121B, CRLF 6)
+  B-6 강제 종료(taskkill /F) 직후 파일 == utf8-lf.md 픽스처: True, 초안 JSON(%APPDATA%\MdEditor\drafts) 텍스트 == 복구된 편집기 텍스트: True
+  B-9 끌어다 놓기 복사본 == 원본 이미지 바이트: True, 원본 그대로 남음: True
+
+# B-3 저장 바이트 보존 (3행 끝에 " (편집)" 입력 → Ctrl+S)
+utf8-crlf.md
+  원본 137B BOM=false EOL=CCCCCC | 결과 146B BOM=false EOL=CCCCCC | 바뀐 줄 3
+  3행: "이 파일은 UTF-8, CRLF입니다."[C] → "이 파일은 UTF-8, CRLF입니다. (편집)"[C] (+hex 2028ed8eb8eca79129)
+mixed-eol.md
+  원본 157B BOM=false EOL=LCLCLC | 결과 166B BOM=false EOL=LCLCLC | 바뀐 줄 3
+  3행: "이 파일은 UTF-8, LF와 CRLF가 섞인 파일입니다."[L] → "이 파일은 UTF-8, LF와 CRLF가 섞인 파일입니다. (편집)"[L] (+hex 2028ed8eb8eca79129)
+utf8-bom.md
+  원본 144B BOM=true EOL=CCCCCC | 결과 153B BOM=true EOL=CCCCCC | 바뀐 줄 3
+  3행: "이 파일은 UTF-8 BOM, CRLF입니다."[C] → "이 파일은 UTF-8 BOM, CRLF입니다. (편집)"[C] (+hex 2028ed8eb8eca79129)
+mixed-eol.md (수정 빌드 회귀 확인)
+  원본 157B BOM=false EOL=LCLCLC | 결과 166B BOM=false EOL=LCLCLC | 바뀐 줄 3
+  3행: "이 파일은 UTF-8, LF와 CRLF가 섞인 파일입니다."[L] → "이 파일은 UTF-8, LF와 CRLF가 섞인 파일입니다. (편집)"[L] (+hex 2028ed8eb8eca79129)
+
+# B-5 EUC-KR
+인코딩 메뉴 'UTF-8로 변환해 저장' 결과 == UTF-8(원본을 EUC-KR로 읽은 텍스트): true (145B, CRLF 6)
+표현 불가 팝업 'UTF-8로 변환해 저장' 결과 == UTF-8(3행 끝 " 😀"): true (150B, CRLF 6)
+
+# B-6·B-7 초안 복구 → Alt+F4 '저장' / '저장 안 함'
+b6-draft.md (복구 후 Alt+F4 → 저장)
+  원본 129B BOM=false EOL=LLLLLL | 결과 143B BOM=false EOL=LLLLLL | 바뀐 줄 3
+  3행: "이 파일은 UTF-8, LF입니다."[L] → "이 파일은 UTF-8, LF입니다. 초안 시험"[L] (+hex 20ecb488ec958820ec8b9ced9798)
+b7-close.md (Alt+F4 → 저장 안 함) vs utf8-crlf.md: 바이트 동일
+
+# B-9 이미지
+assets/image-20261001-175644.png: 9825B PNG 시그니처=true 400x300
+assets/드롭 테스트.png: 642B PNG 시그니처=true 160x90
+  문서: - 한글: 가나다라마바사![드롭 테스트](<assets/드롭 테스트.png>)
+  문서: - English: The quick brown fox
+  문서: ![](assets/image-20261001-175644.png)
+
+# B-10 다른 이름으로 저장 (3행 끝 " 추가")
+cp949.md → b10-saveas.md (EUC-KR로 표시)
+  원본 121B BOM=false EOL=CCCCCC | 결과 126B BOM=false EOL=CCCCCC | 바뀐 줄 3
+  3행: "이 파일은 CP949(EUC-KR), CRLF입니다."[C] → "이 파일은 CP949(EUC-KR), CRLF입니다. 추가"[C] (+hex 20c3dfb0a1)
+원래 파일 b10-cp949.md vs cp949.md: 바이트 동일
+utf8-bom.md → b10-bom-saveas.md
+  원본 144B BOM=true EOL=CCCCCC | 결과 151B BOM=true EOL=CCCCCC | 바뀐 줄 3
+  3행: "이 파일은 UTF-8 BOM, CRLF입니다."[C] → "이 파일은 UTF-8 BOM, CRLF입니다. 추가"[C] (+hex 20ecb694eab080)
+원래 파일 b10-bom.md vs utf8-bom.md: 바이트 동일
