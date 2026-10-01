@@ -140,7 +140,13 @@ export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): Sou
       view.dispatch({ effects: wrapping.reconfigure(wrap ? EditorView.lineWrapping : []) });
     },
     topLine() {
-      const block = view.lineBlockAtHeight(Math.max(0, view.scrollDOM.scrollTop - view.documentPadding.top));
+      const top = Math.max(0, view.scrollDOM.scrollTop - view.documentPadding.top);
+      let block = view.lineBlockAtHeight(top);
+      // 반 줄도 안 보이는 윗줄은 건너뛴다 — scrollToLine의 위쪽 여백(scrollIntoView yMargin)으로 앞 빈 줄이 몇 px
+      // 걸치면 그 줄을 맨 위로 쳐서, 보기 ↔ 소스 왕복 때 보기 화면이 한 블록 앞으로 밀렸다 (Phase 2 실기 B-1)
+      if (block.bottom - top < view.defaultLineHeight / 2 && block.to < view.state.doc.length) {
+        block = view.lineBlockAt(block.to + 1);
+      }
       return view.state.doc.lineAt(block.from).number - 1;
     },
     scrollToLine(line, moveCursor = false) {
