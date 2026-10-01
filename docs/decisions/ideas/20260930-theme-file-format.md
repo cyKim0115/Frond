@@ -2,8 +2,8 @@
 
 - Date: 2026-09-30
 - Idea id: `20260930-theme-file-format`
-- Status: `decided` — **에이전트 권장안으로 구현, 사용자 확인 필요**
-- Verdict: `ADOPT` (가) — 사용자 확인 전까지 잠정
+- Status: `decided` — 에이전트 권장안으로 구현, **2026-10-01 사용자 확정**
+- Verdict: `ADOPT`
 - Related: `docs/roadmap.md` 셸 트랙 S-4, `src/theme/themes.ts`(`parseThemeFile`·`themeToJson`), `src-tauri/src/themes.rs`, 예제 `docs/themes/sepia.json`
 
 ## Proposal (user)
@@ -34,7 +34,7 @@
 
 ## Decision
 
-- Verdict: `ADOPT` (사용자 확인 전 잠정)
+- Verdict: `ADOPT` (2026-10-01 사용자 확정: "테마파일형식도 확정")
 - What we will do now:
   - 형식: `{ "id", "name", "base": "light"|"dark", "shell": { 토큰: 색 }, "doc": { 토큰: 색 } }`. 확장자 `.json`. `id`가 없으면 파일 이름. `$schema`·`description` 키는 허용(무시)
   - `id`: 영문·숫자로 시작, 영문·숫자·`-`·`_`, 64자 — 파일 이름이 되므로 백엔드도 같은 규칙으로 막는다. 내장 id(`light`·`dark`)는 금지
@@ -45,4 +45,5 @@
 
 ## Follow-up
 
-- 사용자 확인: 형식·확장자·토큰 공개 범위. 바꾸려면 `parseThemeFile`·`themes.rs valid_id`·README 절 세 곳
+- 2026-10-01 사용자 확정 — 형식·확장자(`.json`)·토큰 전부 공개. 추천 테마(`src/theme/recommended.ts`)도 이 형식으로 테마 폴더에 저장된다
+- 나중에 바꾸려면 `parseThemeFile`·`themes.rs valid_id`·README 절 세 곳
