@@ -9,6 +9,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { showChoice, showDialog } from "./dialog";
+import { initRecommendedDialog } from "./recommended-dialog";
 import { getSetting, onSettingChange, setSetting, SETTINGS } from "./settings";
 import {
   isBuiltinTheme,
@@ -56,15 +57,30 @@ function button(label: string, onClick: () => void, title?: string): HTMLButtonE
   return b;
 }
 
+/** 테마 배경 위에 주요 토큰 색을 점으로 늘어놓은 미리보기 — 테마 목록·추천 테마 팝업이 같이 쓴다 */
+function themeChips(theme: ThemeDef): HTMLElement {
+  const resolved = resolveTheme(theme);
+  const chips = el("span", "theme-chips");
+  chips.style.background = resolved.shell.bg;
+  for (const [group, key, label] of CHIP_TOKENS) {
+    const chip = el("span", "theme-chip");
+    chip.style.background = group === "shell" ? resolved.shell[key as keyof typeof resolved.shell] : resolved.doc[key as keyof typeof resolved.doc];
+    chip.title = label;
+    chips.append(chip);
+  }
+  return chips;
+}
+
 export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement; reload(): Promise<void> } {
   const root = el("div", "theme-panel");
   const head = el("div", "theme-panel-head");
   head.append(el("h3", undefined, "테마 목록"));
   const headActions = el("div", "theme-panel-actions");
+  const recommendedButton = button("추천 테마…", () => recommended.open(), "미리 골라 둔 테마(세피아·웨딩 팔레트 20종)를 목록에 더합니다");
   const importButton = button("가져오기…", () => void importTheme(), "테마 파일(.json)을 골라 테마 폴더에 복사합니다");
   const folderButton = button("폴더 열기", () => void invoke("open_themes_folder").catch((e) => alertError(e)), "테마 폴더를 탐색기로 엽니다 — 직접 넣은 파일은 '다시 읽기'로 목록에 올립니다");
   const reloadButton = button("다시 읽기", () => void reload(), "테마 폴더를 다시 읽습니다");
-  headActions.append(importButton, folderButton, reloadButton);
+  headActions.append(recommendedButton, importButton, folderButton, reloadButton);
   head.append(headActions);
   const list = el("ul", "theme-list");
   const problems = el("p", "theme-problems");
@@ -77,7 +93,7 @@ export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement
   root.append(head, list, problems, hint);
   if (!hooks.isTauri) {
     for (const b of [importButton, folderButton, reloadButton]) b.disabled = true;
-    hint.textContent = "브라우저 미리보기에서는 내장 테마만 보입니다.";
+    hint.textContent = "브라우저 미리보기에서는 테마 폴더가 없어 추천 테마를 이 브라우저에만 임시로 더합니다.";
   }
 
   async function alertError(error: unknown): Promise<void> {
@@ -89,18 +105,10 @@ export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement
     const selected = getSetting("theme");
     list.replaceChildren(
       ...listThemes().map((theme) => {
-        const resolved = resolveTheme(theme);
         const li = el("li", "theme-item");
         if (theme.id === current) li.setAttribute("aria-current", "true");
 
-        const chips = el("span", "theme-chips");
-        chips.style.background = resolved.shell.bg;
-        for (const [group, key, label] of CHIP_TOKENS) {
-          const chip = el("span", "theme-chip");
-          chip.style.background = group === "shell" ? resolved.shell[key as keyof typeof resolved.shell] : resolved.doc[key as keyof typeof resolved.doc];
-          chip.title = label;
-          chips.append(chip);
-        }
+        const chips = themeChips(theme);
 
         const info = el("span", "theme-info");
         info.title = isBuiltinTheme(theme.id) ? "내장 테마" : `테마 폴더의 ${theme.id}.json`;
@@ -122,6 +130,7 @@ export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement
         return li;
       }),
     );
+    recommended.refresh();
   }
 
   async function reload(): Promise<void> {
@@ -149,6 +158,34 @@ export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement
     hooks.onListChanged();
     render();
   }
+
+  /** 추천 테마를 목록에 더한다 — 테마 폴더에 저장하고 다시 읽는다. 브라우저 미리보기는 캐시에만 더한다 */
+  async function addThemes(themes: readonly ThemeDef[]): Promise<boolean> {
+    if (themes.length === 0) return true;
+    if (!hooks.isTauri) {
+      setUserThemes([...listThemes().filter((t) => !isBuiltinTheme(t.id)), ...themes]);
+      hooks.onListChanged();
+      render();
+      return true;
+    }
+    let ok = true;
+    try {
+      for (const theme of themes) await invoke("save_user_theme", { id: theme.id, json: themeToJson(theme) });
+    } catch (e) {
+      ok = false;
+      await alertError(e);
+    }
+    await reload();
+    return ok;
+  }
+
+  const recommended = initRecommendedDialog({
+    has: (id) => listThemes().some((t) => t.id === id),
+    add: addThemes,
+    apply: (id) => setSetting("theme", id),
+    currentThemeId: hooks.currentThemeId,
+    chips: themeChips,
+  });
 
   async function importTheme(): Promise<void> {
     const picked = await openDialog({ multiple: false, directory: false, filters: [{ name: "테마 JSON", extensions: ["json"] }] });
