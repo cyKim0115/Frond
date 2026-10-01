@@ -8,7 +8,7 @@
  * `dirty`가 둘의 차이를 나타낸다. 저장은 `current.hash`를 etag로 넘겨 그 사이 바뀐 파일을 덮어쓰지 않는다(save.rs).
  */
 
-import type { Text } from "@codemirror/state";
+import type { StateEffect, Text } from "@codemirror/state";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -99,6 +99,11 @@ let savedDoc: Text | null = null;
 let dirty = false;
 /** 보기 모드에 마지막으로 그린 텍스트 — 같으면 모드 전환 때 다시 그리지 않는다 */
 let renderedText: string | null = null;
+/**
+ * 소스 → 보기로 나갈 때 남긴 편집기 자리. 커서·선택은 편집기 상태에 그대로 남아 있으니 스크롤만 따로 둔다.
+ * 편집기에 문서를 새로 올리면(`loadEditor`) 버린다 — 그때는 되살릴 자리가 없다
+ */
+let sourceMemo: { scroll: StateEffect<unknown>; viewLine: number } | null = null;
 let tocEntries: TocEntry[] = [];
 let zoom = 1;
 
@@ -255,11 +260,20 @@ function renderView(text: string): void {
 
 /** 보기 화면 맨 위 블록의 소스 줄 (0 기준) */
 function viewTopLine(): number {
-  const top = viewer.getBoundingClientRect().top + 4;
+  return viewLineRange().top;
+}
+
+/** 보기 화면에 보이는 소스 줄 범위 `[top, bottom)` (0 기준). 마지막 블록까지 보이면 bottom은 Infinity */
+function viewLineRange(): { top: number; bottom: number } {
+  const rect = viewer.getBoundingClientRect();
+  let top: number | null = null;
   for (const el of article.children as HTMLCollectionOf<HTMLElement>) {
-    if (el.getBoundingClientRect().bottom > top && el.dataset.line !== undefined) return Number(el.dataset.line);
+    if (el.dataset.line === undefined) continue;
+    const box = el.getBoundingClientRect();
+    if (top === null && box.bottom > rect.top + 4) top = Number(el.dataset.line);
+    else if (top !== null && box.top >= rect.bottom) return { top, bottom: Number(el.dataset.line) };
   }
-  return 0;
+  return { top: top ?? 0, bottom: Infinity };
 }
 
 /** 소스 줄 `line`(0 기준) 이하에서 시작하는 마지막 최상위 블록을 화면 맨 위로 */
@@ -315,6 +329,7 @@ function loadEditor(text: string): void {
   // 손실 디코드 문서는 저장할 수 없으니 편집도 막는다 (스펙 경계 사례)
   ed.setReadOnly(current.info.lossy);
   editorDocPath = current.path;
+  sourceMemo = null;
   setDirty(text !== current.text);
 }
 
@@ -327,25 +342,52 @@ function showMode(next: Mode): void {
   if (next === "source") findBar.close();
 }
 
-/** Ctrl+/ — 보던 위치를 `data-line`으로 맞춰 오간다 (T1) */
+/**
+ * 보기 → 소스로 돌아올 때 커서를 어디에 둘지 (`sourceMemo`가 있을 때만 묻는다)
+ * - "restore": 떠날 때의 커서·선택과 편집기 스크롤을 그대로 되살린다
+ * - "keep-cursor": 커서·선택은 되살리고, 편집기 스크롤만 보기 화면 위치(viewTop)에 맞춘다
+ * - "follow": 커서를 보기 화면 맨 위 줄 첫머리로 옮긴다 (예전 동작)
+ *
+ * @param cursorLine 떠날 때 커서가 있던 줄
+ * @param leftAt     보기로 넘어온 직후 보기 화면 맨 위 줄
+ * @param viewTop    지금 보기 화면에 보이는 줄 범위 [viewTop, viewBottom). 마지막까지 보이면 viewBottom은 Infinity
+ * 줄은 모두 0 기준 소스 줄. 보기 화면은 최상위 블록 단위라 viewTop은 블록 시작 줄이다
+ */
+function cursorReturn(cursorLine: number, leftAt: number, viewTop: number, viewBottom: number): "restore" | "keep-cursor" | "follow" {
+  // 보기에서 움직이지 않았으면 떠날 때 그대로. 움직였어도 커서 줄이 보이는 범위 안이면 커서는 살리고 화면만 따라간다
+  if (viewTop === leftAt) return "restore";
+  if (cursorLine >= viewTop && cursorLine < viewBottom) return "keep-cursor";
+  return "follow";
+}
+
+/** Ctrl+/ — 보던 위치를 `data-line`으로 맞춰 오간다 (T1). 보기에서 크게 움직이지 않았으면 커서도 되살린다 */
 function setMode(next: Mode): void {
   if (!current || next === mode) return;
   if (next === "source") {
-    const line = viewTopLine();
+    // 보기 화면은 숨기기 전에 잰다
+    const range = viewLineRange();
     if (editorDocPath !== current.path) loadEditor(current.text);
+    const memo = sourceMemo;
+    sourceMemo = null;
     showMode("source");
     const ed = editor!;
     // 숨겨져 있던 편집기는 크기를 다시 재야 한다. scrollIntoView 효과는 그 측정 때 반영된다
     ed.view.requestMeasure();
-    // 커서도 보던 줄로 — 바로 입력하면 보던 자리에 들어간다
-    ed.scrollToLine(line, true);
+    const { state } = ed.view;
+    const choice = memo ? cursorReturn(state.doc.lineAt(state.selection.main.head).number - 1, memo.viewLine, range.top, range.bottom) : "follow";
+    if (choice === "restore") ed.view.dispatch({ effects: memo!.scroll });
+    // follow면 커서도 보던 줄로 — 바로 입력하면 보던 자리에 들어간다
+    else ed.scrollToLine(range.top, choice === "follow");
     ed.focus();
   } else {
     const line = editor ? editor.topLine() : 0;
+    // 편집기는 숨겨지면 스크롤을 잃는다 — 문서 위치 기준 스냅샷으로 남긴다
+    const scroll = editor && editorDocPath === current.path ? editor.view.scrollSnapshot() : null;
     const text = workingText();
     if (text !== renderedText) renderView(text);
     showMode("view");
     scrollViewToLine(line);
+    sourceMemo = scroll ? { scroll, viewLine: viewTopLine() } : null;
     viewer.focus({ preventScroll: true });
   }
 }
