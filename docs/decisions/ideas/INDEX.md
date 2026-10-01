@@ -14,6 +14,8 @@
 | `20261001-v1-open-decisions` D5 | 줄바꿈 변환·[비교] — 백로그, 변환 먼저 / 비교는 Phase 3 분할 뷰와 | `DEFER` | 2026-10-01 | `20261001-v1-open-decisions.md` |
 | `20261001-v1-open-decisions` D6 | RAG 캡처 — MVP 닫을 때 묻지 않고 실행 | `ADOPT` | 2026-10-01 | `20261001-v1-open-decisions.md` |
 | `20261001-v1-open-decisions` D7 | 큰 문서(2 MB 초과) `Ctrl+P` — 확인 팝업 후 인쇄 | `ADOPT` | 2026-10-01 | `20261001-v1-open-decisions.md` |
+| `20261001-ai-app-open` A1·A2 | AI 앱 오른쪽 창에 MdEditor 넣기 / 화면 오른쪽 사이드 모드 — 폐기 | `REJECT` | 2026-10-01 | `20261001-ai-app-open.md` |
+| `20261001-ai-app-open` A3·A4 | Claude Code·Codex PostToolUse 훅으로 **새로 만든 md만** MdEditor로 열기 (`integrations/`) | `ADOPT` | 2026-10-01 | `20261001-ai-app-open.md` |
 
 ## How to add
 
