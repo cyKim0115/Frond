@@ -59,7 +59,7 @@
 ## 셸 트랙 — 설정·테마 (사용자 요청 2026-09-30)
 
 Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이 들어간다. 1-7 통과 후 Phase 2와 병행할 수 있고, 순서는 S-1 → S-2 → S-3 → S-4다.
-**상태: S-1~S-4 구현 완료 2026-09-30(야간), 실기 검증 대기 — [`next-session.md`](next-session.md) §2 C.** 테마 파일 형식은 에이전트 권장안([`decisions/ideas/20260930-theme-file-format.md`](decisions/ideas/20260930-theme-file-format.md)) — 사용자 확인 대기.
+**상태: S-1~S-4 구현 완료 2026-09-30(야간), 실기 검증 대기 — [`next-session.md`](next-session.md) §2 C.** 테마 파일 형식은 [`decisions/ideas/20260930-theme-file-format.md`](decisions/ideas/20260930-theme-file-format.md) — 2026-10-01 사용자 확정.
 설정 항목·카테고리를 추가할 때는 [`add-setting` 스킬](../.claude/skills/add-setting/SKILL.md)을 따른다.
 
 | 작업 | 내용 | 완료 조건 (EARS) |

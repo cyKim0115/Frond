@@ -6,7 +6,7 @@
 |---------|-----------------|---------|------|------|
 | `20260929-stack` | 앱 스택 — Tauri 2 + Vite + TS (Phase 0 IME 스파이크 통과로 승격. 런타임 핀·자체 파일 I/O·NSIS 훅은 구현 규칙) | `ADOPT` | 2026-09-29 | `20260929-stack.md` |
 | `20260929-editor-engine` | 에디터 엔진 — CodeMirror 6 + 자체 라이브프리뷰 데코 + 에디터 밖 바이트 보존 계층 (ProseMirror 계열·Vditor·Muya 제외) | `ADOPT_WITH_CHANGES` | 2026-09-29 | `20260929-editor-engine.md` |
-| `20260930-theme-file-format` | 사용자 테마 파일 — 색 토큰만 담는 JSON(id·name·base·shell·doc), `%APPDATA%\MdEditor\themes`, 잘못된 값은 저장 안 함. **에이전트 권장안, 사용자 확인 필요** | `ADOPT` (잠정) | 2026-09-30 | `20260930-theme-file-format.md` |
+| `20260930-theme-file-format` | 사용자 테마 파일 — 색 토큰만 담는 JSON(id·name·base·shell·doc), `%APPDATA%\MdEditor\themes`, 잘못된 값은 저장 안 함. 2026-10-01 사용자 확정 | `ADOPT` | 2026-09-30 | `20260930-theme-file-format.md` |
 | `20261001-v1-open-decisions` D1 | 원문 HTML — 허용 목록 태그·속성만 렌더, 목록 밖 태그는 글자 그대로 | `ADOPT_WITH_CHANGES` | 2026-10-01 | `20261001-v1-open-decisions.md` |
 | `20261001-v1-open-decisions` D2 | 자동 링크 — `www.` 시작 주소 추가(GFM 범위), 맨 도메인은 계속 글자 | `ADOPT` | 2026-10-01 | `20261001-v1-open-decisions.md` |
 | `20261001-v1-open-decisions` D3 | 대용량 샘플(`samples/large/`) 커밋 — 안 함, 생성 스크립트 유지 | `REJECT` | 2026-10-01 | `20261001-v1-open-decisions.md` |

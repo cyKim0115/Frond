@@ -341,7 +341,7 @@ export function themeTransitionCss(ms: number): string {
 
 // ---- 테마 파일 (로드맵 S-4) ----------------------------------------------------------
 //
-// 형식(2026-09-30 에이전트 권장안, 사용자 확인 대기): 색 토큰만 담는 JSON.
+// 형식(2026-10-01 확정, docs/decisions/ideas/20260930-theme-file-format.md): 색 토큰만 담는 JSON.
 //   { "id": "sepia", "name": "세피아", "base": "light", "shell": { "bg": "#f4ecd8" }, "doc": { "bgColor-default": "#f4ecd8" } }
 // id가 없으면 파일 이름. 빠진 토큰은 base 내장 테마 값. 모르는 키는 무시(경고). 임의 CSS·url()·@import는 받지 않는다.
 
