@@ -79,11 +79,14 @@ body {
 
 /* ---- 공통: 머리 띠·아이콘 버튼 ------------------------------------------------- */
 
+/* 제목 표시줄 띠 — 글자 위에서도 텍스트 커서(I)·드래그 선택 없이 창 이동 영역처럼 보인다 */
 .col-header {
   flex: none;
   height: var(--titlebar-h);
   display: flex;
   align-items: center;
+  cursor: default;
+  user-select: none;
 }
 .icon-btn {
   display: inline-grid;
