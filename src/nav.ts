@@ -1,8 +1,11 @@
 /**
  * 왼쪽 탐색 영역 — 제목 표시줄 왼쪽 끝의 토글 버튼(Ctrl+Shift+E)으로 열고 닫는다. 폭 애니메이션은 CSS(style.css).
  * 머리 띠의 정사각형 탭으로 패널을 고른다. 지금은 '최근 파일' 탭 하나.
+ * 최근 파일 항목을 오른쪽 클릭하면 탐색기에서 파일 위치를 연다.
  */
 
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { showContextMenu } from "./context-menu";
 import { showDialog } from "./dialog";
 import { ICON_CLOSE, icon } from "./icons";
 import { isBoolean, isString, readPref, writePref } from "./prefs";
@@ -119,17 +122,30 @@ export function initNav(hooks: NavHooks): Nav {
     clearButton.disabled = shown.length === 0;
   }
 
-  async function openRecent(path: string): Promise<void> {
-    if (await hooks.exists(path)) {
-      await hooks.open(path);
-      return;
-    }
+  /** 파일이 아직 있으면 true. 없으면 알리고 목록에서 뺀다 */
+  async function ensureExists(path: string): Promise<boolean> {
+    if (await hooks.exists(path)) return true;
     await showDialog({
       title: "파일을 찾을 수 없습니다",
       message: "삭제되거나 이동된 파일입니다. 최근 파일 목록에서 제거합니다.",
       detail: path,
     });
     setRecent(removeRecent(recent, path));
+    return false;
+  }
+
+  async function openRecent(path: string): Promise<void> {
+    if (await ensureExists(path)) await hooks.open(path);
+  }
+
+  /** 탐색기를 열고 그 파일을 선택해 둔다 */
+  async function revealRecent(path: string): Promise<void> {
+    if (!(await ensureExists(path))) return;
+    try {
+      await revealItemInDir(path);
+    } catch (err) {
+      await showDialog({ title: "파일 위치를 열 수 없습니다", message: String(err), detail: path });
+    }
   }
 
   list.addEventListener("click", (event) => {
@@ -138,6 +154,12 @@ export function initNav(hooks: NavHooks): Nav {
     if (!button || path === undefined) return;
     if (button.classList.contains("recent-remove")) setRecent(removeRecent(recent, path));
     else void openRecent(path);
+  });
+
+  list.addEventListener("contextmenu", (event) => {
+    const path = (event.target as Element).closest("li")?.dataset.path;
+    if (path === undefined) return;
+    showContextMenu(event, [{ label: "파일 위치 열기", action: () => void revealRecent(path) }]);
   });
 
   clearButton.addEventListener("click", async () => {
