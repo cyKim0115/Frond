@@ -44,6 +44,8 @@ export function slugify(text: string): string {
   return slug === "" ? "section" : slug;
 }
 
+const WWW_RE = /^www\./i;
+
 function createMarkdownIt(): MarkdownItInstance {
   const md = new MarkdownIt({ html: true, linkify: true, typographer: false, breaks: false })
     .use(htmlAllowlistPlugin)
@@ -55,8 +57,12 @@ function createMarkdownIt(): MarkdownItInstance {
     .use(footnote)
     .use(dataLinePlugin);
 
-  // GitHub처럼 스킴 있는 URL과 이메일만 자동 링크. 퍼지 링크를 켜면 `paths.md` 같은 파일명이 `.md`(몰도바 TLD) 링크가 된다
-  md.linkify.set({ fuzzyLink: false, fuzzyIP: false });
+  // GFM 자동 링크 범위: 스킴 있는 URL·이메일·`www.`로 시작하는 주소 (결정 D2). linkify-it에 `www.` 전용 옵션이 없어 퍼지 링크를 켜고
+  // 스킴 없는 매치 중 `www.`로 시작하지 않는 것은 버린다 — 안 버리면 `paths.md` 같은 파일명이 `.md`(몰도바 TLD) 링크가 된다
+  md.linkify.set({ fuzzyLink: true, fuzzyIP: false });
+  const match = md.linkify.match.bind(md.linkify);
+  // 코어 linkify 룰은 `test`가 참이면 결과의 `length`를 바로 읽는다 — 다 걸러져도 null이 아니라 빈 배열
+  md.linkify.match = (text) => match(text)?.filter((m) => m.schema !== "" || WWW_RE.test(m.raw)) ?? null;
   md.validateLink = isAllowedLink;
 
   const renderFence: RendererRule = (tokens, idx, _options, _env, renderer) => {

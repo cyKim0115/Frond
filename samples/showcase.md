@@ -21,7 +21,7 @@ tags: [sample, gfm]
 ## 링크
 
 - 외부 링크: [Anthropic](https://www.anthropic.com)
-- 자동 링크: https://github.com
+- 자동 링크: https://github.com · www.github.com (스킴·`www.` 없는 paths.md·example.com은 글자)
 - 문서 안 앵커: [표로 이동](#표)
 - 상대 경로 파일: [samples README](README.md)
 
