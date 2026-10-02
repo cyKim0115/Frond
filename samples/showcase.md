@@ -88,6 +88,17 @@ const greet = (name: string): string => `Hello, ${name}!`;
 
 </details>
 
+허용 목록 태그: <kbd>Ctrl</kbd>+<kbd>S</kbd>, H<sub>2</sub>O, x<sup>2</sup>, <mark>형광펜</mark>, <ins>추가</ins>·<del>삭제</del>, <abbr title="HyperText Markup Language">HTML</abbr>,<br>여기서 줄바꿈.
+
+<p align="center">
+  <img src="images/missing.png" alt="가운데 놓인 없는 이미지" width="120">
+</p>
+
+목록 밖 태그는 글자 그대로: List<String>, <section>, <script>alert(1)</script>, <iframe src="x"></iframe>.
+속성도 목록만 남는다: <span style="color:red" onclick="alert(1)" title="툴팁">style·onclick이 빠진 span</span>
+
+<!-- 주석은 보이지 않습니다 -->
+
 ## 각주
 
 각주가 붙은 문장입니다.[^1]

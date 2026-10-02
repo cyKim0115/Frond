@@ -100,7 +100,7 @@ describe("samples/showcase.md", () => {
     expect(renderMarkdown("# a", OPTIONS).frontMatter).toBeUndefined();
   });
 
-  it("취소선·코드 펜스·원문 HTML 이스케이프", () => {
+  it("취소선·코드 펜스·원문 HTML 허용 목록", () => {
     expect(root.innerHTML).toContain("<s>취소선</s>");
 
     const csharp = root.querySelector("pre[data-line='50'] > code.language-csharp")!;
@@ -110,9 +110,19 @@ describe("samples/showcase.md", () => {
     expect(plain.className).toBe("");
     expect(plain.textContent).toBe("언어 지정 없는 코드 블록\n    들여쓰기가 유지되어야 합니다\n");
 
-    // html: false — <details>는 글자 그대로 보인다
-    expect(root.querySelector("details")).toBeNull();
-    expect(root.textContent).toContain("<details>");
+    // 허용 태그는 렌더(블록 첫 태그가 data-line을 받는다), 목록 밖 태그·속성은 글자로 남거나 빠진다
+    const details = root.querySelector("details[data-line='83']")!;
+    expect(details.querySelector("summary")!.textContent).toBe("펼치기");
+    expect(details.querySelector("p")!.textContent).toBe("접혀 있던 내용입니다.");
+    expect(root.querySelectorAll("kbd")).toHaveLength(2);
+    expect(root.querySelector("abbr")!.getAttribute("title")).toBe("HyperText Markup Language");
+    const center = root.querySelector("p[align='center']")!;
+    expect(center.querySelector("img")!.getAttribute("width")).toBe("120");
+    expect(root.textContent).toContain("List<String>, <section>, <script>alert(1)</script>, <iframe src=\"x\"></iframe>.");
+    expect(root.querySelector("script, iframe, section:not(.footnotes)")).toBeNull();
+    const span = root.querySelector("span[title='툴팁']")!;
+    expect(span.getAttributeNames()).toEqual(["title"]);
+    expect(root.textContent).not.toContain("주석은 보이지 않습니다");
   });
 
   it("링크: 외부는 새 창 속성, 앵커·mailto는 그대로, 상대 .md는 data-local-path", () => {
@@ -175,7 +185,10 @@ describe("보안", () => {
     const { html, root } = render("앞\n\n<script>alert(1)</script>\n\n뒤 <img src=x onerror=alert(1)>");
     expect(html).not.toContain("<script");
     expect(html).toContain("&lt;script&gt;");
-    expect(root.querySelector("img")).toBeNull();
+    // img는 허용 태그지만 이벤트 속성은 버리고 src는 상대 경로 재작성을 거친다
+    const img = root.querySelector("img")!;
+    expect(img.getAttributeNames()).toEqual(["src"]);
+    expect(assetPath(img)).toBe("C:\\docs\\paths\\x");
 
     const cleaned = sanitizeHtml(
       '<p data-line="1">x<script>alert(1)</script><iframe src="x"></iframe><style>p{}</style><object></object><embed></p><form action="x"><input type="text"></form>',
@@ -248,6 +261,82 @@ describe("링크 경로", () => {
     const { root } = render("paths.md와 example.com은 링크가 아니고 https://github.com 은 링크다. 메일 a@b.co 도.");
     const hrefs = Array.from(root.querySelectorAll("a")).map((a) => a.getAttribute("href"));
     expect(hrefs).toEqual(["https://github.com", "mailto:a@b.co"]);
+  });
+});
+
+describe("원문 HTML 허용 목록 (결정 D1)", () => {
+  it("허용 태그만 HTML이 되고, 목록 밖 태그는 이스케이프돼 글자로 보인다", () => {
+    const { root, html } = render(
+      "a <kbd>K</kbd> <u>u</u> <s>s</s> <sub>1</sub> <custom-el>x</custom-el> <svg onload=alert(1)></svg> <input value=1> <style>p{}</style>",
+    );
+    expect(Array.from(root.querySelectorAll("kbd, u, s, sub")).map((e) => e.tagName)).toEqual(["KBD", "U", "S", "SUB"]);
+    expect(root.querySelector("custom-el, svg, input, style")).toBeNull();
+    expect(root.textContent?.trim()).toBe("a K u s 1 <custom-el>x</custom-el> <svg onload=alert(1)></svg> <input value=1> <style>p{}</style>");
+    expect(html).not.toMatch(/<(svg|input|style|custom-el)/);
+  });
+
+  it("목록 밖 태그로 시작하는 블록은 문단이 되고 마크다운이 그대로 살아 있다", () => {
+    const { root } = render("<section>\n**굵게**\n</section>\n\n<script>\nalert(1)\n</script>");
+    const [first, second] = Array.from(root.querySelectorAll("p"));
+    expect(first.innerHTML).toBe("&lt;section&gt;\n<strong>굵게</strong>\n&lt;/section&gt;");
+    expect(second.textContent).toBe("<script>\nalert(1)\n</script>");
+  });
+
+  it("허용 블록 안의 금지 태그는 글자, 빈 줄 뒤 마크다운은 렌더", () => {
+    const { root } = render('<div align="center" class="x" style="color:red">\n<iframe src="https://e.x"></iframe> 1 < 2 &amp; &copy;\n</div>\n\n<details open>\n<summary>요약</summary>\n\n**본문**\n\n</details>');
+    const div = root.querySelector("div[data-line='0']")!;
+    expect(div.getAttributeNames().sort()).toEqual(["align", "data-line"]);
+    expect(div.textContent).toBe('\n<iframe src="https://e.x"></iframe> 1 < 2 & ©\n');
+    const details = root.querySelector("details")!;
+    expect(details.hasAttribute("open")).toBe(true);
+    expect(details.getAttribute("data-line")).toBe("4");
+    expect(details.querySelector("strong")!.textContent).toBe("본문");
+  });
+
+  it("a href·img src는 마크다운 링크·이미지와 같은 검증·재작성을 거친다", () => {
+    const { root } = render(
+      '<a href="https://x.y/?a=1&amp;b=2" onclick="x">외부</a> <a href="javascript:alert(1)">j</a> <a href="other.md#s">문서</a> <a name="n">이름</a> ' +
+        '<img src="data:image/png;base64,AAAA" alt="d"> <img src="img/a&amp;b%20c.png" width="50%" height=20 alt="상대"> <img src="https://x.y/a.png">' +
+        ' <span href="https://x.y" src="a.png">s</span> <a src="a.png" href="https://x.y/2">2</a>',
+    );
+    const links = Array.from(root.querySelectorAll("a"));
+    expect(links.map((a) => [a.getAttribute("href"), a.getAttribute("target"), a.dataset.localPath ?? null])).toEqual([
+      ["https://x.y/?a=1&b=2", "_blank", null],
+      [null, null, null],
+      ["other.md#s", null, "C:\\docs\\paths\\other.md"],
+      [null, null, null],
+      ["https://x.y/2", "_blank", null],
+    ]);
+    expect(links.every((a) => !a.hasAttribute("onclick") && !a.hasAttribute("src") && !a.hasAttribute("name"))).toBe(true);
+    const [data, local, remote] = Array.from(root.querySelectorAll("img"));
+    expect(data.hasAttribute("src")).toBe(false);
+    expect(assetPath(local)).toBe("C:\\docs\\paths\\img\\a&b c.png");
+    expect([local.getAttribute("width"), local.getAttribute("height"), local.getAttribute("alt")]).toEqual(["50%", "20", "상대"]);
+    expect(remote.getAttribute("src")).toBe("https://x.y/a.png");
+    expect(root.querySelector("span")!.getAttributeNames()).toEqual([]);
+  });
+
+  it("역슬래시 드라이브 경로는 그대로, 큰 문서면 img도 loading=lazy", () => {
+    const html = renderMarkdown('<img src="C:\\(old)\\a_b.png">', { ...OPTIONS, lazyImages: true }).html;
+    const root = document.createElement("div");
+    root.innerHTML = html;
+    const img = root.querySelector("img")!;
+    expect(assetPath(img)).toBe("C:\\(old)\\a_b.png");
+    expect(img.getAttribute("loading")).toBe("lazy");
+  });
+
+  it("주석은 숨기고, 닫히지 않은 주석은 문서를 삼키지 않고 글자로 남는다", () => {
+    expect(render("앞 <!-- 메모 --> 뒤").root.textContent?.trim()).toBe("앞  뒤");
+    expect(render("<!--\n여러 줄\n-->\n\n본문").root.textContent?.trim()).toBe("본문");
+    const open = render("<!-- 열림\n\n# 제목").root;
+    expect(open.textContent).toContain("<!-- 열림");
+    expect(open.querySelector("h1")!.textContent).toBe("제목");
+  });
+
+  it("코드 안의 태그는 HTML이 아니다", () => {
+    const { root } = render("`<kbd>x</kbd>`\n\n```\n<details>\n```");
+    expect(root.querySelector("kbd, details")).toBeNull();
+    expect(root.querySelector("code")!.textContent).toBe("<kbd>x</kbd>");
   });
 });
 
