@@ -1004,6 +1004,27 @@ async function pickAndOpen(): Promise<void> {
   if (typeof picked === "string") await openPath(picked);
 }
 
+/** 이 크기 이상인 문서는 인쇄 전에 묻는다 (결정 D7, 기준은 사용자 지정 1 MB). 2 MB에서도 미리보기가 오래 멈췄다 */
+const PRINT_WARN_SIZE = 1024 * 1024;
+
+/** Ctrl+P — 큰 문서는 확인을 받은 뒤에만 인쇄한다. 미리보기가 멈춰 강제 종료하다 편집 중 내용을 잃는 사고를 막는다 */
+async function printDocument(): Promise<void> {
+  const size = current ? Math.max(current.info.byte_len, workingText().length) : 0;
+  if (size >= PRINT_WARN_SIZE) {
+    // primary 선택지가 없으면 처음 포커스는 취소
+    const choice = await showChoice({
+      title: "큰 문서 인쇄",
+      message:
+        `이 문서는 ${(size / 1024 / 1024).toFixed(1)} MB입니다. 큰 문서는 인쇄 미리보기가 오래 멈추거나 응답하지 않을 수 있습니다.` +
+        (dirty ? " 저장하지 않은 변경이 있으니 먼저 저장해 두세요." : ""),
+      choices: [{ value: "print", label: "계속" }],
+      cancelLabel: "취소",
+    });
+    if (choice !== "print") return;
+  }
+  window.print();
+}
+
 // ---- 단축키 ------------------------------------------------------------------------
 // 캡처 단계에서 받는다 — 편집기(CM6)가 먼저 가져가면 안 되는 앱 단축키(Ctrl+/·Ctrl+S 등)가 있다.
 // 찾기(Ctrl+F)·바꾸기(Ctrl+H)는 소스 모드에서 편집기 몫이다.
@@ -1035,6 +1056,9 @@ window.addEventListener(
     } else if (ctrl && key === "o") {
       take();
       void pickAndOpen();
+    } else if (ctrl && key === "p") {
+      take();
+      void printDocument();
     } else if (ctrl && (event.key === "=" || event.key === "+")) {
       take();
       applyZoom(zoom + 0.1);
