@@ -1,13 +1,12 @@
 /**
  * 렌더 파이프라인 (로드맵 1-3, 스택 판정 Modified approach 6).
  *
- * markdown-it 15 (`html: false`, linkify) + cjk-friendly + front-matter + anchor + 태스크 리스트 + footnote
+ * markdown-it 15 (`html: true` + 허용 목록, linkify) + cjk-friendly + front-matter + anchor + 태스크 리스트 + footnote
  *   → `data-line` 부여 → 링크·이미지 재작성(스킴 허용 목록, 상대 경로 → 절대 경로 → `toAssetUrl`) → DOMPurify.
  * 코드 하이라이트는 DOM 삽입 뒤 `highlightCodeBlocks()`가 언어를 지연 로드해 처리한다.
  * front matter는 닫는 줄이 있는 YAML 해시일 때만 인정한다(`hasClosedFrontMatter`) — 첫 줄 `---`만으로는 `<hr>`.
  *
- * `html: false`: 원문의 HTML 태그(`<details>`·`<img>`…)는 렌더하지 않고 글자 그대로 이스케이프한다.
- * GitHub와 다른 점이지만 뷰어로서 더 안전하고, 필요해지면 허용 태그 목록과 함께 다시 연다.
+ * 원문 HTML은 허용 목록 태그(`<details>`·`<img width>`·`<br>`·`<kbd>`…)만 렌더하고 나머지 태그는 글자 그대로 둔다 (html.ts, 결정 D1).
  */
 
 import MarkdownIt from "markdown-it";
@@ -17,6 +16,7 @@ import cjkFriendly from "markdown-it-cjk-friendly";
 import footnote from "markdown-it-footnote";
 import frontMatter from "markdown-it-front-matter";
 import { dataLinePlugin } from "./data-line";
+import { htmlAllowlistPlugin } from "./html";
 import { isAllowedLink, rewriteInlineLinks } from "./links";
 import { sanitizeHtml } from "./sanitize";
 import { taskListsPlugin } from "./task-lists";
@@ -45,7 +45,8 @@ export function slugify(text: string): string {
 }
 
 function createMarkdownIt(): MarkdownItInstance {
-  const md = new MarkdownIt({ html: false, linkify: true, typographer: false, breaks: false })
+  const md = new MarkdownIt({ html: true, linkify: true, typographer: false, breaks: false })
+    .use(htmlAllowlistPlugin)
     .use(cjkFriendly)
     // 원문은 콜백 대신 토큰(`front_matter`.meta)에서 읽어 env에 넣는다 — 콜백은 env를 못 받는다
     .use(frontMatter, () => {})
