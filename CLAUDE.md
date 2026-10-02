@@ -2,7 +2,7 @@
 
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
-**현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이고, 에이전트는 §3 순서로 진행한다. 통과하면 MVP(V1) 완료.**
+**현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이다. 에이전트 §3 2~4(인쇄 확인·원문 HTML 허용 목록·`www.` 자동 링크)는 2026-10-02 완료, 남은 §3-5는 B-2·B-9 통과 뒤. 통과하면 MVP(V1) 완료.**
 할 일·열린 결정은 [docs/next-session.md](docs/next-session.md) §2·§3, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
@@ -53,7 +53,7 @@ src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·loa
                        drafts.rs(초안 백업), assets.rs(붙여넣은 이미지), themes.rs(사용자 테마 폴더),
                        nsis/hooks.nsh(설치기 레지스트리 훅), capabilities/(최소 권한)
 src/                   프런트(vanilla TS). main.ts 셸(열기·보기/소스 모드·저장·초안·외부 변경·목차·상태바·줌·설정 적용),
-                       editor.ts(CM6 소스 편집기), find.ts(보기 모드 찾기), render/(markdown-it 파이프라인, types.ts가 계약),
+                       editor.ts(CM6 소스 편집기), find.ts(보기 모드 찾기), render/(markdown-it 파이프라인, types.ts가 계약, html.ts 원문 HTML 허용 목록),
                        theme/(문서 CSS·폰트, themes.ts 테마 모델·토큰·테마 파일 검증), theme-panel.ts(설정 테마 목록),
                        theme/recommended.ts·recommended-dialog.ts(추천 테마 — 세피아·웨딩 팔레트, 팔레트→토큰 파생),
                        style.css(셸 CSS·대체 색 토큰)
