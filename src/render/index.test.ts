@@ -123,6 +123,7 @@ describe("samples/showcase.md", () => {
     const span = root.querySelector("span[title='툴팁']")!;
     expect(span.getAttributeNames()).toEqual(["title"]);
     expect(root.textContent).not.toContain("주석은 보이지 않습니다");
+    expect(root.querySelector("a[href='http://www.github.com']")!.textContent).toBe("www.github.com");
   });
 
   it("링크: 외부는 새 창 속성, 앵커·mailto는 그대로, 상대 .md는 data-local-path", () => {
@@ -261,6 +262,23 @@ describe("링크 경로", () => {
     const { root } = render("paths.md와 example.com은 링크가 아니고 https://github.com 은 링크다. 메일 a@b.co 도.");
     const hrefs = Array.from(root.querySelectorAll("a")).map((a) => a.getAttribute("href"));
     expect(hrefs).toEqual(["https://github.com", "mailto:a@b.co"]);
+  });
+
+  it("`www.`로 시작하는 주소만 스킴 없이 자동 링크한다 (GFM 확장 autolink, 결정 D2)", () => {
+    const { root } = render("www.example.com/a?b=1 과 WWW.Test.org, 그리고 sub.www.example.com·readme.md·a.co.kr 은 글자.");
+    const links = Array.from(root.querySelectorAll("a"));
+    expect(links.map((a) => a.getAttribute("href"))).toEqual(["http://www.example.com/a?b=1", "http://WWW.Test.org"]);
+    expect(links.map((a) => a.textContent)).toEqual(["www.example.com/a?b=1", "WWW.Test.org"]);
+    expect(links.every((a) => a.getAttribute("target") === "_blank")).toBe(true);
+    // 링크로 다 걸러진 문단도 글자는 그대로 남는다
+    expect(render("readme.md 와 a.co.kr").root.textContent?.trim()).toBe("readme.md 와 a.co.kr");
+  });
+
+  it("samples/paths/paths.md에는 스킴 없는 자동 링크가 생기지 않는다", () => {
+    // 스킴 없는 자동 링크는 href에 `http://`가 붙고 글자에는 스킴이 없다
+    const { root } = render(pathsMd);
+    const fuzzy = Array.from(root.querySelectorAll("a")).filter((a) => a.getAttribute("href")?.startsWith("http://") && !a.textContent?.startsWith("http"));
+    expect(fuzzy.map((a) => a.outerHTML)).toEqual([]);
   });
 });
 
