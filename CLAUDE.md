@@ -85,3 +85,5 @@ cd crates/mdeditor-core; cargo run --example roundtrip -- ../../samples/raw   # 
 - 사용자 조절 값은 `src/settings.ts`의 `SETTINGS`에 추가하고 `main.ts` `applySetting`에서 적용한다 (하드코딩 금지).
   설정 팝업은 왼쪽 카테고리 탭 구조 — 항목·기능을 더할 때는 `add-setting` 스킬(`.claude/skills/add-setting/`)을 따른다
 - CM6·다크 모드에서 `.cm-cursor` 색은 반드시 테마에서 지정한다 (기본 검정이라 안 보임 — Phase 0 발견)
+- 앱 아이콘은 `src-tauri/icons/icon.svg`가 원본이고, `icon.ico`의 16·24·32px은 픽셀 격자에 맞춘 전용판이다.
+  아이콘 파일만 바꾸면 `tauri-build`가 다시 돌지 않아 exe에 예전 아이콘이 남는다 → `tauri.conf.json`을 touch한 뒤 빌드
