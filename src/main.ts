@@ -27,6 +27,7 @@ import { initSettingsDialog } from "./settings-dialog";
 import { applyTheme, findTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
 import { createThemePanel } from "./theme-panel";
 import { initTitlebar, setTitleText } from "./titlebar";
+import { countText, type TextCount } from "./wordcount";
 import "./style.css";
 import "./theme/index.css";
 
@@ -80,6 +81,7 @@ const statusDefault = $<HTMLButtonElement>("#status-default");
 const statusMode = $<HTMLButtonElement>("#status-mode");
 const statusEncoding = $<HTMLButtonElement>("#status-encoding");
 const statusEol = $<HTMLButtonElement>("#status-eol");
+const statusCount = $<HTMLButtonElement>("#status-count");
 const app = $("#app");
 
 const IS_TAURI = "__TAURI_INTERNALS__" in window;
@@ -260,6 +262,7 @@ function renderView(text: string): void {
   );
   headings = Array.from(article.querySelectorAll<HTMLElement>("h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]"));
   indexChunks();
+  recount(large);
   sidebar.hidden = result.toc.length === 0;
   updateActiveHeading();
   findBar.refresh();
@@ -752,6 +755,43 @@ function updateDocChrome(): void {
     : "줄바꿈 — 눌러서 LF·CRLF로 변환";
 }
 
+// ---- 상태바 글자 수 (wordcount.ts) ---------------------------------------------------
+
+let textCount: TextCount | null = null;
+let countTimer = 0;
+const COUNT_CYCLE = ["words", "chars", "charsNoSpace"] as const;
+
+/** 보기 화면에 그린 본문을 센다. 큰 문서는 그린 뒤 잠시 있다가 (10 MB 약 0.2 s) */
+function recount(large = app.classList.contains("large-doc")): void {
+  window.clearTimeout(countTimer);
+  textCount = null;
+  updateCount();
+  if (getSetting("statusCount") === "off") return;
+  const run = (): void => {
+    textCount = countText(article.textContent ?? "");
+    updateCount();
+  };
+  if (large) countTimer = window.setTimeout(run, 300);
+  else run();
+}
+
+function updateCount(): void {
+  const kind = getSetting("statusCount");
+  statusCount.hidden = !current || kind === "off" || !textCount;
+  if (statusCount.hidden || !textCount) return;
+  const n = (v: number): string => v.toLocaleString("ko-KR");
+  const { words, chars, charsNoSpace } = textCount;
+  statusCount.textContent =
+    kind === "words" ? `${n(words)}단어` : kind === "chars" ? `${n(chars)}자` : `${n(charsNoSpace)}자 (공백 제외)`;
+  statusCount.title = `단어 ${n(words)} · 글자 ${n(chars)} (공백 제외 ${n(charsNoSpace)})\n보기 화면에 그린 본문 기준 — 눌러서 표시 바꾸기`;
+}
+
+statusCount.addEventListener("click", () => {
+  const kind = getSetting("statusCount");
+  const i = COUNT_CYCLE.indexOf(kind as (typeof COUNT_CYCLE)[number]);
+  setSetting("statusCount", COUNT_CYCLE[(i + 1) % COUNT_CYCLE.length]);
+});
+
 let flashTimer = 0;
 /** 상태바 경로 자리에 잠깐 알림을 띄운다 */
 function flashStatus(message: string): void {
@@ -1069,6 +1109,9 @@ function applySetting(key: SettingKey): void {
     editor?.setLineWrapping(getSetting("editorLineWrap") === "wrap");
   } else if (key === "draftIntervalSec") {
     scheduleDrafts();
+  } else if (key === "statusCount") {
+    if (textCount || !current) updateCount();
+    else recount();
   }
 }
 SETTING_KEYS.forEach(applySetting);
