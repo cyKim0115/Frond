@@ -6,7 +6,7 @@ Markdown(`.md`) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱
 ![Frond 기본 화면 — 왼쪽 목차, 오른쪽 본문](docs/screenshots/main.png)
 
 > **현재 단계: V2 진행 중.** MVP V1(보기·편집·저장, 설정·테마)에 더해 탭·분할 뷰·폴더 트리·외부 변경 비교·세션 복원·AI 훅 받은 목록(Phase 3)과
-> Mermaid·GitHub Alerts(Phase 4 일부)가 구현돼 있습니다. 실기 확인 목록은 [docs/next-session.md](docs/next-session.md) §2, 전체 계획은 [docs/plan.md](docs/plan.md)·[docs/roadmap.md](docs/roadmap.md)에 있습니다.
+> Mermaid·GitHub Alerts·KaTeX 수식·HTML 내보내기·인쇄 손질(Phase 4)이 구현돼 있습니다. 실기 확인 목록은 [docs/next-session.md](docs/next-session.md) §2, 전체 계획은 [docs/plan.md](docs/plan.md)·[docs/roadmap.md](docs/roadmap.md)에 있습니다.
 
 ## 주요 기능
 
@@ -14,7 +14,8 @@ Markdown(`.md`) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱
 - **탭** — 문서마다 편집 상태(되돌리기 기록·커서)·스크롤·모드가 따로 남고, 다음 실행 때 지난 탭을 다시 엽니다
 - **분할 뷰**(`Ctrl+Shift+/`) — 왼쪽 소스, 오른쪽 미리보기. 스크롤이 서로 따라가고 고친 블록만 바로 다시 그립니다
 - **폴더 트리** — 탐색 영역 '폴더' 탭. 목차와 함께 보이고, 폴더에 파일이 생기거나 사라지면 바로 갱신됩니다
-- GitHub 스타일 렌더: 표·체크리스트·각주·front matter·코드 구문 강조, **Mermaid 다이어그램**, **GitHub Alerts**(`> [!NOTE]` 등)
+- GitHub 스타일 렌더: 표·체크리스트·각주·front matter·코드 구문 강조, **Mermaid 다이어그램**, **GitHub Alerts**(`> [!NOTE]` 등), **수식**(`$…$`·`$$`, KaTeX)
+- **HTML 내보내기** — 보이는 그대로(테마 색·코드·그림·수식) 한 파일로, 이미지는 파일 안에 넣거나 경로로. **인쇄·PDF**는 쪽 번호와 함께
 - **소스 모드 편집(`Ctrl+/`)과 저장(`Ctrl+S`)** — 고친 줄만 다시 쓰고 나머지 바이트(인코딩·BOM·줄바꿈·끝 개행)는 그대로 둡니다
 - 다른 편집기와 부딪히지 않게: 연 뒤에 파일이 바뀌었으면 덮어쓰기 전에 묻고, 편집 중 외부 변경은 배너로 알립니다. **비교**로 디스크 내용과 편집 중 내용의 차이를 보고 부분마다 고릅니다
 - **AI 훅 문서 받은 목록** — Claude Code·Codex가 새 md를 만들면 보던 문서를 바꾸지 않고 '새 문서' 목록에 쌓습니다([integrations/](integrations/README.md))
@@ -221,11 +222,19 @@ npm run app:build
 - **줌**: `Ctrl+=` / `Ctrl+-` / `Ctrl+0` (50–300 %). 본문·편집기만 커지고 목차·메뉴는 그대로입니다
 - **인쇄**: `Ctrl+P` 또는 오른쪽 클릭 메뉴의 **인쇄**. 제목 표시줄·목차·상태바를 빼고 본문만 인쇄하며, 긴 코드 줄은 접힙니다. 테마와 관계없이 라이트로 인쇄합니다. PDF 저장은 인쇄 대화상자에서 고릅니다. 1 MB 이상인 문서는 인쇄 미리보기가 오래 멈출 수 있어 먼저 **계속 / 취소**를 묻습니다
 
-### Mermaid·GitHub Alerts
+### Mermaid·GitHub Alerts·수식
 
 - ` ```mermaid ` 코드 블록은 다이어그램으로 그립니다(순서도·시퀀스·파이·간트·클래스·상태 등, 마인드맵·아키텍처 다이어그램 제외). 라이브러리는 문서에 Mermaid가 있을 때만 불러오고, 라벨의 HTML·클릭 동작은 막습니다(`securityLevel: strict`). 라이트·다크 테마를 따라 다시 그리고, 문법이 틀리면 코드 블록 아래에 이유를 보입니다
 - 인용의 첫 줄이 `[!NOTE]`·`[!TIP]`·`[!IMPORTANT]`·`[!WARNING]`·`[!CAUTION]`이면 GitHub처럼 색 틀·아이콘이 붙은 알림 상자로 그립니다. 그 줄에 다른 글자가 있거나 목록 안이면 보통 인용입니다
+- **수식**: `$E=mc^2$`처럼 `$`로 감싸면 인라인, `$$` 줄 사이나 ` ```math ` 블록은 가운데 정렬 수식(KaTeX). GitHub처럼 `$5와 $10`, `$ x$`(안쪽 공백)는 글자 그대로이고 `\$`는 달러 기호입니다. 수식이 있을 때만 KaTeX를 불러오고, 틀린 수식은 빨간 원문으로 남깁니다
 - 예제: [samples/extended.md](samples/extended.md)
+
+### 내보내기·인쇄
+
+제목 표시줄 설정 옆 **⋯(문서 메뉴)**: 파일 열기 · 폴더 열기 · **HTML로 내보내기…** · **인쇄 · PDF로 저장…** · 설정.
+
+- **HTML로 내보내기**: 지금 화면 그대로(테마 색·본문 폭·코드 강조·Mermaid 그림·수식) HTML 파일 하나로 저장합니다. 이미지는 **파일 안에 넣기**(한 파일로 주고받기 좋음) 또는 **경로로 두기**(가볍지만 이미지 파일이 함께 있어야 함). 탭 오른쪽 클릭으로도 됩니다
+- **인쇄·PDF**: `Ctrl+P` — PDF는 인쇄 대화상자에서 'Microsoft Print to PDF'·'PDF로 저장'. 소스·분할 모드에서도 고친 내용으로 본문을 찍고, 아래에 쪽 번호가 붙고, 다크 테마여도 라이트로 찍습니다(그림 포함). PDF 파일 이름은 문서 이름
 
 ### 알아 둘 점
 
@@ -271,7 +280,7 @@ cargo test                        # Rust 코어·백엔드 단위 테스트 (저
 npm run app:build                 # 릴리스 + NSIS 설치기
 ```
 
-- 스택: Tauri 2 · Vite · TypeScript(프레임워크 없음) · CodeMirror 6(+ `@codemirror/merge`) · markdown-it · highlight.js · Mermaid(tiny) · DOMPurify. 파일 읽기·쓰기는 Rust 크레이트 [`crates/mdeditor-core`](crates/mdeditor-core)가 맡습니다(바이트 보존)
+- 스택: Tauri 2 · Vite · TypeScript(프레임워크 없음) · CodeMirror 6(+ `@codemirror/merge`) · markdown-it · highlight.js · Mermaid(tiny) · KaTeX · DOMPurify. 파일 읽기·쓰기는 Rust 크레이트 [`crates/mdeditor-core`](crates/mdeditor-core)가 맡습니다(바이트 보존)
 - 폴더 구조·작업 규칙은 [CLAUDE.md](CLAUDE.md), 결정 기록은 [docs/decisions/](docs/decisions/)에 있습니다
 - 설정 항목은 `src/settings.ts`의 `SETTINGS`에 하나 더하면 설정 팝업의 해당 탭에 자동으로 나타납니다 (`add-setting` 스킬)
 - `docs/screenshots/`의 화면은 실제 앱(1200 × 760)에서 찍었습니다
