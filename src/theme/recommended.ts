@@ -175,6 +175,9 @@ function wedding(slug: string, name: string, mood: string, colors: Five, base: T
   return { theme: paletteTheme(`wedding-${slug}`, name, base, roles(colors)), group: "wedding", description: mood, palette: colors };
 }
 
+/** 미니멀 화이트 세이지 차콜 — 라이트(WEDDING)와 다크 짝(RECOMMENDED_THEMES)이 같은 원본 팔레트를 쓴다 */
+const SAGE_CHARCOAL: Five = ["#ffffff", "#a6b8a6", "#2f3235", "#e6e2dc", "#6b6f74"];
+
 // 원본 페이지 순서. 역할: 배경은 가장 밝은(다크면 가장 어두운) 색을 흰색과 섞어 누그러뜨리고, 보조면은 그 옆 색조
 const WEDDING: readonly RecommendedTheme[] = [
   wedding("sage-champagne-blush", "세이지 샴페인 블러시", "부드럽고, 로맨틱하며, 경쾌한", ["#6f8f7a", "#f2e7d5", "#d9a0a7", "#ffffff", "#3a4a43"], "light",
@@ -210,7 +213,7 @@ const WEDDING: readonly RecommendedTheme[] = [
   wedding("tropical-orchid-palm", "트로피컬 오키드 팜", "열대의, 생생한, 자신감 있는", ["#c45a9a", "#2f7d4a", "#f3f0e7", "#f6b5c8", "#1b2a2a"], "light",
     (c) => ({ bg: c[2], surface: mix(c[2], c[3], 0.25), fg: c[4], accent: c[0], second: c[1] })),
   // 이 팔레트만 원본의 회색 베이지(c[3]) 대신 세이지(c[1])를 면·글자·강조에 은은히 깔아 전체에 초록빛이 돈다
-  wedding("minimal-white-sage-charcoal", "미니멀 화이트 세이지 차콜", "깨끗한, 미니멀리스트, 차분한", ["#ffffff", "#a6b8a6", "#2f3235", "#e6e2dc", "#6b6f74"], "light",
+  wedding("minimal-white-sage-charcoal", "미니멀 화이트 세이지 차콜", "깨끗한, 미니멀리스트, 차분한", SAGE_CHARCOAL, "light",
     (c) => {
       const bg = mix(c[0], c[1], 0.035);
       const surface = mix(c[0], c[1], 0.17);
@@ -231,8 +234,32 @@ function fromFile(text: string, stem: string, description: string): RecommendedT
   return parsed.ok ? [{ theme: parsed.theme, group: "mdeditor", description }] : [];
 }
 
+/** 화이트 세이지 차콜의 다크 짝 — 원본 팔레트에 다크는 없어서 MdEditor 묶음에 둔다. 차콜 바탕에 세이지 초록빛 */
+const SAGE_CHARCOAL_DARK: RecommendedTheme = (() => {
+  const c = SAGE_CHARCOAL;
+  const bg = mix(mix(c[2], "#1e3a2a", 0.3), "#000000", 0.35);
+  const surface = mix(bg, c[1], 0.08);
+  const fg = mix(c[0], c[1], 0.3);
+  const roles: Roles = {
+    bg,
+    surface,
+    fg,
+    accent: mix(c[1], "#7fc79a", 0.4),
+    second: mix(c[4], c[1], 0.5),
+    // 다크는 사이드바(surface)가 본문보다 밝아 흐린 글자는 surface 기준으로 맞춘다
+    muted: readable(mix(fg, bg, 0.4), surface),
+  };
+  return {
+    theme: paletteTheme("minimal-sage-charcoal-dark", "미니멀 세이지 차콜 다크", "dark", roles),
+    group: "mdeditor",
+    description: "화이트 세이지 차콜의 다크 짝 — 차콜 바탕에 세이지 초록빛",
+    palette: c,
+  };
+})();
+
 /** 팝업 순서 = 묶음 순서(RECOMMENDED_GROUPS) → 묶음 안 순서 */
 export const RECOMMENDED_THEMES: readonly RecommendedTheme[] = [
   ...fromFile(sepiaJson, "sepia", "누런 종이 느낌 — 오래 읽기 편한 따뜻한 라이트"),
+  SAGE_CHARCOAL_DARK,
   ...WEDDING,
 ];
