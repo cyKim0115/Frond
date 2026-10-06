@@ -14,6 +14,7 @@ mod assets;
 mod assoc;
 mod drafts;
 mod elevation;
+mod export;
 mod print_menu;
 mod save;
 mod themes;
@@ -200,6 +201,8 @@ pub fn run() {
             webview_version,
             watch::watch_document,
             watch::unwatch_document,
+            export::write_export,
+            export::read_image_bytes,
             tree::list_dir,
             tree::watch_tree,
             tree::unwatch_tree,
