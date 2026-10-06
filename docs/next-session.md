@@ -1,6 +1,6 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store 출시 결정·오늘 할 일 §3-9·§5)
+작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store 출시 결정·오늘 할 일 §3-9·§5. **AI 훅 설정 탭 `feat/ai-hook-settings` 실기·머지 = 오늘 할 일 §2 K·§3-10**)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
 이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
@@ -26,6 +26,15 @@
 | 단계 6 Phase 5 라이브프리뷰 | **실험 구현 2026-10-06** — `exp/live-preview` `e678bad`(main 미병합). 한글 IME 게이트 §2 I |
 | 단계 5 Phase 4 | **구현 완료 2026-10-06** — 4-3 KaTeX·4-4 HTML 내보내기·4-5 인쇄 손질, 4-6 Shiki 검토 `DEFER`. 사용자 실기 §2 H |
 | 단계 4 Phase 3 (+ 4-1·4-2) | **구현 완료 2026-10-06** — 3-6 AI 훅 받은 목록·3-1 탭·3-5 세션 복원·3-3 분할 뷰·3-4 비교·3-2 폴더 트리, Mermaid·Alerts. `v2` 브랜치에서 작업해 main에 합침. 사용자 실기 §2 G |
+| AI 훅 설정 탭 (배포용) | **구현 2026-10-06, main 미병합** — 브랜치 `feat/ai-hook-settings`(임시 워크트리 `../MdEditor-ai-hook`). 실기·머지는 **오늘 할 일** §2 K·§3-10 |
+
+### 2026-10-06 작업 — AI 훅 설정 탭 (`feat/ai-hook-settings`, 사용자 요청: 배포용, 개인 경로 없이)
+
+- 상시 `v2` 워크트리를 정리(main에 다 합쳐져 있어 워크트리·브랜치 삭제)하고, main 폴더는 다른 세션과 같이 쓰므로 기능 브랜치를 임시 워크트리에 팠다
+- 훅 본체를 PowerShell 스크립트에서 **exe 훅 모드**(`mdeditor.exe --ai-hook=claude|codex`)로 옮겼다 — 저장소 경로·실행 정책에 기대지 않는다. 설정 새 탭 **AI 연동**에서 Claude Code·Codex 훅을 켜고 끈다(AI 앱 설정 파일에 Frond 항목만, `.frond.bak` 백업). 결정 [`20261006-ai-hook-in-app`](decisions/ideas/20261006-ai-hook-in-app.md)
+- Codex는 승인 안 한 훅을 말없이 건너뛴다(CLI 'Hooks need review'·`/hooks`에서 `t`) — 조사로 확인. Codex 명령은 PowerShell `-Command`로 돌아 `"경로" 인수` 형태를 피했다
+- 확인: Rust 단위 15건·vitest 146건·tsc, 훅 모드가 앱을 안 띄우는 6경우 각 ~45 ms·exit 0. **실제 등록·넘기기는 실기 대기**(§2 K)
+- 사고: v2 워크트리를 지우면서 그 안의 라이브프리뷰 시험 exe도 지워졌다 → `exp/live-preview`에서 같은 식별자로 다시 빌드해 main 폴더 `target\exp-live\FrondLive.exe`에 두었다(§2 I 경로 갱신)
 
 ### 2026-10-06 작업 — 기본 테마 세이지 차콜·탭 모양 (사용자 요청)
 
@@ -46,7 +55,7 @@
 
 - `exp/live-preview` 브랜치(워크트리 `MdEditor-v2`에서 `v2`를 갈라 만듦) `e678bad`: `src/live-preview.ts` ViewPlugin — 보이는 범위의 Lezer 트리로 캐럿 없는 줄의 `#`·`**`·`` ` ``·`[`/`](주소)`·`>`·`\`를 숨기고, 이미지·체크박스(누르면 한 글자 토글)·글머리·구분선을 위젯으로, 제목 크기·인용선·코드 배경·본문 글꼴. 캐럿 줄은 원문(위젯 옆 조합 회피), 조합 중에는 map만 하고 `compositionend` 뒤 다시 만든다. front matter·주소 없는 `[글자]`는 꾸미지 않는다. 설정 편집 탭 **소스 표시 (실험)**
 - 확인: vitest 145건(라이브 6건 — 숨김·위젯·캐럿 줄 원문·겹침 없음·체크박스 토글·문서 불변), 헤드리스 Edge 화면. 데코레이션만 쓰므로 저장 경로는 소스 모드와 같다
-- 시험용 실행 파일: `C:\Users\cykim\repo\MdEditor-v2\target\exp-live\FrondLive.exe` — 식별자 `com.cykim.frond.live`라 설치본과 따로 뜨고 설정·탭도 따로다(초안·테마 폴더 `%APPDATA%\Frond`는 같이 쓴다)
+- 시험용 실행 파일: `C:\Users\cykim\repo\MdEditor\target\exp-live\FrondLive.exe` — 식별자 `com.cykim.frond.live`라 설치본과 따로 뜨고 설정·탭도 따로다(초안·테마 폴더 `%APPDATA%\Frond`는 같이 쓴다)
 - 판정 기록: [`decisions/ideas/20261006-live-preview.md`](decisions/ideas/20261006-live-preview.md) — IME 통과면 실험 설정으로 main에, 실패면 `archived-exp/live-preview`
 
 ### 2026-10-06 작업 — 단계 5 (V2 Phase 4 나머지)
@@ -223,7 +232,7 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 
 ### I. 단계 6 라이브프리뷰 실험 — 한글 IME 게이트 (main에 넣을지 정하는 확인)
 
-실행: `C:\Users\cykim\repo\MdEditor-v2\target\exp-live\FrondLive.exe` (설치 없이 바로 실행, 설치본과 따로 뜬다). 설정(`Ctrl+,`) → 편집 → **소스 표시 (실험)** = 라이브프리뷰 → 문서를 열고 `Ctrl+/`로 소스 모드.
+실행: `C:\Users\cykim\repo\MdEditor\target\exp-live\FrondLive.exe` (설치 없이 바로 실행, 설치본과 따로 뜬다). 설정(`Ctrl+,`) → 편집 → **소스 표시 (실험)** = 라이브프리뷰 → 문서를 열고 `Ctrl+/`로 소스 모드.
 직접(탐색기에서 더블클릭) 실행한다 — Claude 데스크톱 안에서 띄우면 설정이 컨테이너로 가상화된다. 데이터 폴더는 설치본과 같은 `%APPDATA%\Frond`(이미 이전됨)를 쓴다.
 
 1. 보이는 모양: 커서가 없는 줄은 `#`·`**`·링크 주소가 숨고, 이미지·체크박스·글머리가 그려지는지. 커서가 있는 줄만 원문인지
@@ -237,6 +246,19 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 2. 탭을 3개 이상 열고: 안 고른 탭이 어둡게(뒤에 꽂힌 갈피처럼), 고른 탭이 밝게 테두리와 함께 보여 한눈에 구분되는지. 다크에서도
 3. 다른 테마(세피아·GitHub 라이트 등)에서도 탭 구분이 되는지
 4. ✅ **통과 2026-10-06** (사용자: 잘 된다, 15:07 설치본) — **탭 끌기**: 다른 탭을 눌렀다 떼고 마우스를 움직여도 탭이 따라오지 않는지(제보 버그). 탭을 끌면 커서를 따라오고 이웃 탭이 비켜 미끄러지는지, 놓으면 새 자리로 들어가는지. 창 밖까지 끌고 가서 놓아도 끌기가 남지 않는지
+
+### K. AI 훅 설정 탭 (2026-10-06) — **오늘 할 일**: 시험 exe로 확인 → main 머지
+
+시험 exe: `C:\Users\cykim\repo\MdEditor\target\ai-hook-test\mdeditor.exe` — 브랜치 `feat/ai-hook-settings` 릴리스 빌드, 식별자 `com.cykim.frond.aihooktest`라
+설치본과 따로 뜬다. **탐색기에서 직접 실행**(Claude 데스크톱 안에서 띄우면 컨테이너로 가상화된다). 훅은 켠 exe를 부르므로 시험 동안 AI 훅은 이 exe로 간다.
+
+1. 설정(`Ctrl+,`) → **AI 연동**: 맨 위 'AI 훅이 만든 문서'(탐색 탭에서 옮김), 아래 **AI 앱 연결**에 Claude Code·Codex가 '예전 스크립트(open-new-md.ps1)로 연결됨'으로 보이는지
+2. Claude Code **이 Frond로 바꾸기** → 확인 팝업 → '연결됨'. `%USERPROFILE%\.claude\settings.json`에 `--ai-hook=claude` 항목 하나, 같은 폴더에 `settings.json.frond.bak`, 다른 설정·키 순서는 그대로인지
+3. 시험 exe가 떠 있는 채로 Claude Code에게 새 md를 만들게 하면 → 창이 앞으로 안 오고 '새 문서' 목록에 쌓이는지. 시험 exe를 끈 채로도 → 그 문서로 뜨는지. **기록 열기**에 `넘김 (Write, claude, WMI)` 줄
+4. Codex **이 Frond로 바꾸기** → Codex CLI 실행 → 'Hooks need review'에서 승인(또는 `/hooks`에서 `t`) → Codex로 새 md → 넘어오는지 (Codex 실기는 처음)
+5. **열지 않을 폴더**에 폴더 하나 추가 → 그 폴더에 AI가 만든 md는 안 넘어오는지. **빼기**로 되돌리기
+6. **끄기** → 설정 파일에서 Frond 항목만 빠지고 다른 훅은 그대로인지. 다시 켜기
+7. 통과하면 §3-10 머지 → 설치본 재설치 → 설정에서 다시 **이 Frond로 바꾸기**(시험 exe를 지운 뒤 설치본을 한 번 켜면 자동으로 고쳐진다)
 
 ### E. 확인이 필요한 결정
 
@@ -258,6 +280,9 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 9. **Store 출시·선택 구매 먼저 할 일 (2026-10-06 할 일, 사용자가 실행 지시하면)** — 결정: Store MSIX + Durable add-on, 라이선스 MIT 확정(LICENSE·`TRADEMARKS.md` 추가 완료).
    에이전트 A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문.
    **8번 이름 정리를 먼저** 하고 새 워크트리 `feat/store`에서. 순서·완료 조건: [`store-launch.md`](store-launch.md)
+10. **AI 훅 설정 탭 머지 (2026-10-06 오늘 할 일)** — §2 K 통과 뒤 `git merge feat/ai-hook-settings`(main 폴더, 다른 세션 작업과 겹치면 정리) →
+    `npm run app:build` → 설치본 재설치(WMI) → 임시 워크트리 `../MdEditor-ai-hook`·브랜치·`target\ai-hook-test` 지우기.
+    Store(9번) 때: MSIX 안 exe(WindowsApps)는 직접 실행이 막힐 수 있어 훅 명령에 **실행 별칭** 경로를 넣어야 한다 — `ai_hook_setup.rs` `current_exe()` 자리
 
 ## 4. 보강할 실측
 
