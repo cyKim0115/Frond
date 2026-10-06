@@ -107,7 +107,7 @@ mod tests {
         let installed = Path::new(r"C:\Users\a\AppData\Local\Frond\mdeditor.exe");
         assert_eq!(classify(None, Some(installed), false), InstallKind::Installed);
         assert_eq!(classify(None, Some(installed), true), InstallKind::Dev);
-        let built = Path::new(r"C:\repo\MdEditor\target\release\mdeditor.exe");
+        let built = Path::new(r"C:\repo\frond\target\release\mdeditor.exe");
         assert_eq!(classify(None, Some(built), false), InstallKind::Dev);
         assert_eq!(classify(None, None, false), InstallKind::Installed);
     }

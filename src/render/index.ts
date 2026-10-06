@@ -89,7 +89,7 @@ function createMarkdownIt(): MarkdownItInstance {
   md.renderer.rules.fence = renderFence;
 
   // 플러그인(anchor·linkify·footnote) 뒤에 push → 모든 토큰이 완성된 뒤 목차·front matter·링크 재작성
-  md.core.ruler.push("mdeditor_collect", collectRule);
+  md.core.ruler.push("frond_collect", collectRule);
   // 토큰 목록을 바꾸므로 맨 끝
   md.use(chunkPlugin);
   return md;

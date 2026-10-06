@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn unknown_extension_has_no_default() {
-        assert_eq!(query_current_default(".mdeditor-assoc-test-none"), Ok(None));
+        assert_eq!(query_current_default(".frond-assoc-test-none"), Ok(None));
     }
 
     #[test]

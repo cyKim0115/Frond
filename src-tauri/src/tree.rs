@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn lists_dirs_then_docs_and_skips_hidden() {
-        let root = std::env::temp_dir().join(format!("mdeditor-tree-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("frond-tree-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         for dir in ["b폴더", "A폴더", ".git", "node_modules"] {
             std::fs::create_dir_all(root.join(dir)).unwrap();
