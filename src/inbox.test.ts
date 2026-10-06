@@ -34,7 +34,7 @@ describe("AI 훅 받은 목록 (로드맵 3-6)", () => {
 
   it("저장본의 깨진 항목은 버리고 출처가 없으면 ai", () => {
     saveInbox([entry("C:\\a.md")]);
-    localStorage.setItem("mdeditor.inbox", JSON.stringify([{ path: "C:\\a.md", at: 5 }, { path: 3 }, "x", { path: "C:\\b.md", at: 1, read: true, source: "codex" }]));
+    localStorage.setItem("frond.inbox", JSON.stringify([{ path: "C:\\a.md", at: 5 }, { path: 3 }, "x", { path: "C:\\b.md", at: 1, read: true, source: "codex" }]));
     expect(loadInbox()).toEqual([
       { path: "C:\\a.md", source: "ai", at: 5, read: false },
       { path: "C:\\b.md", source: "codex", at: 1, read: true },
