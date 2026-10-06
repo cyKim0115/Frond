@@ -119,6 +119,10 @@ interface Roles {
   accent: string;
   /** 코드 문자열·목록 기호 */
   second: string;
+  /** 흐린 글자 — 없으면 글자·배경을 섞어 만든다 */
+  muted?: string;
+  /** 경계선 — 없으면 글자·배경을 섞어 만든다 */
+  line?: string;
 }
 
 /** 역할 5개에서 셸·문서 토큰을 만든다. 나머지(경고·성공 색 등)는 base 내장 테마 값 */
@@ -126,8 +130,8 @@ export function paletteTheme(id: string, name: string, base: ThemeBase, roles: R
   const dark = base === "dark";
   const { bg, surface } = roles;
   const fg = readable(roles.fg, bg, 7);
-  const muted = readable(mix(fg, bg, 0.4), bg, 4.5);
-  const line = mix(fg, bg, dark ? 0.78 : 0.82);
+  const muted = readable(roles.muted ?? mix(fg, bg, 0.4), bg, 4.5);
+  const line = roles.line ?? mix(fg, bg, dark ? 0.78 : 0.82);
   const accent = readable(roles.accent, bg, 4.5);
   const second = readable(roles.second, bg, 4.5);
   const onAccent = contrast(accent, "#ffffff") >= contrast(accent, dark ? bg : fg) ? "#ffffff" : dark ? bg : fg;
@@ -205,8 +209,15 @@ const WEDDING: readonly RecommendedTheme[] = [
     (c) => ({ bg: soft(c[2], 0.55), surface: soft(c[2], 0.2), fg: c[4], accent: c[1], second: c[0] })),
   wedding("tropical-orchid-palm", "트로피컬 오키드 팜", "열대의, 생생한, 자신감 있는", ["#c45a9a", "#2f7d4a", "#f3f0e7", "#f6b5c8", "#1b2a2a"], "light",
     (c) => ({ bg: c[2], surface: mix(c[2], c[3], 0.25), fg: c[4], accent: c[0], second: c[1] })),
+  // 이 팔레트만 원본의 회색 베이지(c[3]) 대신 세이지(c[1])를 면·글자·강조에 은은히 깔아 전체에 초록빛이 돈다
   wedding("minimal-white-sage-charcoal", "미니멀 화이트 세이지 차콜", "깨끗한, 미니멀리스트, 차분한", ["#ffffff", "#a6b8a6", "#2f3235", "#e6e2dc", "#6b6f74"], "light",
-    (c) => ({ bg: c[0], surface: mix(c[0], c[3], 0.55), fg: c[2], accent: c[1], second: c[4] })),
+    (c) => {
+      const bg = mix(c[0], c[1], 0.07);
+      const surface = mix(c[0], c[1], 0.3);
+      const fg = mix(c[2], "#1e3a2a", 0.25);
+      // 사이드바(surface)가 본문보다 어두워 흐린 글자 기본값으로는 대비가 모자라니 surface 기준으로 맞춘다
+      return { bg, surface, fg, accent: mix(c[1], "#2f6b4a", 0.6), second: mix(c[4], c[1], 0.3), muted: readable(mix(fg, c[1], 0.45), surface), line: mix(c[1], bg, 0.5) };
+    }),
   wedding("rustic-burlap-sage", "러스틱 벌랩 세이지", "소박한, 자연스러운, 아늑한", ["#d8c6a6", "#7b8f6a", "#f4efe6", "#5a4b3c", "#2f2b26"], "light",
     (c) => ({ bg: c[2], surface: mix(c[2], c[0], 0.4), fg: c[4], accent: c[1], second: c[3] })),
   wedding("art-deco-emerald-gold", "아르데코 에메랄드 골드", "화려한, 대담한, 빈티지-럭셔리", ["#0b6b4f", "#d4af37", "#0f1a1a", "#f5f0e6", "#2a3d36"], "dark",
