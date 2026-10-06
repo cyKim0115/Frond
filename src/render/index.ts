@@ -7,6 +7,7 @@
  * front matter는 닫는 줄이 있는 YAML 해시일 때만 인정한다(`hasClosedFrontMatter`) — 첫 줄 `---`만으로는 `<hr>`.
  *
  * 원문 HTML은 허용 목록 태그(`<details>`·`<img width>`·`<br>`·`<kbd>`…)만 렌더하고 나머지 태그는 글자 그대로 둔다 (html.ts, 결정 D1).
+ * GitHub Alerts(`> [!NOTE]`)는 alerts.ts(로드맵 4-2). Mermaid 펜스는 보통 코드 블록으로 내고 셸이 DOM에 넣은 뒤 mermaid.ts가 그린다(4-1).
  */
 
 import MarkdownIt from "markdown-it";
@@ -15,6 +16,7 @@ import anchor from "markdown-it-anchor";
 import cjkFriendly from "markdown-it-cjk-friendly";
 import footnote from "markdown-it-footnote";
 import frontMatter from "markdown-it-front-matter";
+import { alertsPlugin } from "./alerts";
 import { chunkPlugin } from "./chunks";
 import { dataLinePlugin } from "./data-line";
 import { htmlAllowlistPlugin } from "./html";
@@ -59,6 +61,7 @@ function createMarkdownIt(): MarkdownItInstance {
     .use(anchor, { slugify, tabIndex: false })
     .use(taskListsPlugin)
     .use(footnote)
+    .use(alertsPlugin)
     .use(dataLinePlugin);
 
   // GFM 자동 링크 범위: 스킴 있는 URL·이메일·`www.`로 시작하는 주소 (결정 D2). linkify-it에 `www.` 전용 옵션이 없어 퍼지 링크를 켜고

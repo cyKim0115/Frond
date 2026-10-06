@@ -99,7 +99,11 @@ export function initTabStrip(host: HTMLElement, hooks: TabStripHooks): TabStrip 
       drag.moved = true;
       drag.el = host.querySelector(`.tab[data-id="${drag.id}"]`) ?? drag.el;
       drag.el.classList.add("dragging");
-      host.setPointerCapture(event.pointerId);
+      try {
+        host.setPointerCapture(event.pointerId);
+      } catch {
+        // 이미 끝난 포인터 — 캡처 없이 이어 간다
+      }
     }
     // 포인터가 이웃 탭의 가운데를 넘으면 그 자리로 옮긴다
     const tabs = Array.from(host.querySelectorAll<HTMLElement>(".tab"));

@@ -21,9 +21,26 @@ const CONFIG: Config = {
   FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "svg", "math"],
   // 기본값(true)은 `id`가 `document`의 프로퍼티명과 겹치면(`title`·`links`·`images`·`body`…) 속성을 지워
   // 영어 제목의 앵커·목차가 조용히 깨진다. 이 앱은 전역 이름 참조(`window.x`)를 쓰지 않아 DOM clobbering 위험이 없다
+  // (유일한 예외인 Mermaid는 스크립트가 `globalThis.mermaid`에 진짜 속성을 만든 뒤에만 읽는다 — mermaid.ts)
   SANITIZE_DOM: false,
 };
 
 export function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, CONFIG);
+}
+
+/**
+ * Mermaid가 그린 SVG — Mermaid `securityLevel: "strict"`가 라벨을 이미 정화하지만 한 번 더 거른다.
+ * 그림 안 `<style>`(Mermaid 테마)과 라벨용 `foreignObject` 안 HTML은 남기고, 스크립트·이벤트 속성·외부 참조는 지운다
+ */
+const SVG_CONFIG: Config = {
+  USE_PROFILES: { svg: true, svgFilters: true, html: true },
+  ADD_TAGS: ["foreignObject", "style"],
+  HTML_INTEGRATION_POINTS: { foreignobject: true },
+  FORBID_TAGS: ["script", "iframe", "object", "embed", "form", "image"],
+  SANITIZE_DOM: false,
+};
+
+export function sanitizeSvg(svg: string): string {
+  return DOMPurify.sanitize(svg, SVG_CONFIG);
 }

@@ -26,6 +26,7 @@ import { initFindBar } from "./find";
 import { initNav } from "./nav";
 import { docTitle, samePath } from "./recent";
 import { CHUNK_CLASS, highlightCodeBlocks, LARGE_CHUNK_BLOCKS, LARGE_SOFT_LIMIT, renderMarkdown, type TocEntry } from "./render";
+import { DIAGRAM_CLASS, renderDiagrams } from "./render/mermaid";
 import { initSidebarResize } from "./resize";
 import { readSession, type Session, type SessionMode, writeSession } from "./session";
 import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
@@ -351,6 +352,8 @@ function activate(tab: Tab): void {
   nav.setCurrent(tab.doc.path);
   renderTabs();
   saveSession();
+  // 다른 테마일 때 그린 그림은 지금 테마로 다시 그린다
+  void renderDiagrams(tab.article, isDarkTheme());
   if (!tab.draftChecked) {
     tab.draftChecked = true;
     void offerDraft(tab);
@@ -585,6 +588,10 @@ const tabTitle = (tab: Tab): string | undefined => (tab.needsRender ? undefined 
 
 // ---- 보기 모드 (렌더) --------------------------------------------------------------
 
+function isDarkTheme(): boolean {
+  return effectiveTheme().base === "dark";
+}
+
 function renderView(tab: Tab, text: string): void {
   // 2 MB(스펙 largeSoftLimit)를 넘는 문서는 하이라이트를 생략하고, 이미지는 지연 로드,
   // 큰 문서 모드(블록 묶음 단위로 화면 밖 레이아웃 생략·패널 애니메이션 끔)로 그린다
@@ -598,8 +605,9 @@ function renderView(tab: Tab, text: string): void {
   tab.large = large;
   tab.article.classList.toggle("large", large);
   tab.article.innerHTML = result.html;
-  tab.renderSeq++;
+  const seq = ++tab.renderSeq;
   if (!large) void highlightCodeBlocks(tab.article);
+  void renderDiagrams(tab.article, isDarkTheme(), () => tab.renderSeq !== seq || !tab.article.isConnected);
   tab.renderedText = text;
   tab.needsRender = false;
   tab.tocEntries = result.toc;
@@ -1212,6 +1220,21 @@ function updateDocChrome(): void {
 
 let countTimer = 0;
 const COUNT_CYCLE = ["words", "chars", "charsNoSpace"] as const;
+/** 셀 때 빼는 것 — 그림(Mermaid SVG 안 스타일·라벨)과 수식의 MathML 사본(화면 글자와 겹침) */
+const UNCOUNTED = `.${DIAGRAM_CLASS}, .katex-mathml, style`;
+
+/** 보기 화면에 그린 본문 글자 — 그림·수식 사본은 뺀다 */
+function countableText(root: HTMLElement): string {
+  if (!root.querySelector(UNCOUNTED)) return root.textContent ?? "";
+  let text = "";
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) =>
+      node.nodeType === Node.ELEMENT_NODE && (node as Element).matches(UNCOUNTED) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+  });
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) if (n.nodeType === Node.TEXT_NODE) text += (n as CharacterData).data;
+  return text;
+}
+
 /** 보기 화면에 그린 본문을 센다. 큰 문서는 그린 뒤 잠시 있다가 (10 MB 약 0.2 s) */
 function recount(tab: Tab | null = active): void {
   if (!tab) return;
@@ -1220,7 +1243,7 @@ function recount(tab: Tab | null = active): void {
   if (tab === active) updateCount();
   if (getSetting("statusCount") === "off") return;
   const run = (): void => {
-    tab.textCount = countText(tab.article.textContent ?? "");
+    tab.textCount = countText(countableText(tab.article));
     if (tab === active) updateCount();
   };
   if (tab.large) countTimer = window.setTimeout(run, 300);
@@ -1517,6 +1540,8 @@ function applyEffectiveTheme(): void {
   const theme = resolveTheme(effectiveTheme());
   const ms = themeTransitionMs();
   const root = document.documentElement;
+  // 그림(Mermaid)은 라이트·다크 팔레트가 따로라 바뀐 쪽으로 다시 그린다 (뒤 탭은 앞으로 올 때)
+  if (active) void renderDiagrams(active.article, theme.base === "dark");
   if (!themeReady || ms === 0) {
     applyTheme(theme);
     return;
