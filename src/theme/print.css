@@ -59,7 +59,8 @@
   .markdown-body mark,
   .markdown-body table tr,
   .markdown-body .hljs-addition,
-  .markdown-body .hljs-deletion {
+  .markdown-body .hljs-deletion,
+  .markdown-body .markdown-alert-title::before {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
