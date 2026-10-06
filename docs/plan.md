@@ -1,4 +1,4 @@
-# MdEditor 계획표·로드맵
+# Frond 계획표·로드맵
 
 기준: 2026-10-06 · 정본은 할 일 상세 [`next-session.md`](next-session.md), Phase 정의 [`roadmap.md`](roadmap.md)다.
 이 문서는 둘을 한 장으로 줄인 것이고, **날짜는 제안**이다.

@@ -28,6 +28,16 @@
 | 단계 4 Phase 3 (+ 4-1·4-2) | **구현 완료 2026-10-06** — 3-6 AI 훅 받은 목록·3-1 탭·3-5 세션 복원·3-3 분할 뷰·3-4 비교·3-2 폴더 트리, Mermaid·Alerts. `v2` 브랜치에서 작업해 main에 합침. 사용자 실기 §2 G |
 | AI 훅 설정 탭 (배포용) | **구현 2026-10-06, main 미병합** — 브랜치 `feat/ai-hook-settings`(임시 워크트리 `../MdEditor-ai-hook`). 실기·머지는 **오늘 할 일** §2 K·§3-10 |
 
+### 2026-10-06 작업 — 남은 이름 Frond 정리 ([`frond-rename.md`](frond-rename.md), 76cha PC)
+
+- 저장소 `cyKim0115/Frond`(사용자가 GitHub에서 개명) → `origin` 새 주소, `Cargo.toml` `repository`·설명서 GitHub 링크
+- 크레이트 `crates/frond-core`(`frond_core`)·앱 `frond`(lib `frond_lib`), `package.json` `frond`. 설치본 exe는 `mainBinaryName: "mdeditor"`로 `mdeditor.exe` 고정
+- localStorage `frond.*` — `prefs.ts`가 첫 읽기 전에 `frond.` 키가 하나도 없으면 옛 `mdeditor.*`를 복사(옛 키는 남김)
+- 렌더 규칙 `frond_*`, 임시 파일 `.frond-*.tmp`, 추천 테마 묶음 id `frond`, 아이콘 title·글꼴 머리말·스킬 설명
+- 남긴 것: ProgId `MdEditor.Markdown`, identifier `com.cykim.mdeditor`, exe `mdeditor.exe`, 훅 기록 `%TEMP%\mdeditor-open-hook.log`, `hooks.nsh` 매크로 이름, 로컬 폴더 이름
+- **다른 PC 미병합 브랜치(`feat/ai-hook-settings`·`exp/live-preview`)를 main에 합칠 때** `crates/mdeditor-core` 경로·`mdeditor_core`·`mdeditor_lib`·`mdeditor.` 키 충돌을 `frond`로 맞춘다
+- 이 PC(76cha)에는 설치본이 없었다(옛 MdEditor·Frond 모두) → 새 설치기로 처음 설치
+
 ### 2026-10-06 작업 — AI 훅 설정 탭 (`feat/ai-hook-settings`, 사용자 요청: 배포용, 개인 경로 없이)
 
 - 상시 `v2` 워크트리를 정리(main에 다 합쳐져 있어 워크트리·브랜치 삭제)하고, main 폴더는 다른 세션과 같이 쓰므로 기능 브랜치를 임시 워크트리에 팠다
@@ -239,6 +249,7 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 2. **한글 IME 시나리오** (Phase 0 ①–⑧을 라이브 모드에서): ① 기존 글이 있는 문서를 처음 클릭하고 바로 한글 입력 ② 조합 중 버튼 클릭·Alt+Tab ③ 조합 중 Enter·`Ctrl+S` ④ 자동 줄바꿈 경계에서 입력 ⑤ 선택 후 Backspace 하고 입력 ⑥ front matter 바로 아래 문단 ⑦ 백틱·`**` 바로 뒤에 한글 ⑧ 이미지·체크박스가 있는 줄로 커서를 옮겨 그 앞뒤에서 조합 — 글자 유실·중복·자소 분리가 없어야 한다
 3. 체크박스를 눌러 `[ ]`↔`[x]`가 바뀌고 저장하면 그 한 글자만 바뀌는지
 4. 결과를 알려 주면: 통과 → 실험 설정으로 main에 합치고 블록 위젯(수식·Mermaid·표) 다음 / 실패 → `archived-exp/live-preview`로 보관
+   - 합칠 때: main은 2026-10-06 이름 정리로 `crates/frond-core`·`frond_lib`·localStorage `frond.`다 — 크레이트 경로 충돌을 풀고 새 코드의 `mdeditor_*`를 `frond_*`로
 
 ### J. 기본 테마·탭 모양 (2026-10-06) — 재설치 뒤 확인
 
@@ -258,7 +269,7 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 4. Codex **이 Frond로 바꾸기** → Codex CLI 실행 → 'Hooks need review'에서 승인(또는 `/hooks`에서 `t`) → Codex로 새 md → 넘어오는지 (Codex 실기는 처음)
 5. **열지 않을 폴더**에 폴더 하나 추가 → 그 폴더에 AI가 만든 md는 안 넘어오는지. **빼기**로 되돌리기
 6. **끄기** → 설정 파일에서 Frond 항목만 빠지고 다른 훅은 그대로인지. 다시 켜기
-7. 통과하면 §3-10 머지 → 설치본 재설치 → 설정에서 다시 **이 Frond로 바꾸기**(시험 exe를 지운 뒤 설치본을 한 번 켜면 자동으로 고쳐진다)
+7. 통과하면 §3-10 머지(main은 이름 정리 뒤라 `mdeditor_core`→`frond_core` 등 충돌을 맞춘다) → 설치본 재설치 → 설정에서 다시 **이 Frond로 바꾸기**(시험 exe를 지운 뒤 설치본을 한 번 켜면 자동으로 고쳐진다)
 
 ### E. 확인이 필요한 결정
 
@@ -275,8 +286,7 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 5. ~~B·C 결과 → `fidelity-report.md` → MVP 닫기 → `capture-to-rag`(D6)~~ — 2026-10-06 에이전트 몫 완료(SHIPPABLE 조건부). B-2·B-9 통과하면 `ASSET.md` 상태 `verified`·`v0.1.0` 태그(사용자 결정)
 6. 단계 4~6 — [`plan.md`](plan.md) 단계 3 실행 순서대로. 단계마다 사용자 실기 목록을 §2에 더한다. **단계 4(+4-1·4-2)는 2026-10-06 완료(§2 G), 단계 5도 2026-10-06 완료(§2 H), 단계 6은 실험 구현(§2 I, main 미병합)** — 다음은 사용자 실기 결과 대응: B-2·B-9(V1 닫기), G·H 문제 고치기, I 결과로 라이브프리뷰를 합칠지 보관할지. 맨 앞은 **3-6 AI 훅 받은 목록**(2026-10-06 사용자 요청: 훅이 연 문서가 보던 문서를 바꿔 읽던 자리를 잃는다 → 훅만 표식으로 구별해 탐색 영역 '새 문서' 탭에 쌓기, 설계 [`roadmap.md`](roadmap.md) Phase 3 · 3-6)
 7. ~~AI 훅 컨테이너 실행~~ — 2026-10-06 `open-new-md.ps1`이 WMI(`Win32_Process.Create`)로 밖에서 띄우게 고침(실패하면 `Start-Process`). 시험 앱으로 확인: WMI로 띄우면 실제 `%LOCALAPPDATA%`에, 예전 방식은 Claude 패키지 LocalCache에 썼다. 원래 메모: AI 훅이 Claude 데스크톱 세션에서 앱을 **새로** 띄우면 그 앱도 MSIX 컨테이너 안에서 돈다 → 테마·초안 쓰기가 Claude 패키지 LocalCache로 가서 사용자가 직접 띄운 앱에는 안 보인다(이미 떠 있는 앱으로 넘길 때는 상관없음). `integrations/open-new-md.ps1`이 `Win32_Process.Create`(WMI)나 탐색기 경유로 밖에서 띄우게 고친다. Codex 등 컨테이너 밖 도구는 지금 그대로. 2026-10-06 Frond 이전 설치 중 발견
-8. **남은 MdEditor 이름 → Frond 정리 (2026-10-06 할 일, 사용자가 실행 지시하면)** — **1번 저장소 이름은 2026-10-06 완료**(`cyKim0115/Frond`, 다른 PC는 `git remote set-url origin git@github.com:cyKim0115/Frond.git`). 크레이트·localStorage 접두사는 바꾸고
-   ProgId·identifier·exe 이름은 남긴다. 범위·순서·검증: [`frond-rename.md`](frond-rename.md)
+8. ~~남은 MdEditor 이름 → Frond 정리~~ — 2026-10-06 완료(76cha PC, §1 작업 기록). 다른 PC는 `git remote set-url origin git@github.com:cyKim0115/Frond.git`. 범위·남긴 것: [`frond-rename.md`](frond-rename.md)
 9. **Store 출시·선택 구매 먼저 할 일 (2026-10-06 할 일, 사용자가 실행 지시하면)** — 결정: Store MSIX + Durable add-on, 라이선스 MIT 확정(LICENSE·`TRADEMARKS.md` 추가 완료).
    에이전트 A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문.
    **8번 이름 정리를 먼저** 하고 새 워크트리 `feat/store`에서. 순서·완료 조건: [`store-launch.md`](store-launch.md)

@@ -1,6 +1,6 @@
-# mdeditor-core
+# frond-core
 
-MdEditor의 바이트 보존 파일 코어. UI 없이 `cargo test`로 검증한다 (로드맵 Phase 0-2).
+Frond의 바이트 보존 파일 코어. UI 없이 `cargo test`로 검증한다 (로드맵 Phase 0-2).
 
 ## 보장
 
@@ -30,7 +30,7 @@ FileDocument::to_bytes(new_text)
 ## 확인
 
 ```powershell
-cd crates/mdeditor-core
+cd crates/frond-core
 cargo test
 cargo run --example roundtrip -- ../../samples/raw   # 제자리 저장 후
 git status --short ../../samples/raw                 # 아무것도 안 나와야 함
