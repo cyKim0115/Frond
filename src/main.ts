@@ -1226,6 +1226,9 @@ async function init(): Promise<void> {
     );
   });
 
+  // 웹뷰 기본 오른쪽 클릭 메뉴의 '인쇄'도 Ctrl+P와 같은 큰 문서 확인을 거친다 (print_menu.rs)
+  await listen("print-requested", () => void printDocument());
+
   await listen<string>("file-missing", () => {
     showBanner(
       dirty

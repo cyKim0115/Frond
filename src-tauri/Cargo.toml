@@ -33,6 +33,8 @@ percent-encoding = "2"
 # 파일 연결 (assoc.rs) · 관리자 권한 감지 (elevation.rs)
 windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Com", "Win32_System_Threading", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
 winreg = "0.55"
+# 기본 오른쪽 클릭 메뉴의 인쇄를 앱 인쇄로 (print_menu.rs) — tauri(wry)가 쓰는 것과 같은 버전
+webview2-com = "0.39"
 
 [dev-dependencies]
 tempfile = "3.27.0"
