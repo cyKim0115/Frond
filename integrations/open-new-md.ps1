@@ -85,8 +85,17 @@ try {
     # 출처 표식 — 앱이 탐색기에서 연 것과 구별해 보던 문서를 밀어내지 않는다. 받은 목록이 있어 전부 넘긴다
     $source = if ($payload.tool_name -eq 'apply_patch') { 'codex' } else { 'claude' }
     $arguments = @("--from-hook=$source") + @($targets | ForEach-Object { '"{0}"' -f $_ })
-    Start-Process -FilePath $exe -ArgumentList $arguments
-    Write-HookLog "넘김 ($($payload.tool_name), $source): $($targets -join ', ')"
+    # Claude 데스크톱 세션은 MSIX 컨테이너다 — 그 안에서 Start-Process로 앱을 새로 띄우면 앱의 AppData 쓰기(설정·탭·테마·초안)가
+    # Claude 패키지 LocalCache로 가상화돼 사용자가 띄운 앱과 따로 논다. WMI(Win32_Process.Create)로 컨테이너 밖에서 띄운다.
+    # 이미 떠 있는 앱으로 넘길 때도 같은 길이다(두 번째 인스턴스는 넘기고 바로 끝난다). WMI가 안 되면 예전처럼 Start-Process
+    $commandLine = ('"{0}" ' -f $exe) + ($arguments -join ' ')
+    $how = 'Start-Process'
+    try {
+        $result = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $commandLine } -ErrorAction Stop
+        if ($result.ReturnValue -eq 0) { $how = 'WMI' }
+    } catch { }
+    if ($how -ne 'WMI') { Start-Process -FilePath $exe -ArgumentList $arguments }
+    Write-HookLog "넘김 ($($payload.tool_name), $source, $how): $($targets -join ', ')"
 } catch {
     Write-HookLog "오류: $($_.Exception.Message)"
 }

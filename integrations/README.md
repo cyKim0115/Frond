@@ -72,7 +72,8 @@ timeout = 15
 
 ## 문제 해결
 
-- 판단 기록: `%TEMP%\mdeditor-open-hook.log` (열었을 때·오류일 때만 한 줄)
+- 판단 기록: `%TEMP%\mdeditor-open-hook.log` (열었을 때·오류일 때만 한 줄, 띄운 방법 `WMI`·`Start-Process`도 남긴다)
+- Claude 데스크톱 세션의 훅은 MSIX 컨테이너 안에서 돈다 — 2026-10-06부터 앱을 WMI(`Win32_Process.Create`)로 컨테이너 밖에서 띄워, 훅이 처음 띄운 앱도 사용자가 띄운 앱과 같은 설정·테마·초안을 쓴다. WMI가 막히면 예전처럼 `Start-Process`
 - 탭(로드맵 3-1)이 생긴 뒤로는 새 파일이 새 탭으로 열리므로 편집 중이어도 저장 확인 팝업이 뜨지 않는다
 - 끄기: 위 설정 블록을 지운다. Claude Code는 `"disableAllHooks": true`로 모든 훅을 한꺼번에 끌 수도 있다
 - 스크립트는 한글 주석 때문에 **UTF-8 BOM**으로 저장한다 (PowerShell 5.1이 BOM 없는 파일을 cp949로 읽는다)
