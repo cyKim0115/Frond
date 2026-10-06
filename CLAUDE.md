@@ -45,7 +45,8 @@ powershell -File .cursor/system-crew/scripts/sync-to-project.ps1 -Mode OnDemand
 .cursor/rules|skills/  sync 산출물 (Cursor용). 로컬 오버라이드는 .cursor/rules/local/
 docs/next-session.md   지금 열려 있는 것 (결정 대기·다음 할 일)
 docs/plan.md           한 장 계획표·로드맵 (단계 1~7, 날짜는 제안)
-docs/store-launch.md   Store 출시·선택 구매 먼저 할 일 (단계 7, 사용자 몫 U·에이전트 몫 A)
+docs/store-launch.md   Store 출시·선택 구매 먼저 할 일 (단계 7, 사용자 몫 U·에이전트 몫 A — A-1~A-5 2026-10-06 완료)
+docs/store-listing.md  Store 제출 문구 초안 (한·영 설명·기능 목록·add-on·스크린샷·IARC 메모)
 docs/gitbook-site.md   GitBook 사용 설명서 꾸밀 계획 (오늘 할 일 A-1~A-6·사용자 U-1~U-2, 꾸밈 값·목차·완료 조건)
 docs/website-launch.md 제품 웹사이트(fork.dev식, website/ Astro → Cloudflare) 오늘 할 일·Cursor 핸드오프 (도메인 전엔 로컬, 원고·장면 목록)
 docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
@@ -60,7 +61,8 @@ crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전�
 src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·AI 훅 표식 --from-hook·load_document), watch.rs(외부 변경, 문서마다),
                        tree.rs(폴더 트리 목록·재귀 감시), export.rs(HTML 내보내기 쓰기·이미지 바이트),
                        assoc.rs(파일 연결·기본 앱), elevation.rs(관리자 권한 감지), save.rs(저장·etag 충돌·인코딩·줄바꿈 변환),
-                       print_menu.rs(WebView2 기본 메뉴 '인쇄' → 앱 인쇄 확인), drafts.rs(초안 백업), appdata.rs(데이터 폴더 %APPDATA%\Frond·옛 MdEditor 폴더 이전), assets.rs(붙여넣은 이미지), themes.rs(사용자 테마 폴더),
+                       print_menu.rs(WebView2 기본 메뉴 '인쇄' → 앱 인쇄 확인), drafts.rs(초안 백업), appdata.rs(데이터 폴더 %APPDATA%\Frond·옛 MdEditor 폴더 이전), assets.rs(붙여넣은 이미지), themes.rs(사용자 테마 폴더 문서\Frond\themes·옛 %APPDATA% 폴더 이전),
+                       install.rs(설치 방식 판정 — MSIX·Scoop·설치기·개발), license.rs(권리 판정 — Store 밖은 모두 열림, Store 공급자 자리),
                        nsis/hooks.nsh(설치기 레지스트리 훅), capabilities/(최소 권한)
 src/                   프런트(vanilla TS). main.ts 셸(탭별 문서 상태·열기·보기/소스/분할 모드·저장·초안·외부 변경·비교·세션·목차·상태바·줌·설정 적용),
                        tabs.ts(제목 표시줄 탭 띠), session.ts(세션 복원 저장값), split.ts(분할 뷰 손잡이·스크롤 동기 계산),
@@ -71,7 +73,10 @@ src/                   프런트(vanilla TS). main.ts 셸(탭별 문서 상태·
                        wordcount.ts(상태바 글자 수),
                        theme/(문서 CSS·폰트, themes.ts 테마 모델·토큰·테마 파일 검증 — 내장 라이트·다크 = 세이지 차콜, 빈 토큰은 GitHub 기본 팔레트),
                        theme/palette.ts(팔레트→토큰 파생·대비), theme-panel.ts(설정 테마 목록),
-                       theme/recommended.ts·recommended-dialog.ts(추천 테마 — 세피아·GitHub·웨딩 팔레트),
+                       theme/recommended.ts·recommended-dialog.ts(추천 테마 — 세피아·GitHub·웨딩 팔레트, 앱에 들어 있어 폴더 복사 없음),
+                       theme/catalog.ts(테마 목록 = 내장 → 추천 → 구매자 전용 → 사용자, 적용 테마 게이트 visibleTheme),
+                       theme/supporter.ts(구매자 전용 테마 — docs/themes/supporter/*.json),
+                       license.ts(권리 상태·canUseTheme·구매 권유 순수 함수), purchase.ts(설정 정보 탭·구매 안내·권유 배너),
                        style.css(셸 CSS·대체 색 토큰)
                        titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), nav.ts(왼쪽 탐색 영역 탭·최근 파일),
                        recent.ts(최근 목록 순수 함수·문서 제목 추출),
