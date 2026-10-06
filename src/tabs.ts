@@ -174,43 +174,55 @@ export function initTabStrip(host: HTMLElement, hooks: TabStripHooks): TabStrip 
         // 이미 끝난 포인터 — 캡처 없이 이어 간다
       }
     }
+    follow(d, event.clientX);
+  });
+
+  /** 끄는 탭을 커서 자리로, 그 탭이 걸친 이웃은 한 칸 비키게 */
+  function follow(d: Drag, clientX: number): void {
     const s = d.slots;
     const me = s[d.from];
     const last = s[s.length - 1];
     // 띠 양 끝 밖으로는 안 나간다
     const dx = Math.min(
-      Math.max(event.clientX - d.startX + host.scrollLeft - d.startScroll, s[0].left - me.left),
+      Math.max(clientX - d.startX + host.scrollLeft - d.startScroll, s[0].left - me.left),
       last.left + last.width - (me.left + me.width),
     );
     d.el.style.transform = `translateX(${dx}px)`;
-    // 끄는 탭 가운데가 이웃 가운데를 넘으면 그 이웃이 한 칸 비킨다
-    const center = me.left + me.width / 2 + dx;
+    // 끄는 탭의 앞 모서리가 이웃 가운데를 넘으면 그 이웃이 비킨다 — 가운데끼리 비교하면 양 끝에서 같아져 맨 앞·맨 뒤로 못 갔다
+    const left = me.left + dx;
+    const right = left + me.width;
     let to = d.from;
     d.tabs.forEach((t, i) => {
       if (i === d.from) return;
       const mid = s[i].left + s[i].width / 2;
       let offset = 0;
-      if (i < d.from && center < mid) {
+      if (i < d.from && left < mid) {
         offset = d.shift;
         to--;
-      } else if (i > d.from && center > mid) {
+      } else if (i > d.from && right > mid) {
         offset = -d.shift;
         to++;
       }
       t.style.transform = offset ? `translateX(${offset}px)` : "";
     });
     d.to = to;
-  });
+  }
 
   /** 끌기를 끝낸다. `commit`이면 새 순서를 확정하고, 보이던 자리에서 제자리로 미끄러지게 한다 */
   function finish(commit: boolean): void {
     const d = drag;
     drag = null;
     if (!d || !d.moved) return;
+    // 보이던 자리(비키던 중인 이웃은 그 순간 자리)
     const before = new Map(d.tabs.map((t) => [t, t.getBoundingClientRect().left]));
+    // transition을 먼저 끄고 transform을 지운다 — 켠 채 지우면 되돌아가는 전환이 시작돼, 새 자리를 잴 때
+    // 옛 transform이 섞여 재지고 탭이 원래 자리로 갔다가 미끄러져 보였다
+    for (const t of d.tabs) {
+      t.style.transition = "none";
+      t.style.transform = "";
+    }
     host.classList.remove("reordering");
     d.el.classList.remove("dragging");
-    for (const t of d.tabs) t.style.transform = "";
     if (commit && d.from >= 0 && d.to !== d.from) hooks.move(d.id, d.to);
     // FLIP: 새 레이아웃 자리에서 보이던 자리만큼 되돌려 놓고, 다음 그림에서 transition으로 0까지
     const moving: HTMLElement[] = [];
@@ -218,17 +230,14 @@ export function initTabStrip(host: HTMLElement, hooks: TabStripHooks): TabStrip 
       if (!t.isConnected) continue;
       const delta = before.get(t)! - t.getBoundingClientRect().left;
       if (Math.abs(delta) < 0.5) continue;
-      t.style.transition = "none";
       t.style.transform = `translateX(${delta}px)`;
       moving.push(t);
     }
-    if (moving.length === 0) return;
-    d.el.classList.add("settling");
+    if (moving.length > 0) d.el.classList.add("settling");
     void host.offsetWidth;
-    for (const t of moving) {
-      t.style.transition = "";
-      t.style.transform = "";
-    }
+    for (const t of d.tabs) t.style.transition = "";
+    for (const t of moving) t.style.transform = "";
+    if (moving.length === 0) return;
     const done = (): void => d.el.classList.remove("settling");
     d.el.addEventListener("transitionend", done, { once: true });
     setTimeout(done, 400);
@@ -236,6 +245,8 @@ export function initTabStrip(host: HTMLElement, hooks: TabStripHooks): TabStrip 
 
   const endDrag = (event: PointerEvent): void => {
     if (!drag || event.pointerId !== drag.pointer) return;
+    // 마지막 pointermove와 놓은 자리가 다를 수 있다 — 놓은 자리로 맞추고 확정
+    if (event.type === "pointerup" && drag.moved && drag.from >= 0) follow(drag, event.clientX);
     finish(event.type === "pointerup");
   };
   host.addEventListener("pointerup", endDrag);
