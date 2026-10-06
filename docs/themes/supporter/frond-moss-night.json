@@ -1,0 +1,40 @@
+{
+  "id": "frond-moss-night",
+  "name": "이끼 밤",
+  "base": "dark",
+  "shell": {
+    "bg": "#141b16",
+    "sidebar-bg": "#1e2821",
+    "fg": "#e3eadf",
+    "muted": "#90978f",
+    "line": "#424942",
+    "accent": "#9cc68a",
+    "on-accent": "#141b16"
+  },
+  "doc": {
+    "bgColor-default": "#141b16",
+    "bgColor-muted": "#1e2821",
+    "bgColor-neutral-muted": "rgba(227, 234, 223, 0.16)",
+    "fgColor-default": "#e3eadf",
+    "fgColor-muted": "#90978f",
+    "fgColor-accent": "#9cc68a",
+    "borderColor-default": "#424942",
+    "borderColor-muted": "#424942b3",
+    "borderColor-accent-emphasis": "#9cc68a",
+    "selection-bg": "rgba(156, 198, 138, 0.36)",
+    "selection-bg-inactive": "rgba(156, 198, 138, 0.2)",
+    "color-prettylights-syntax-keyword": "#9cc68a",
+    "color-prettylights-syntax-entity-tag": "#9cc68a",
+    "color-prettylights-syntax-markup-heading": "#9cc68a",
+    "color-prettylights-syntax-string": "#d4b36a",
+    "color-prettylights-syntax-variable": "#d4b36a",
+    "color-prettylights-syntax-markup-list": "#d4b36a",
+    "color-prettylights-syntax-constant": "#b8bd7a",
+    "color-prettylights-syntax-entity": "#d9c693",
+    "color-prettylights-syntax-comment": "#90978f",
+    "color-prettylights-syntax-brackethighlighter-angle": "#90978f",
+    "color-prettylights-syntax-markup-bold": "#e3eadf",
+    "color-prettylights-syntax-markup-italic": "#e3eadf",
+    "color-prettylights-syntax-storage-modifier-import": "#e3eadf"
+  }
+}

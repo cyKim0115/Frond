@@ -37,7 +37,9 @@ import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey 
 import { initSettingsDialog } from "./settings-dialog";
 import { buildSyncMap, initSplitResize, lineForY, type SyncMap, yForLine } from "./split";
 import { initTabStrip } from "./tabs";
-import { findTheme } from "./theme/catalog";
+import { canUseTheme, type Entitlement, onEntitlementChange, setEntitlement } from "./license";
+import { createAboutPanel, showPurchaseInfo } from "./purchase";
+import { visibleTheme } from "./theme/catalog";
 import { applyTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
 import { createThemePanel } from "./theme-panel";
 import { initTitlebar } from "./titlebar";
@@ -1707,8 +1709,9 @@ const systemDark = matchMedia("(prefers-color-scheme: dark)");
 function effectiveTheme(): ThemeDef {
   const id = getSetting("theme");
   const wanted = id === "system" ? getSetting(systemDark.matches ? "themeDark" : "themeLight") : id;
-  // 지워진 사용자 테마 등으로 못 찾으면 시스템 모드 쪽 내장 테마
-  return findTheme(wanted) ?? findTheme(systemDark.matches ? "dark" : "light")!;
+  // 지워진 사용자 테마 등으로 못 찾으면 시스템 모드 쪽, 구매자 기능 테마를 지금 못 쓰면 그 테마 쪽(라이트/다크) 내장 테마로 보인다.
+  // 설정값은 그대로 둔다 — 권리가 돌아오면 원래 테마가 다시 보인다 (store-launch A-3)
+  return visibleTheme(wanted, systemDark.matches ? "dark" : "light", (origin) => canUseTheme(origin));
 }
 
 // 전환 연출(S-3): 보통 문서는 등록한 색 토큰(@property <color>)을 transition으로 보간하고, 큰 문서(노드 수십만)는
@@ -1807,9 +1810,26 @@ const themePanel = createThemePanel({
     for (const key of ["theme", "themeLight", "themeDark"] as const) settingsDialog.refreshOptions(key);
     applyEffectiveTheme();
   },
+  showPurchaseInfo: () => void showPurchaseInfo({ openAbout: openAboutTab }),
 });
 settingsDialog.addPanel("theme", themePanel.element);
 void themePanel.reload();
+
+/** 구매 안내에서 '정보 탭 보기' — 위에 떠 있는 추천 테마 팝업을 닫고 설정 '정보' 탭으로 */
+function openAboutTab(): void {
+  document.querySelector<HTMLDialogElement>("#recommended-dialog")?.close();
+  settingsDialog.open("about");
+}
+
+// 권리(store-launch A-3) — 설정 '정보' 탭, 바뀌면 테마 게이트·선택지 표시를 다시
+const aboutPanel = createAboutPanel({ isTauri: IS_TAURI });
+settingsDialog.addPanel("about", aboutPanel.element);
+onEntitlementChange(() => {
+  for (const key of ["theme", "themeLight", "themeDark"] as const) settingsDialog.refreshOptions(key);
+  applyEffectiveTheme();
+  themePanel.refresh();
+  aboutPanel.refresh();
+});
 
 async function pickAndOpen(): Promise<void> {
   const picked = await openDialog({
@@ -2262,6 +2282,8 @@ async function init(): Promise<void> {
 
   // 웹뷰 기본 오른쪽 클릭 메뉴의 '인쇄'도 Ctrl+P와 같은 큰 문서 확인을 거친다 (print_menu.rs)
   await listen("print-requested", () => void printDocument());
+  await listen<Entitlement>("entitlement-changed", (event) => setEntitlement(event.payload));
+  void invoke<Entitlement>("get_entitlement").then(setEntitlement, () => undefined);
 
   await getCurrentWebview().onDragDropEvent((event) => {
     if (event.payload.type === "over" || event.payload.type === "enter") {
@@ -2331,6 +2353,9 @@ if (IS_TAURI) {
   // Tauri 밖(브라우저에서 `npm run dev`)에서는 샘플을 직접 불러 렌더·테마를 눈으로 확인한다.
   // ?sample=a.md,b.md 로 여러 탭, ?mode=source 로 소스 모드
   const params = new URLSearchParams(location.search);
+  // ?entitlement=free 로 무료 화면(테마 잠금·정보 탭)을 본다
+  const tier = params.get("entitlement");
+  if (tier === "free" || tier === "supporter") setEntitlement({ tier, source: "dev" });
   void (async () => {
     for (const sample of (params.get("sample") ?? "samples/showcase.md").split(",")) await openPath(sample);
     if (params.get("mode") === "source") setMode("source");

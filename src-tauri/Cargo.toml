@@ -36,5 +36,9 @@ winreg = "0.55"
 # 기본 오른쪽 클릭 메뉴의 인쇄를 앱 인쇄로 (print_menu.rs) — tauri(wry)가 쓰는 것과 같은 버전
 webview2-com = "0.39"
 
+[features]
+# Store 공급자(license.rs) — R-3에서 StoreContext 호출을 넣을 자리. 지금은 켜도 판정이 같다
+store = []
+
 [dev-dependencies]
 tempfile = "3.27.0"

@@ -28,6 +28,7 @@ description: MdEditor 설정 팝업에 항목·기능을 더하거나 옮길 때
 | `theme` | 테마 | 테마 선택, `system`용 라이트·다크 쌍, 전환 시간 + 커스텀 패널 테마 목록·가져오기(`src/theme-panel.ts`)·추천 테마 팝업(`src/recommended-dialog.ts`) | 있음 (S-1~S-4) |
 | `nav` | 탐색 | 제목 이동 시 위쪽 여백, AI 훅이 만든 문서(목록·뒤 탭·바로), 시작할 때(지난 탭 다시 열기), 최근 파일 개수 | 있음 |
 | `file` | 파일 | 초안 백업 간격 (앞으로: 인코딩 기본값·EOL) | 있음 (Phase 2) |
+| `about` | 정보 | 커스텀 패널만 — 버전·설치 방식·구매 상태·구매/복원(`src/purchase.ts` `createAboutPanel`) | 있음 (store-launch A-3) |
 
 ## 절차
 

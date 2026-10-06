@@ -4,8 +4,9 @@
  * 적용은 구독자(main.ts `applySetting`)가 맡는다. 항목·탭을 더할 때는 `add-setting` 스킬을 따른다.
  */
 
+import { canUseTheme } from "./license";
 import { readPref, writePref } from "./prefs";
-import { listThemes } from "./theme/catalog";
+import { catalogEntries } from "./theme/catalog";
 import type { ThemeBase } from "./theme/themes";
 
 /** 설정 팝업 왼쪽 탭 — id·라벨·순서는 여기 한 곳에서만 정한다. 자주 쓰는 것을 위에 둔다 */
@@ -15,6 +16,7 @@ export const SETTING_CATEGORIES = [
   { id: "theme", label: "테마" },
   { id: "nav", label: "탐색" },
   { id: "file", label: "파일" },
+  { id: "about", label: "정보" },
 ] as const;
 export type CategoryId = (typeof SETTING_CATEGORIES)[number]["id"];
 
@@ -44,11 +46,12 @@ export interface SelectDef extends BaseDef {
 }
 export type SettingDef = NumberDef | SelectDef;
 
-/** 테마 목록(내장 + 추천 + 테마 폴더) — `base`를 주면 그쪽 테마만 */
+/** 테마 목록(내장 + 추천 + 구매자 전용 + 테마 폴더) — `base`를 주면 그쪽 테마만. 지금 권리로 못 쓰는 테마도 빼지 않고
+ * 이름 뒤에 표시만 한다(빼면 저장된 설정값이 지워진다 — license.ts) */
 const themeOptions = (base?: ThemeBase) => (): SelectOption[] =>
-  listThemes()
-    .filter((t) => base === undefined || t.base === base)
-    .map((t) => ({ value: t.id, label: t.name }));
+  catalogEntries()
+    .filter((e) => base === undefined || e.theme.base === base)
+    .map((e) => ({ value: e.theme.id, label: canUseTheme(e.origin) ? e.theme.name : `${e.theme.name} (구매자 기능)` }));
 
 export const SETTINGS = {
   theme: {

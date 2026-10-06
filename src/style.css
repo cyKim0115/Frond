@@ -899,3 +899,35 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
 .rec-source { font-size: 11px; color: var(--muted); }
 .rec-palette { display: inline-flex; gap: 2px; margin-right: 6px; vertical-align: -1px; }
 .rec-palette span { width: 10px; height: 10px; border-radius: 2px; box-shadow: inset 0 0 0 1px rgb(127 127 127 / 0.35); }
+
+/* ---- 구매자 기능 표시 (store-launch A-3) — 색은 테마 토큰에서 ---- */
+.theme-locked { font-size: 11px; color: var(--accent); }
+.lock-badge {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--accent);
+  vertical-align: 1px;
+}
+
+/* ---- 설정 '정보' 탭 (src/purchase.ts) ---- */
+.about-panel { padding: 4px 0; display: flex; flex-direction: column; gap: 10px; }
+.about-panel h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.about-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: 13px; }
+.about-facts dt { color: var(--muted); }
+.about-facts dd { margin: 0; }
+.about-note,
+.about-hint,
+.about-links { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.about-note { color: var(--fg); }
+.about-actions { display: flex; gap: 6px; }
+.about-actions button:disabled { opacity: 0.5; cursor: default; }
+.about-actions[hidden],
+.about-hint[hidden],
+.about-warn[hidden] { display: none; }
+.about-warn { margin: 0; font-size: 12px; color: var(--danger); }
+.about-links a { color: var(--accent); }
