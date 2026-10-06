@@ -5,7 +5,7 @@
 //! - CP949로 표현 불가한 문자 → 조용히 손상하지 않고 오류
 
 use encoding_rs::{EUC_KR, UTF_8};
-use mdeditor_core::{DetectSource, FileDocument, SaveError, WriteMethod};
+use mdeditor_core::{DetectSource, Eol, FileDocument, SaveError, WriteMethod};
 use std::fs;
 use std::path::PathBuf;
 
@@ -180,6 +180,59 @@ fn convert_without_edit_rewrites_bytes_but_keeps_text_and_eols() {
     assert_eq!(reopened.text(), text);
     assert!(reopened.has_bom());
     assert_eq!(reopened.eols(), doc.eols());
+}
+
+#[test]
+fn convert_eol_rewrites_every_line_and_keeps_text_encoding_bom() {
+    for (fixture, target) in [("mixed-eol.md", Eol::CrLf), ("utf8-crlf.md", Eol::Lf), ("utf8-bom.md", Eol::Lf)] {
+        let mut doc = FileDocument::open(raw_dir().join(fixture)).unwrap();
+        let text = doc.text().to_owned();
+        doc.convert_eol(target);
+        let bytes = doc.to_bytes(&text).unwrap();
+        assert_ne!(bytes, doc.original_bytes(), "{fixture}");
+        let reopened = FileDocument::from_bytes(bytes);
+        assert_eq!(reopened.text(), text, "{fixture}");
+        assert_eq!(reopened.encoding(), doc.encoding(), "{fixture}");
+        assert_eq!(reopened.has_bom(), doc.has_bom(), "{fixture}");
+        assert!(reopened.eols().iter().all(|e| *e == target), "{fixture}");
+        assert!(!reopened.info().mixed_eol, "{fixture}");
+    }
+}
+
+#[test]
+fn convert_eol_to_what_every_line_already_has_keeps_bytes() {
+    let path = raw_dir().join("utf8-crlf.md");
+    let original = fs::read(&path).unwrap();
+    let mut doc = FileDocument::from_bytes(original.clone());
+    doc.convert_eol(Eol::CrLf);
+    assert_eq!(doc.to_bytes(doc.text()).unwrap(), original);
+}
+
+#[test]
+fn convert_eol_with_edit_uses_target_for_new_lines_too() {
+    let mut doc = FileDocument::open(raw_dir().join("mixed-eol.md")).unwrap();
+    let new_text = format!("새 첫 줄\n{}\n끝에 더한 줄", doc.text());
+    doc.convert_eol(Eol::Lf);
+    let reopened = FileDocument::from_bytes(doc.to_bytes(&new_text).unwrap());
+    assert_eq!(reopened.text(), new_text);
+    assert!(reopened.eols().iter().all(|e| *e == Eol::Lf));
+}
+
+#[test]
+fn save_after_convert_eol_updates_dominant() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("m.md");
+    fs::copy(raw_dir().join("mixed-eol.md"), &path).unwrap();
+    let mut doc = FileDocument::open(&path).unwrap();
+    let text = doc.text().to_owned();
+    doc.convert_eol(Eol::Lf);
+    doc.save_to(&path, &text).unwrap();
+    let info = doc.info();
+    assert_eq!(info.eol, "LF");
+    assert!(!info.mixed_eol);
+    assert_eq!(fs::read(&path).unwrap(), doc.original_bytes());
+    // 변환은 한 번만 — 다음 저장은 다시 줄별 보존
+    assert_eq!(doc.to_bytes(&text).unwrap(), doc.original_bytes());
 }
 
 #[test]

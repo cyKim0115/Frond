@@ -5,10 +5,11 @@
 //!    바뀐 줄만 다시 쓴다 (무편집이면 원본 바이트 그대로, 코어 `render`).
 //!
 //! 인코딩 "변환"(Convert to)은 저장 옵션 `convert_to`, "해석만 바꾸기"(Encode in)는 [`crate::load_document`]의 `encoding`.
+//! 줄바꿈 변환(모든 줄을 LF 또는 CRLF로)은 저장 옵션 `eol`.
 
 use std::path::{Path, PathBuf};
 
-use mdeditor_core::{DocumentInfo, FileDocument, SaveError};
+use mdeditor_core::{DocumentInfo, Eol, FileDocument, SaveError};
 use serde::Serialize;
 
 use crate::hash_hex;
@@ -62,6 +63,7 @@ pub fn encoding_for(label: &str) -> Result<&'static encoding_rs::Encoding, Strin
 /// - `expected_hash`: 연 때(또는 마지막 저장)의 해시. 디스크와 다르면 `Conflict`
 /// - `force`: 충돌을 무시하고 덮어쓴다. 파일이 없어졌으면 새로 만든다(인코딩은 `convert_to` 또는 UTF-8)
 /// - `convert_to`·`bom`: 저장 인코딩을 바꾼다 (Convert to)
+/// - `eol`: 모든 줄의 줄바꿈을 이것(`LF`·`CRLF`)으로 바꾼다. 없으면 줄별 원본 줄바꿈을 지킨다
 #[tauri::command]
 pub fn save_document(
     path: String,
@@ -70,6 +72,7 @@ pub fn save_document(
     force: bool,
     convert_to: Option<String>,
     bom: Option<bool>,
+    eol: Option<String>,
 ) -> Result<SavedPayload, SaveFailure> {
     let path = PathBuf::from(path);
     let mut doc = match FileDocument::open(&path) {
@@ -90,6 +93,10 @@ pub fn save_document(
     if let Some(label) = convert_to {
         let encoding = encoding_for(&label).map_err(|message| SaveFailure::Io { message })?;
         doc.convert(encoding, bom.unwrap_or(false));
+    }
+    if let Some(label) = eol {
+        let eol = Eol::from_label(&label).ok_or_else(|| SaveFailure::Io { message: format!("알 수 없는 줄바꿈: {label}") })?;
+        doc.convert_eol(eol);
     }
     doc.save_to(&path, &text)?;
     Ok(SavedPayload { hash: hash_hex(&doc.content_hash()), info: doc.info() })
@@ -131,7 +138,7 @@ mod tests {
         let original = b"\xEF\xBB\xBF# t\r\nline\nlast";
         let (_dir, path) = temp_file("a.md", original);
         let (text, hash) = open_hash(&path);
-        save_document(path.to_string_lossy().into(), text, hash, false, None, None).unwrap();
+        save_document(path.to_string_lossy().into(), text, hash, false, None, None, None).unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), original);
     }
 
@@ -140,7 +147,7 @@ mod tests {
         let (_dir, path) = temp_file("a.md", b"a\r\nb\nc\r\n");
         let (text, hash) = open_hash(&path);
         let edited = text.replace('b', "B");
-        let saved = save_document(path.to_string_lossy().into(), edited, hash, false, None, None).unwrap();
+        let saved = save_document(path.to_string_lossy().into(), edited, hash, false, None, None, None).unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), b"a\r\nB\nc\r\n");
         assert_eq!(saved.hash, open_hash(&path).1);
     }
@@ -151,9 +158,9 @@ mod tests {
         let (text, hash) = open_hash(&path);
         std::fs::write(&path, b"someone else\n").unwrap();
         let p: String = path.to_string_lossy().into();
-        let err = save_document(p.clone(), text.clone(), hash.clone(), false, None, None).unwrap_err();
+        let err = save_document(p.clone(), text.clone(), hash.clone(), false, None, None, None).unwrap_err();
         assert!(matches!(err, SaveFailure::Conflict { missing: false }));
-        save_document(p, "mine\n".into(), hash, true, None, None).unwrap();
+        save_document(p, "mine\n".into(), hash, true, None, None, None).unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), b"mine\n");
     }
 
@@ -161,9 +168,9 @@ mod tests {
     fn missing_file_is_conflict_then_recreated_when_forced() {
         let dir = tempfile::tempdir().unwrap();
         let p: String = dir.path().join("gone.md").to_string_lossy().into();
-        let err = save_document(p.clone(), "x\n".into(), "h".into(), false, None, None).unwrap_err();
+        let err = save_document(p.clone(), "x\n".into(), "h".into(), false, None, None, None).unwrap_err();
         assert!(matches!(err, SaveFailure::Conflict { missing: true }));
-        save_document(p.clone(), "x\n".into(), "h".into(), true, None, None).unwrap();
+        save_document(p.clone(), "x\n".into(), "h".into(), true, None, None, None).unwrap();
         assert!(Path::new(&p).is_file());
     }
 
@@ -173,7 +180,7 @@ mod tests {
         let (_, hash) = open_hash(&path);
         let p: String = path.to_string_lossy().into();
         // EUC-KR로 변환해 저장하면 이모지는 표현할 수 없다
-        let err = save_document(p.clone(), "가 😀\n".into(), hash.clone(), false, Some("EUC-KR".into()), None).unwrap_err();
+        let err = save_document(p.clone(), "가 😀\n".into(), hash.clone(), false, Some("EUC-KR".into()), None, None).unwrap_err();
         match err {
             SaveFailure::Unmappable { ch, line, .. } => {
                 assert_eq!(ch, "😀");
@@ -182,8 +189,23 @@ mod tests {
             other => panic!("{other:?}"),
         }
         // UTF-8로 변환하면 저장된다
-        save_document(p, "가 😀\n".into(), hash, false, Some("UTF-8".into()), None).unwrap();
+        save_document(p, "가 😀\n".into(), hash, false, Some("UTF-8".into()), None, None).unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), "가 😀\n".as_bytes());
+    }
+
+    #[test]
+    fn eol_option_converts_every_line_once() {
+        let (_dir, path) = temp_file("a.md", b"a\r\nb\nc\r\n");
+        let (text, hash) = open_hash(&path);
+        let p: String = path.to_string_lossy().into();
+        let saved = save_document(p.clone(), text.clone(), hash, false, None, None, Some("LF".into())).unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"a\nb\nc\n");
+        assert_eq!(saved.info.eol, "LF");
+        assert!(!saved.info.mixed_eol);
+        let saved = save_document(p.clone(), format!("{text}d\n"), saved.hash, false, None, None, Some("crlf".into())).unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"a\r\nb\r\nc\r\nd\r\n");
+        let err = save_document(p, text, saved.hash, false, None, None, Some("LFCR".into())).unwrap_err();
+        assert!(matches!(err, SaveFailure::Io { .. }));
     }
 
     #[test]

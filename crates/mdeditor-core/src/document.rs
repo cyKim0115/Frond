@@ -54,6 +54,8 @@ pub struct FileDocument {
     /// 저장할 인코딩. `convert()`로 바뀔 수 있다.
     encoding: &'static Encoding,
     bom: bool,
+    /// 저장할 때 모든 줄에 쓸 종결자. `convert_eol()`로 정하고, 없으면 줄별 원본 종결자를 지킨다.
+    eol_target: Option<Eol>,
     source: DetectSource,
     lossy: bool,
 }
@@ -86,6 +88,7 @@ impl FileDocument {
             detected_bom: meta.bom,
             encoding: meta.encoding,
             bom: meta.bom,
+            eol_target: None,
             source: meta.source,
             lossy: meta.lossy,
         }
@@ -160,8 +163,18 @@ impl FileDocument {
         self.bom = bom;
     }
 
+    /// 모든 줄의 종결자를 `eol`로 바꿔 저장하게 한다 (줄바꿈 "변환"). 다음 저장부터 바이트가 달라진다.
+    /// 이미 모든 줄이 `eol`이면 무편집 저장은 여전히 원본 바이트 그대로다.
+    pub fn convert_eol(&mut self, eol: Eol) {
+        self.eol_target = Some(eol);
+    }
+
     fn target_unchanged(&self) -> bool {
-        self.encoding == self.detected_encoding && self.bom == self.detected_bom
+        self.encoding == self.detected_encoding
+            && self.bom == self.detected_bom
+            && self
+                .eol_target
+                .is_none_or(|target| self.eols.iter().all(|e| *e == target))
     }
 
     /// `new_text`를 저장할 때 디스크에 쓸 바이트와 그때의 EOL 맵.
@@ -172,8 +185,12 @@ impl FileDocument {
         if self.lossy {
             return Err(SaveError::LossyDocument);
         }
-        let eols = eol::remap(&self.text, &self.eols, new_text, self.dominant);
-        let raw = eol::join(new_text, &eols, self.dominant);
+        let fill = self.eol_target.unwrap_or(self.dominant);
+        let eols = match self.eol_target {
+            Some(target) => vec![target; new_text.matches('\n').count()],
+            None => eol::remap(&self.text, &self.eols, new_text, self.dominant),
+        };
+        let raw = eol::join(new_text, &eols, fill);
         let bytes = encoding::encode(&raw, self.encoding, self.bom)?;
         Ok((bytes, eols))
     }
@@ -193,6 +210,9 @@ impl FileDocument {
         let method = write_atomic(path.as_ref(), &bytes)?;
         self.original = bytes;
         self.eols = eols;
+        if let Some(target) = self.eol_target.take() {
+            self.dominant = target;
+        }
         if self.is_modified(new_text) {
             self.text = new_text.to_owned();
         }
