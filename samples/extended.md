@@ -68,3 +68,20 @@ pie title 시간 쓰임
 graph LR
   A -->
 ```
+
+## 수식 (KaTeX)
+
+인라인 $E = mc^2$, 분수 $\frac{a}{b}$, 백틱 표기 $`\sqrt{x^2+y^2}`$. 돈 표기 $5와 $10은 글자 그대로다.
+
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+
+```math
+\begin{aligned}
+f(x) &= (x+1)^2 \\
+     &= x^2 + 2x + 1
+\end{aligned}
+```
+
+틀린 수식은 빨간 원문으로 남는다: $\frac{1}{$
