@@ -406,8 +406,45 @@ body {
 #window-controls #win-close:hover { background: #c42b1c; color: #fff; }
 #window-controls #win-close:active { background: #c42b1c; color: color-mix(in srgb, #fff 75%, transparent); }
 
-#viewer {
+/* ---- 본문 판: 보기(#viewer) · 소스(#editor) · 분할(둘 다, 로드맵 3-3). 모드는 #panes[data-mode] (main.ts showMode) ---- */
+#panes {
   flex: 1;
+  min-height: 0;
+  display: flex;
+}
+#panes > #viewer,
+#panes > #editor {
+  flex: 1 1 0;
+  min-width: 0;
+}
+#panes[data-mode="split"] > #editor { flex: 0 0 var(--split-left, 50%); }
+/* 가운데 손잡이 — 폭 0 요소 + 가상 요소로 잡는 자리와 경계선. 목차 손잡이(#sidebar-resizer)와 같은 모양 */
+#split-resizer {
+  display: none;
+  position: relative;
+  z-index: 2;
+  width: 0;
+  outline: none;
+}
+#panes[data-mode="split"] > #split-resizer { display: block; }
+#split-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 0 -4px;
+  cursor: col-resize;
+}
+#split-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 -1px;
+  background: var(--line);
+  transition: background-color 0.15s;
+}
+#split-resizer:hover::after,
+#split-resizer:focus-visible::after,
+#app.resizing #split-resizer::after { inset: 0 -1px 0 -2px; background: var(--accent); }
+
+#viewer {
   min-height: 0;
   overflow: auto;
 }
@@ -500,7 +537,7 @@ body {
 ::highlight(find-current) { background-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 
 /* ---- 소스 편집기 (CM6, src/editor.ts) — 색은 테마 문서 토큰, 커서·선택은 theme/dark.css ---- */
-#editor { flex: 1; min-height: 0; display: flex; background: var(--bgColor-default, var(--bg)); }
+#editor { min-height: 0; display: flex; background: var(--bgColor-default, var(--bg)); }
 #editor[hidden] { display: none; }
 #editor .cm-editor {
   flex: 1;
@@ -582,6 +619,10 @@ body {
 
 @media (max-width: 720px) {
   #sidebar, #sidebar-resizer { display: none; }
+  /* 좁은 창의 분할 뷰는 위(소스)·아래(미리보기)로 */
+  #panes[data-mode="split"] { flex-direction: column; }
+  #panes[data-mode="split"] > #editor { flex: 1 1 0; border-bottom: 1px solid var(--line); }
+  #panes[data-mode="split"] > #split-resizer { display: none; }
   #app[data-nav="closed"] #titlebar { padding-left: var(--toggle-w); }
 }
 

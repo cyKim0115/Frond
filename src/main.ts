@@ -28,10 +28,12 @@ import { initNav } from "./nav";
 import { docTitle, samePath } from "./recent";
 import { CHUNK_CLASS, highlightCodeBlocks, LARGE_CHUNK_BLOCKS, LARGE_SOFT_LIMIT, renderMarkdown, type TocEntry } from "./render";
 import { DIAGRAM_CLASS, renderDiagrams } from "./render/mermaid";
+import { setBlocks } from "./render/morph";
 import { initSidebarResize } from "./resize";
 import { readSession, type Session, type SessionMode, writeSession } from "./session";
 import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
 import { initSettingsDialog } from "./settings-dialog";
+import { buildSyncMap, initSplitResize, lineForY, type SyncMap, yForLine } from "./split";
 import { initTabStrip } from "./tabs";
 import { applyTheme, findTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
 import { createThemePanel } from "./theme-panel";
@@ -144,6 +146,7 @@ interface Tab {
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 const viewer = $("#viewer");
 const editorHost = $("#editor");
+const panes = $("#panes");
 const welcome = $("#welcome");
 const banner = $("#banner");
 const sidebar = $("#sidebar");
@@ -252,6 +255,7 @@ function createTab(doc: DocumentPayload, mode: Mode, index = active ? tabs.index
   article.lang = "ko";
   article.hidden = true;
   viewer.append(article);
+  articleResize.observe(article);
   const tocList = document.createElement("div");
   tocList.className = "toc-list";
   const tab: Tab = {
@@ -321,13 +325,13 @@ function renderTabs(): void {
 
 /** 지금 탭의 화면 자리를 탭에 남긴다 — 다른 탭으로 가기 전에 */
 function stash(tab: Tab): void {
-  if (tab.mode === "view" && !tab.needsRender) {
+  if (tab.mode !== "source" && !tab.needsRender) {
     tab.viewScroll = viewer.scrollTop;
     tab.viewLine = viewTopLine();
   }
   if (editor && editorTab === tab) {
     tab.editorState = editor.view.state;
-    if (tab.mode === "source") {
+    if (tab.mode !== "view") {
       tab.editorScroll = editor.view.scrollSnapshot();
       tab.editorLine = editor.topLine();
     }
@@ -349,11 +353,16 @@ function activate(tab: Tab): void {
   app.classList.toggle("large-doc", tab.large);
   sidebar.hidden = tab.tocEntries.length === 0;
   showMode(tab.mode);
-  if (tab.mode === "source") {
+  if (tab.mode !== "view") {
     const ed = attachEditor(tab);
     ed.view.requestMeasure();
     if (restore !== null) ed.scrollToLine(restore);
     else if (tab.editorScroll) ed.view.dispatch({ effects: tab.editorScroll });
+    // 분할 뷰는 편집기 자리에 미리보기를 맞춘다 (편집기 스크롤은 다음 측정 때 반영된다)
+    if (tab.mode === "split") {
+      viewer.scrollTop = tab.viewScroll;
+      requestAnimationFrame(() => syncViewerFromEditor());
+    }
   } else if (restore !== null) {
     scrollViewToLine(restore);
   } else if (tab.large) {
@@ -457,6 +466,7 @@ async function closeTab(tab: Tab): Promise<boolean> {
   if (i < 0) return true;
   if (active === tab) stash(tab);
   tabs.splice(i, 1);
+  articleResize.unobserve(tab.article);
   tab.article.remove();
   if (editorTab === tab) editorTab = null;
   unwatchDocument(tab.doc.path);
@@ -536,12 +546,12 @@ async function reload(options: { discard?: boolean; encoding?: string } = {}, ta
   if (tab !== active) return true; // 읽는 사이 탭을 바꿨다 — 그 탭은 다음에 다시 읽힌다
   tab.forcedEncoding = encoding;
   const scrollTop = viewer.scrollTop;
-  const line = tab.mode === "source" && editor ? editor.topLine() : null;
-  const cursor = tab.mode === "source" && editor ? editor.view.state.selection.main.head : null;
+  const line = tab.mode !== "view" && editor ? editor.topLine() : null;
+  const cursor = tab.mode !== "view" && editor ? editor.view.state.selection.main.head : null;
   hideBanner(tab);
   adopt(tab, doc, tab.mode);
-  if (tab.mode === "view") viewer.scrollTop = scrollTop;
-  else if (editor && line !== null) {
+  if (tab.mode !== "source") viewer.scrollTop = scrollTop;
+  if (tab.mode !== "view" && editor && line !== null) {
     editor.scrollToLine(line);
     if (cursor !== null) editor.view.dispatch({ selection: { anchor: Math.min(cursor, editor.view.state.doc.length) } });
   }
@@ -584,12 +594,8 @@ function adopt(tab: Tab, doc: DocumentPayload, nextMode: Mode): void {
     tab.needsRender = true;
     return;
   }
-  if (nextMode === "source") {
-    loadEditor(tab, doc.text);
-    renderView(tab, doc.text);
-  } else {
-    renderView(tab, doc.text);
-  }
+  if (nextMode !== "view") loadEditor(tab, doc.text);
+  renderView(tab, doc.text);
   showMode(nextMode);
   updateDocChrome();
 }
@@ -622,7 +628,11 @@ function renderView(tab: Tab, text: string): void {
   });
   tab.large = large;
   tab.article.classList.toggle("large", large);
-  tab.article.innerHTML = result.html;
+  // 작은 문서는 바뀐 블록만 갈아 끼운다(render/morph.ts) — 편집 중 미리보기에서 이미지가 깜빡이거나 그림을 다시 그리지 않게.
+  // 큰 문서는 블록 묶음(chunks)째 한 번에 넣는다
+  if (large) tab.article.innerHTML = result.html;
+  else setBlocks(tab.article, result.html, true);
+  if (syncCache?.tab === tab) syncCache = null;
   const seq = ++tab.renderSeq;
   if (!large) void highlightCodeBlocks(tab.article);
   void renderDiagrams(tab.article, isDarkTheme(), () => tab.renderSeq !== seq || !tab.article.isConnected);
@@ -649,7 +659,6 @@ function renderView(tab: Tab, text: string): void {
   recount(tab);
   if (tab !== active) return;
   app.classList.toggle("large-doc", large);
-  viewer.scrollTop = 0;
   sidebar.hidden = result.toc.length === 0;
   updateActiveHeading();
   findBar.refresh();
@@ -718,6 +727,7 @@ function ensureEditor(): SourceEditor {
   editor.setLineWrapping(getSetting("editorLineWrap") === "wrap");
   editor.view.scrollDOM.addEventListener("scroll", () => {
     saveSession();
+    onPaneScroll("editor");
     if (headingTick) return;
     headingTick = requestAnimationFrame(() => {
       headingTick = 0;
@@ -757,13 +767,16 @@ function loadEditor(tab: Tab, text: string): void {
   setDirty(tab, text !== tab.doc.text);
 }
 
+const MODE_LABEL: Record<Mode, string> = { view: "보기", source: "소스", split: "분할" };
+
 function showMode(next: Mode): void {
   if (active) active.mode = next;
-  viewer.hidden = next !== "view";
-  editorHost.hidden = next !== "source";
+  viewer.hidden = next === "source";
+  editorHost.hidden = next === "view";
+  panes.dataset.mode = next;
   statusMode.hidden = !active;
-  statusMode.textContent = next === "source" ? "소스" : "보기";
-  if (next === "source") findBar.close();
+  statusMode.textContent = MODE_LABEL[next];
+  if (next !== "view") findBar.close();
 }
 
 /**
@@ -784,17 +797,34 @@ function cursorReturn(cursorLine: number, leftAt: number, viewTop: number, viewB
   return "follow";
 }
 
-/** Ctrl+/ — 보던 위치를 `data-line`으로 맞춰 오간다 (T1). 보기에서 크게 움직이지 않았으면 커서도 되살린다 */
+/**
+ * Ctrl+/ 보기 ↔ 소스, Ctrl+Shift+/ 분할(로드맵 3-3) — 보던 위치를 `data-line`으로 맞춰 오간다 (T1).
+ * 보기에서 크게 움직이지 않았으면 커서도 되살린다. 분할은 소스(왼쪽)가 기준이고 미리보기가 따라간다
+ */
 function setMode(next: Mode): void {
   const tab = active;
   if (!tab || next === tab.mode) return;
-  if (next === "source") {
+  const prev = tab.mode;
+  if (prev !== "view" && next !== "view") {
+    // 소스 ↔ 분할 — 편집기는 그대로, 미리보기만 보이거나 숨긴다
+    if (next === "split") {
+      const text = workingText(tab);
+      if (text !== tab.renderedText) renderView(tab, text);
+    }
+    showMode(next);
+    editor?.view.requestMeasure();
+    if (next === "split") requestAnimationFrame(() => syncViewerFromEditor());
+    editor?.focus();
+    saveSession();
+    return;
+  }
+  if (next !== "view") {
     // 보기 화면은 숨기기 전에 잰다
     const range = viewLineRange();
     const ed = attachEditor(tab);
     const memo = tab.sourceMemo;
     tab.sourceMemo = null;
-    showMode("source");
+    showMode(next);
     // 숨겨져 있던 편집기는 크기를 다시 재야 한다. scrollIntoView 효과는 그 측정 때 반영된다
     ed.view.requestMeasure();
     const { state } = ed.view;
@@ -803,6 +833,7 @@ function setMode(next: Mode): void {
     // follow면 커서도 보던 줄로 — 바로 입력하면 보던 자리에 들어간다
     else ed.scrollToLine(range.top, choice === "follow");
     ed.focus();
+    if (next === "split") requestAnimationFrame(() => syncViewerFromEditor());
   } else {
     const line = editor && editorTab === tab ? editor.topLine() : 0;
     // 편집기는 숨겨지면 스크롤을 잃는다 — 문서 위치 기준 스냅샷으로 남긴다
@@ -810,7 +841,8 @@ function setMode(next: Mode): void {
     const text = workingText(tab);
     if (text !== tab.renderedText) renderView(tab, text);
     showMode("view");
-    scrollViewToLine(line);
+    // 분할에서 오면 미리보기가 이미 그 자리에 있다
+    if (prev === "source") scrollViewToLine(line);
     tab.sourceMemo = scroll ? { scroll, viewLine: viewTopLine() } : null;
     viewer.focus({ preventScroll: true });
   }
@@ -819,6 +851,9 @@ function setMode(next: Mode): void {
 
 let dirtyTimer = 0;
 let previewTimer = 0;
+/** 편집 → 미리보기 갱신 대기 (ms). 분할 뷰는 화면에 보이므로 짧게 */
+const PREVIEW_DELAY = 700;
+const PREVIEW_DELAY_SPLIT = 120;
 function onEditorChange(): void {
   const tab = editorTab;
   if (!tab) return;
@@ -829,18 +864,23 @@ function onEditorChange(): void {
     const doc = editorDoc(tab);
     if (doc && tab.savedDoc) setDirty(tab, !doc.eq(tab.savedDoc));
   }, 250);
-  // 작은 문서는 목차·보기 화면을 편집을 따라 갱신한다 (큰 문서는 보기로 돌아갈 때 한 번)
+  // 작은 문서는 목차·보기 화면을 편집을 따라 갱신한다 (큰 문서는 보기로 돌아갈 때·분할에서는 저장할 때 한 번).
+  // 분할 뷰는 바로 보이니 짧게 기다린다 — 갱신은 바뀐 블록만(render/morph.ts)
   window.clearTimeout(previewTimer);
-  previewTimer = window.setTimeout(() => {
-    if (editorTab !== tab || tab !== active || !editor) return;
-    const text = editor.getText();
-    if (text.length <= LARGE_SOFT_LIMIT / 4 && text !== tab.renderedText) {
-      const keep = viewer.scrollTop;
-      renderView(tab, text);
-      viewer.scrollTop = keep;
-      updateActiveHeading();
-    }
-  }, 700);
+  previewTimer = window.setTimeout(
+    () => {
+      if (editorTab !== tab || tab !== active || !editor) return;
+      const text = editor.getText();
+      if (text.length <= LARGE_SOFT_LIMIT / 4 && text !== tab.renderedText) {
+        const keep = viewer.scrollTop;
+        renderView(tab, text);
+        if (tab.mode === "split") syncViewerFromEditor();
+        else viewer.scrollTop = keep;
+        updateActiveHeading();
+      }
+    },
+    tab.mode === "split" ? PREVIEW_DELAY_SPLIT : PREVIEW_DELAY,
+  );
 }
 
 function setDirty(tab: Tab, next: boolean): void {
@@ -978,6 +1018,11 @@ async function save(options: SaveOptions = {}, tab: Tab | null = active): Promis
     void invoke("delete_draft", { path: doc.path }).catch(() => undefined);
     hideBanner(tab);
     if (tab === active) updateDocChrome();
+    // 큰 문서는 분할 뷰에서도 편집을 따라 그리지 않는다 — 저장할 때 한 번
+    if (tab === active && tab.mode === "split" && tab.large && text !== tab.renderedText) {
+      renderView(tab, text);
+      syncViewerFromEditor();
+    }
     nav.retitle(doc.path, titleOf(text, tab));
     flashStatus("저장됨");
     return true;
@@ -1329,7 +1374,7 @@ function hideBanner(tab: Tab | null = active): void {
   const hadFocus = banner.contains(document.activeElement);
   banner.hidden = true;
   if (!hadFocus) return;
-  if (active?.mode === "source" && editor) editor.focus();
+  if (active && active.mode !== "view" && editor) editor.focus();
   else viewer.focus({ preventScroll: true });
 }
 
@@ -1409,7 +1454,16 @@ async function eolMenu(): Promise<void> {
 
 statusEncoding.addEventListener("click", () => void encodingMenu());
 statusEol.addEventListener("click", () => void eolMenu());
-statusMode.addEventListener("click", () => setMode(active?.mode === "view" ? "source" : "view"));
+statusMode.addEventListener("click", (event) => {
+  if (!active) return;
+  const now = active.mode;
+  const item = (mode: Mode, label: string) => ({ label: `${mode === now ? "✓ " : "　"}${label}`, action: () => setMode(mode) });
+  showContextMenu(event, [
+    item("view", "보기 (Ctrl+/)"),
+    item("source", "소스 (Ctrl+/)"),
+    item("split", "분할 — 소스 | 미리보기 (Ctrl+Shift+/)"),
+  ]);
+});
 
 // ---- 링크 ------------------------------------------------------------------
 
@@ -1440,7 +1494,8 @@ toc.addEventListener("click", (event) => {
   const a = (event.target as Element).closest<HTMLAnchorElement>("a[href^='#']");
   if (!a || !active) return;
   event.preventDefault();
-  if (active.mode === "source" && editor) {
+  if (active.mode !== "view" && editor) {
+    // 분할 뷰는 편집기를 옮기면 미리보기가 따라온다
     editor.scrollToLine(Number(a.dataset.line ?? 0));
     return;
   }
@@ -1465,7 +1520,7 @@ function updateActiveHeading(): void {
   const tab = active;
   if (!tab) return;
   let next: HTMLAnchorElement | null = null;
-  if (tab.mode === "source" && editor && editorTab === tab) {
+  if (tab.mode !== "view" && editor && editorTab === tab) {
     // 소스 모드: 화면 맨 위 줄 이하에서 시작한 마지막 제목
     const top = editor.topLine();
     let hit: TocEntry | undefined;
@@ -1509,6 +1564,7 @@ function updateActiveHeading(): void {
 }
 viewer.addEventListener("scroll", () => {
   saveSession();
+  onPaneScroll("viewer");
   if (headingTick) return;
   headingTick = requestAnimationFrame(() => {
     headingTick = 0;
@@ -1694,6 +1750,67 @@ function sessionLine(tab: Tab): number {
   return editor && editorTab === tab ? editor.topLine() : tab.editorLine;
 }
 
+// ---- 분할 뷰 스크롤 동기 (로드맵 3-3) ---------------------------------------------------
+// 편집기 맨 위 줄(소수)을 미리보기 블록 닻(`data-line`)으로 보간해 맞추고, 미리보기를 스크롤하면 거꾸로 맞춘다.
+// 한쪽을 맞추면 그쪽에서도 스크롤 이벤트가 오므로 잠깐 그 방향을 잠근다. 닻 위치는 본문 크기가 바뀌면(이미지 로드·
+// 그림·줌·폭) 다시 잰다. 큰 문서(블록 묶음)는 화면 밖 블록 위치를 믿을 수 없어 블록 단위로 맞춘다
+
+let syncCache: { tab: Tab; map: SyncMap; margin: number } | null = null;
+let syncLock: { from: "editor" | "viewer"; until: number } | null = null;
+let syncFrame = 0;
+const SYNC_LOCK_MS = 120;
+const articleResize = new ResizeObserver(() => {
+  syncCache = null;
+});
+
+function syncMapFor(tab: Tab): { map: SyncMap; margin: number } {
+  if (syncCache?.tab === tab) return syncCache;
+  const base = viewer.scrollTop - viewer.getBoundingClientRect().top;
+  const anchors: { line: number; y: number }[] = [];
+  for (const el of tab.article.children as HTMLCollectionOf<HTMLElement>) {
+    if (el.dataset.line !== undefined) anchors.push({ line: Number(el.dataset.line), y: el.getBoundingClientRect().top + base });
+  }
+  // 끝 닻 — 문서 마지막 줄과 스크롤 끝
+  const lines = editor && editorTab === tab ? editor.view.state.doc.lines : workingText(tab).split("\n").length;
+  anchors.push({ line: lines, y: viewer.scrollHeight });
+  const map = buildSyncMap(anchors);
+  // 첫 블록 위 여백(본문 안쪽 여백)만큼은 맞춘 자리에서 빼 맨 위에서 맨 위로 가게 한다
+  syncCache = { tab, map, margin: map.ys[0] ?? 0 };
+  return syncCache;
+}
+
+const syncLocked = (from: "editor" | "viewer"): boolean => syncLock !== null && syncLock.from !== from && performance.now() < syncLock.until;
+
+function syncViewerFromEditor(): void {
+  const tab = active;
+  if (!tab || tab.mode !== "split" || !editor || editorTab !== tab) return;
+  syncLock = { from: "editor", until: performance.now() + SYNC_LOCK_MS };
+  if (tab.large) {
+    scrollViewToLine(editor.topLine());
+    return;
+  }
+  const { map, margin } = syncMapFor(tab);
+  viewer.scrollTop = Math.max(0, yForLine(map, editor.topLineFraction()) - margin);
+}
+
+function syncEditorFromViewer(): void {
+  const tab = active;
+  if (!tab || tab.mode !== "split" || !editor || editorTab !== tab) return;
+  syncLock = { from: "viewer", until: performance.now() + SYNC_LOCK_MS };
+  if (tab.large) {
+    editor.scrollToLine(viewTopLine());
+    return;
+  }
+  const { map, margin } = syncMapFor(tab);
+  editor.scrollToLineFraction(lineForY(map, viewer.scrollTop + margin));
+}
+
+function onPaneScroll(from: "editor" | "viewer"): void {
+  if (active?.mode !== "split" || syncLocked(from)) return;
+  cancelAnimationFrame(syncFrame);
+  syncFrame = requestAnimationFrame(from === "editor" ? syncViewerFromEditor : syncEditorFromViewer);
+}
+
 function saveSessionNow(): void {
   window.clearTimeout(sessionTimer);
   if (!sessionReady || !IS_TAURI) return;
@@ -1767,12 +1884,20 @@ window.addEventListener(
     if (ctrl && key === "s") {
       take();
       void (event.shiftKey ? saveAs() : save());
+    } else if (ctrl && event.shiftKey && (event.code === "Slash" || event.key === "?")) {
+      take();
+      setMode(mode === "split" ? "source" : "split");
     } else if (ctrl && (event.key === "/" || event.code === "Slash")) {
       take();
       setMode(mode === "view" ? "source" : "view");
     } else if (ctrl && !event.shiftKey && key === "f" && mode === "view" && active) {
       take();
       findBar.open();
+    } else if (ctrl && (key === "f" || key === "h") && mode === "split" && editor) {
+      // 분할 뷰의 찾기·바꾸기는 소스 편집기 몫 — 포커스가 미리보기에 있어도
+      take();
+      editor.focus();
+      editor.openSearch();
     } else if (ctrl && key === "h" && mode === "view" && active) {
       take();
       setMode("source");
@@ -1934,7 +2059,7 @@ async function init(): Promise<void> {
     } else if (event.payload.type === "drop") {
       viewer.classList.remove("drag-over");
       const paths = event.payload.paths;
-      if (active?.mode === "source" && paths.length > 0 && paths.every((p) => IMAGE_EXT_RE.test(p))) {
+      if (active && active.mode !== "view" && paths.length > 0 && paths.every((p) => IMAGE_EXT_RE.test(p))) {
         void dropImages(paths, event.payload.position);
         return;
       }
@@ -1981,6 +2106,10 @@ async function checkWebviewVersion(): Promise<void> {
 }
 
 initSidebarResize();
+initSplitResize(() => {
+  syncCache = null;
+  editor?.view.requestMeasure();
+});
 updateDocChrome();
 // 저장된 열림 상태·폭을 적용한 첫 그림에서는 애니메이션을 끈다
 requestAnimationFrame(() => requestAnimationFrame(() => app.classList.remove("no-anim")));

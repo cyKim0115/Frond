@@ -81,6 +81,9 @@
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
           </button>
         </div>
+        <div id="panes" data-mode="view">
+        <div id="editor" lang="ko" hidden></div>
+        <div id="split-resizer" role="separator" aria-orientation="vertical" aria-label="소스·미리보기 폭" tabindex="0" title="끌어서 폭 조절 · 두 번 클릭하면 반반"></div>
         <main id="viewer">
           <section id="welcome">
             <h1>MdEditor</h1>
@@ -88,7 +91,7 @@
             <p class="welcome-hint">닫은 탭 다시 열기 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd></p>
           </section>
         </main>
-        <div id="editor" lang="ko" hidden></div>
+        </div>
       </div>
 
       <footer id="statusbar">

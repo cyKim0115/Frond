@@ -10,6 +10,7 @@
  */
 
 import mermaidUrl from "@mermaid-js/tiny/dist/mermaid.tiny.js?url";
+import { transferKey } from "./morph";
 import { sanitizeSvg } from "./sanitize";
 
 interface MermaidApi {
@@ -101,6 +102,8 @@ export async function renderDiagrams(root: HTMLElement, dark: boolean, isStale: 
         box.dataset.theme = dark ? "dark" : "light";
         if (el.dataset.line !== undefined) box.dataset.line = el.dataset.line;
         box.innerHTML = sanitizeSvg(svg);
+        // 분할 뷰 부분 갱신(morph.ts)이 다음 편집 때 이 그림을 같은 블록으로 알아보게
+        transferKey(el, box);
         el.replaceWith(box);
       } catch (e) {
         // render가 실패하면 Mermaid가 body에 남긴 임시 요소를 치운다
