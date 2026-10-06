@@ -1,6 +1,6 @@
 /**
  * 사용자 설정 — `SETTINGS`에 항목을 하나 더하면 설정 팝업(settings-dialog.ts)의 해당 카테고리 탭에 자동으로 나타난다.
- * 값은 localStorage 한 곳(`mdeditor.settings`)에 모아 두고, 범위·선택지를 벗어난 값은 읽을 때 바로잡는다.
+ * 값은 localStorage 한 곳(`frond.settings`)에 모아 두고, 범위·선택지를 벗어난 값은 읽을 때 바로잡는다.
  * 적용은 구독자(main.ts `applySetting`)가 맡는다. 항목·탭을 더할 때는 `add-setting` 스킬을 따른다.
  */
 
