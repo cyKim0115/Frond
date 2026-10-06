@@ -96,6 +96,19 @@ export const SETTINGS = {
     step: 20,
     unit: "px",
   },
+  statusCount: {
+    kind: "select",
+    section: "view",
+    label: "상태바 글자 수",
+    hint: "보기 화면에 그려진 본문을 셉니다(마크다운 기호·링크 주소 제외). 한글·영문은 띄어쓰기 단위, 한자·가나는 한 글자를 한 단어로 셉니다. 상태바에서 눌러도 바뀝니다",
+    default: "words",
+    options: [
+      { value: "words", label: "단어 수" },
+      { value: "chars", label: "글자 수 (공백 포함)" },
+      { value: "charsNoSpace", label: "글자 수 (공백 제외)" },
+      { value: "off", label: "표시 안 함" },
+    ],
+  },
   headingScrollOffset: {
     kind: "number",
     section: "nav",
