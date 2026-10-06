@@ -212,11 +212,11 @@ const WEDDING: readonly RecommendedTheme[] = [
   // 이 팔레트만 원본의 회색 베이지(c[3]) 대신 세이지(c[1])를 면·글자·강조에 은은히 깔아 전체에 초록빛이 돈다
   wedding("minimal-white-sage-charcoal", "미니멀 화이트 세이지 차콜", "깨끗한, 미니멀리스트, 차분한", ["#ffffff", "#a6b8a6", "#2f3235", "#e6e2dc", "#6b6f74"], "light",
     (c) => {
-      const bg = mix(c[0], c[1], 0.07);
-      const surface = mix(c[0], c[1], 0.3);
-      const fg = mix(c[2], "#1e3a2a", 0.25);
+      const bg = mix(c[0], c[1], 0.035);
+      const surface = mix(c[0], c[1], 0.17);
+      const fg = mix(c[2], "#1e3a2a", 0.15);
       // 사이드바(surface)가 본문보다 어두워 흐린 글자 기본값으로는 대비가 모자라니 surface 기준으로 맞춘다
-      return { bg, surface, fg, accent: mix(c[1], "#2f6b4a", 0.6), second: mix(c[4], c[1], 0.3), muted: readable(mix(fg, c[1], 0.45), surface), line: mix(c[1], bg, 0.5) };
+      return { bg, surface, fg, accent: mix(c[1], "#2f6b4a", 0.6), second: mix(c[4], c[1], 0.3), muted: readable(mix(fg, c[1], 0.3), surface), line: mix(c[1], bg, 0.6) };
     }),
   wedding("rustic-burlap-sage", "러스틱 벌랩 세이지", "소박한, 자연스러운, 아늑한", ["#d8c6a6", "#7b8f6a", "#f4efe6", "#5a4b3c", "#2f2b26"], "light",
     (c) => ({ bg: c[2], surface: mix(c[2], c[0], 0.4), fg: c[4], accent: c[1], second: c[3] })),
