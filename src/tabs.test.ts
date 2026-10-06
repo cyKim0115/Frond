@@ -62,6 +62,31 @@ describe("탭 띠", () => {
     pointer("pointerup", name, 100, 0);
   });
 
+  it("맨 앞·맨 뒤로도 옮긴다 — 띠 끝에 닿으면 끝 탭을 넘은 것으로 본다", () => {
+    const { host, hooks, tab, pointer } = setup();
+    // jsdom에는 레이아웃이 없다 — 폭 100, 간격 0으로 놓인 것처럼
+    const layout = () =>
+      host.querySelectorAll<HTMLElement>(".tab").forEach((el, i) => {
+        Object.defineProperty(el, "offsetLeft", { configurable: true, value: i * 100 });
+        Object.defineProperty(el, "offsetWidth", { configurable: true, value: 100 });
+      });
+    const order = () => Array.from(host.querySelectorAll<HTMLElement>(".tab")).map((el) => el.dataset.id);
+    layout();
+    pointer("pointerdown", tab(2), 150, 1);
+    pointer("pointermove", tab(2), 120, 1);
+    pointer("pointermove", tab(2), -500, 1);
+    pointer("pointerup", tab(2), -500, 0);
+    expect(hooks.move).toHaveBeenLastCalledWith(2, 0);
+    expect(order()).toEqual(["2", "1", "3"]);
+    layout();
+    pointer("pointerdown", tab(2), 50, 1);
+    pointer("pointermove", tab(2), 80, 1);
+    pointer("pointermove", tab(2), 900, 1);
+    pointer("pointerup", tab(2), 900, 0);
+    expect(hooks.move).toHaveBeenLastCalledWith(2, 2);
+    expect(order()).toEqual(["1", "3", "2"]);
+  });
+
   it("버튼이 떨어진 채 움직이면(pointerup을 놓침) 끌기를 끝내고 다시 따라붙지 않는다", () => {
     const { host, tab, pointer } = setup();
     const two = tab(2);
