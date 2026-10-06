@@ -1,20 +1,25 @@
 /**
- * 앱 셸 — 파일 열기 경로(argv·두 번째 인스턴스·드롭·Ctrl+O·최근 파일), 보기(렌더)·소스(CM6) 모드, 저장·초안,
- * 목차·상태바·줌·테마, 외부 변경. 파일 읽기·쓰기는 전부 Rust 커맨드(mdeditor-core)로 간다 — fs 플러그인 금지.
- * 제목 표시줄은 titlebar.ts, 탐색 영역은 nav.ts, 목차 폭은 resize.ts, 설정은 settings.ts(+ settings-dialog.ts),
- * 소스 편집기는 editor.ts, 보기 모드 찾기는 find.ts, 테마는 theme/themes.ts.
+ * 앱 셸 — 파일 열기 경로(argv·두 번째 인스턴스·드롭·Ctrl+O·최근 파일), 탭, 보기(렌더)·소스(CM6) 모드, 저장·초안,
+ * 목차·상태바·줌·테마, 외부 변경, 세션 복원. 파일 읽기·쓰기는 전부 Rust 커맨드(mdeditor-core)로 간다 — fs 플러그인 금지.
+ * 제목 표시줄은 titlebar.ts, 탭 띠는 tabs.ts, 탐색 영역은 nav.ts, 목차 폭은 resize.ts, 설정은 settings.ts(+ settings-dialog.ts),
+ * 소스 편집기는 editor.ts, 보기 모드 찾기는 find.ts, 테마는 theme/themes.ts, 세션 저장은 session.ts.
  *
- * 문서 상태: `current`는 디스크 기준(연 때·마지막 저장 때의 텍스트·해시·메타). 편집 중인 텍스트는 편집기에만 있고
- * `dirty`가 둘의 차이를 나타낸다. 저장은 `current.hash`를 etag로 넘겨 그 사이 바뀐 파일을 덮어쓰지 않는다(save.rs).
+ * 문서 상태는 탭(로드맵 3-1)마다 `Tab`에 있다. `tab.doc`은 디스크 기준(연 때·마지막 저장 때의 텍스트·해시·메타)이고,
+ * 편집 중인 텍스트는 편집기 상태에만 있으며 `tab.dirty`가 둘의 차이를 나타낸다. 저장은 `tab.doc.hash`를 etag로 넘겨
+ * 그 사이 바뀐 파일을 덮어쓰지 않는다(save.rs).
+ * - 편집기(CM6 view)는 하나다. 탭을 바꾸면 그 탭의 `EditorState`로 갈아 끼운다 — 되돌리기 기록·커서·선택이 탭마다 남는다.
+ *   `editorTab`이 지금 view에 올라 있는 탭이고, 나머지 탭의 편집 상태는 `tab.editorState`에 있다
+ * - 보기 화면은 탭마다 `<article>`을 두고 활성 탭 것만 보인다 — 탭을 오가도 다시 그리지 않고 하이라이트·그림도 남는다
  */
 
-import type { StateEffect, Text } from "@codemirror/state";
+import type { EditorState, StateEffect, Text } from "@codemirror/state";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
+import { showContextMenu } from "./context-menu";
 import { showChoice, showDialog } from "./dialog";
 import { createSourceEditor, type SourceEditor } from "./editor";
 import { initFindBar } from "./find";
@@ -22,11 +27,13 @@ import { initNav } from "./nav";
 import { docTitle, samePath } from "./recent";
 import { CHUNK_CLASS, highlightCodeBlocks, LARGE_CHUNK_BLOCKS, LARGE_SOFT_LIMIT, renderMarkdown, type TocEntry } from "./render";
 import { initSidebarResize } from "./resize";
+import { readSession, type Session, type SessionMode, writeSession } from "./session";
 import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
 import { initSettingsDialog } from "./settings-dialog";
+import { initTabStrip } from "./tabs";
 import { applyTheme, findTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
 import { createThemePanel } from "./theme-panel";
-import { initTitlebar, setTitleText } from "./titlebar";
+import { initTitlebar } from "./titlebar";
 import { countText, type TextCount } from "./wordcount";
 import "./style.css";
 import "./theme/index.css";
@@ -67,16 +74,79 @@ interface Draft {
   base_hash: string;
   saved_at: number;
 }
-type Mode = "view" | "source";
+type Mode = SessionMode;
+
+interface BannerAction {
+  label: string;
+  run: () => void;
+}
+interface BannerState {
+  message: string;
+  actions: BannerAction[];
+  warn: boolean;
+  /** 같은 종류의 배너를 골라 거둘 때 ("image" — 이미지 붙여넣기·놓기 실패, "missing" — 파일 사라짐) */
+  kind: string;
+}
+
+/** 열린 문서 하나 (로드맵 3-1) */
+interface Tab {
+  id: number;
+  doc: DocumentPayload;
+  /** "해석만 바꾸기"로 고른 인코딩 — 같은 문서를 다시 읽을 때도 유지한다 */
+  forcedEncoding?: string;
+  mode: Mode;
+  /** 편집기 상태 — `editorTab`이 아닐 때만 의미가 있다. 소스 모드에 한 번도 안 들어갔으면 null */
+  editorState: EditorState | null;
+  /** 편집기 기준 "저장된 내용" — 이것과 같으면 dirty가 아니다 */
+  savedDoc: Text | null;
+  dirty: boolean;
+  /** 보기 화면에 마지막으로 그린 텍스트 — 같으면 모드 전환 때 다시 그리지 않는다 */
+  renderedText: string | null;
+  /** 아직 그리지 않았다 (세션 복원·백그라운드 다시 읽기) — 활성화할 때 그린다 */
+  needsRender: boolean;
+  /** 렌더 차례 — 비동기 후처리(그림)가 그사이 다시 그린 문서를 건드리지 않게 */
+  renderSeq: number;
+  /**
+   * 소스 → 보기로 나갈 때 남긴 편집기 자리. 커서·선택은 편집기 상태에 그대로 남아 있으니 스크롤만 따로 둔다.
+   * 편집기에 문서를 새로 올리면(`loadEditor`) 버린다 — 그때는 되살릴 자리가 없다
+   */
+  sourceMemo: { scroll: StateEffect<unknown>; viewLine: number } | null;
+  article: HTMLElement;
+  tocList: HTMLElement;
+  tocEntries: TocEntry[];
+  frontMatter?: string;
+  tocLinks: Map<string, HTMLAnchorElement>;
+  activeLink: HTMLAnchorElement | null;
+  /** 문서 순서의 본문 제목. `renderView()`가 채운다 */
+  headings: HTMLElement[];
+  /** 큰 문서의 블록 묶음(render/chunks.ts)과, 묶음마다 그 묶음 이후 첫 제목의 `headings` 번호. 묶지 않은 문서는 빈 배열 */
+  chunks: HTMLElement[];
+  chunkHeadingStart: number[];
+  large: boolean;
+  textCount: TextCount | null;
+  lastDraftText: string | null;
+  banner: BannerState | null;
+  /** 감시 중인 파일이 사라졌다는 배너를 띄웠다 — 다시 생기면 거둔다 */
+  missing: boolean;
+  /** 비활성 탭에서 기억한 자리 — 보기 스크롤(작은 문서)·보기 맨 위 줄(큰 문서·세션)·편집기 스크롤·편집기 맨 위 줄 */
+  viewScroll: number;
+  viewLine: number;
+  editorScroll: StateEffect<unknown> | null;
+  editorLine: number;
+  /** 처음 그릴 때 이 줄로 (세션 복원·백그라운드 다시 읽기) */
+  restoreLine: number | null;
+  /** 초안 복구를 이미 물었다 */
+  draftChecked: boolean;
+}
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 const viewer = $("#viewer");
-const article = $<HTMLElement>("#document");
 const editorHost = $("#editor");
 const welcome = $("#welcome");
 const banner = $("#banner");
 const sidebar = $("#sidebar");
 const toc = $("#toc");
+const statusPath = $("#status-path");
 const statusDefault = $<HTMLButtonElement>("#status-default");
 const statusMode = $<HTMLButtonElement>("#status-mode");
 const statusEncoding = $<HTMLButtonElement>("#status-encoding");
@@ -90,27 +160,15 @@ const toAssetUrl = IS_TAURI
   ? convertFileSrc
   : (absPath: string) => absPath.split(/[\\/]/).map(encodeURIComponent).join("/");
 
-let current: DocumentPayload | null = null;
-/** "해석만 바꾸기"로 고른 인코딩 — 같은 문서를 다시 읽을 때도 유지한다 */
-let forcedEncoding: string | undefined;
-let mode: Mode = "view";
+let tabs: Tab[] = [];
+let active: Tab | null = null;
+let nextTabId = 1;
 let editor: SourceEditor | null = null;
-/** 편집기가 지금 담고 있는 문서 경로 — 다른 문서를 열면 null(편집기 내용이 낡음) */
-let editorDocPath: string | null = null;
-/** 편집기 기준 "저장된 내용" — 이것과 같으면 dirty가 아니다 */
-let savedDoc: Text | null = null;
-let dirty = false;
-/** 보기 모드에 마지막으로 그린 텍스트 — 같으면 모드 전환 때 다시 그리지 않는다 */
-let renderedText: string | null = null;
-/**
- * 소스 → 보기로 나갈 때 남긴 편집기 자리. 커서·선택은 편집기 상태에 그대로 남아 있으니 스크롤만 따로 둔다.
- * 편집기에 문서를 새로 올리면(`loadEditor`) 버린다 — 그때는 되살릴 자리가 없다
- */
-let sourceMemo: { scroll: StateEffect<unknown>; viewLine: number } | null = null;
-let tocEntries: TocEntry[] = [];
+/** 편집기 view에 지금 올라 있는 탭 — 다른 탭으로 가면 그 탭의 상태로 갈아 끼운다 */
+let editorTab: Tab | null = null;
+/** 닫은 탭 경로 — Ctrl+Shift+T로 다시 연다 */
+const closedPaths: string[] = [];
 let zoom = 1;
-/** 감시 중인 파일이 사라졌다는 배너를 띄웠다 — 다시 생기면 거둔다 */
-let fileMissing = false;
 
 // ---- 읽기 -----------------------------------------------------------------------
 
@@ -143,129 +201,429 @@ async function fileExists(path: string): Promise<boolean> {
   );
 }
 
+function watchDocument(tab: Tab): void {
+  if (IS_TAURI) void invoke("watch_document", { path: tab.doc.path, hash: tab.doc.hash }).catch(() => undefined);
+}
+
+function unwatchDocument(path: string): void {
+  if (IS_TAURI) void invoke("unwatch_document", { path }).catch(() => undefined);
+}
+
 const nav = initNav({ open: (path) => openPath(path).then(() => undefined), exists: fileExists });
 
 /** 편집 중인 텍스트 (소스 모드에 한 번도 안 들어갔으면 디스크 텍스트) */
-function workingText(): string {
-  if (!current) return "";
-  return editor && editorDocPath === current.path ? editor.getText() : current.text;
+function workingText(tab: Tab | null = active): string {
+  if (!tab) return "";
+  if (editor && editorTab === tab) return editor.getText();
+  return tab.editorState ? tab.editorState.doc.toString() : tab.doc.text;
+}
+
+/** 편집기 기준 지금 문서 (편집기에 한 번도 안 올렸으면 null) */
+function editorDoc(tab: Tab): Text | null {
+  if (editor && editorTab === tab) return editor.view.state.doc;
+  return tab.editorState?.doc ?? null;
+}
+
+const findTab = (path: string): Tab | undefined => tabs.find((t) => samePath(t.doc.path, path));
+
+// ---- 탭 (로드맵 3-1) ---------------------------------------------------------------
+
+function createTab(doc: DocumentPayload, mode: Mode, index = active ? tabs.indexOf(active) + 1 : tabs.length): Tab {
+  const article = document.createElement("article");
+  article.className = "markdown-body doc";
+  article.lang = "ko";
+  article.hidden = true;
+  viewer.append(article);
+  const tocList = document.createElement("div");
+  tocList.className = "toc-list";
+  const tab: Tab = {
+    id: nextTabId++,
+    doc,
+    mode,
+    editorState: null,
+    savedDoc: null,
+    dirty: false,
+    renderedText: null,
+    needsRender: true,
+    renderSeq: 0,
+    sourceMemo: null,
+    article,
+    tocList,
+    tocEntries: [],
+    tocLinks: new Map(),
+    activeLink: null,
+    headings: [],
+    chunks: [],
+    chunkHeadingStart: [],
+    large: false,
+    textCount: null,
+    lastDraftText: null,
+    banner: null,
+    missing: false,
+    viewScroll: 0,
+    viewLine: 0,
+    editorScroll: null,
+    editorLine: 0,
+    restoreLine: null,
+    draftChecked: false,
+  };
+  tabs.splice(Math.min(Math.max(0, index), tabs.length), 0, tab);
+  return tab;
+}
+
+const tabStrip = initTabStrip($("#tabs"), {
+  activate(id) {
+    const tab = tabs.find((t) => t.id === id);
+    if (tab) activate(tab);
+  },
+  close(id) {
+    const tab = tabs.find((t) => t.id === id);
+    if (tab) void closeTab(tab);
+  },
+  menu(id, event) {
+    const tab = tabs.find((t) => t.id === id);
+    if (tab) tabMenu(tab, event);
+  },
+  move(id, index) {
+    const tab = tabs.find((t) => t.id === id);
+    if (!tab) return;
+    tabs = tabs.filter((t) => t !== tab);
+    tabs.splice(index, 0, tab);
+    renderTabs();
+    saveSession();
+  },
+});
+
+function renderTabs(): void {
+  tabStrip.render(
+    tabs.map((t) => ({ id: t.id, name: t.doc.name, title: t.doc.path, dirty: t.dirty })),
+    active?.id ?? null,
+  );
+}
+
+/** 지금 탭의 화면 자리를 탭에 남긴다 — 다른 탭으로 가기 전에 */
+function stash(tab: Tab): void {
+  if (tab.mode === "view" && !tab.needsRender) {
+    tab.viewScroll = viewer.scrollTop;
+    tab.viewLine = viewTopLine();
+  }
+  if (editor && editorTab === tab) {
+    tab.editorState = editor.view.state;
+    if (tab.mode === "source") {
+      tab.editorScroll = editor.view.scrollSnapshot();
+      tab.editorLine = editor.topLine();
+    }
+  }
+}
+
+/** 탭을 앞으로 — 그 탭의 보기 화면·목차·모드·편집기 상태·배너·상태바로 바꾼다 */
+function activate(tab: Tab): void {
+  if (tab === active) return;
+  if (active) stash(active);
+  findBar.close();
+  active = tab;
+  for (const t of tabs) t.article.hidden = t !== tab;
+  welcome.hidden = true;
+  toc.replaceChildren(tab.tocList);
+  const restore = tab.restoreLine;
+  tab.restoreLine = null;
+  if (tab.needsRender) renderView(tab, workingText(tab));
+  app.classList.toggle("large-doc", tab.large);
+  sidebar.hidden = tab.tocEntries.length === 0;
+  showMode(tab.mode);
+  if (tab.mode === "source") {
+    const ed = attachEditor(tab);
+    ed.view.requestMeasure();
+    if (restore !== null) ed.scrollToLine(restore);
+    else if (tab.editorScroll) ed.view.dispatch({ effects: tab.editorScroll });
+  } else if (restore !== null) {
+    scrollViewToLine(restore);
+  } else if (tab.large) {
+    // 큰 문서는 숨겼다 보이면 묶음 높이를 다시 재므로 스크롤 값 대신 보던 블록으로 돌아간다
+    scrollViewToLine(tab.viewLine);
+  } else {
+    viewer.scrollTop = tab.viewScroll;
+  }
+  paintBanner(tab.banner);
+  updateDocChrome();
+  updateCount();
+  updateActiveHeading();
+  nav.setCurrent(tab.doc.path);
+  renderTabs();
+  saveSession();
+  if (!tab.draftChecked) {
+    tab.draftChecked = true;
+    void offerDraft(tab);
+  }
+}
+
+/** 열린 문서가 없을 때 — 처음 화면 */
+function showWelcome(): void {
+  active = null;
+  for (const t of tabs) t.article.hidden = true;
+  welcome.hidden = false;
+  viewer.hidden = false;
+  editorHost.hidden = true;
+  viewer.scrollTop = 0;
+  toc.replaceChildren();
+  sidebar.hidden = true;
+  app.classList.remove("large-doc");
+  findBar.close();
+  paintBanner(null);
+  updateDocChrome();
+  updateCount();
+  nav.setCurrent(null);
+  renderTabs();
+  saveSession();
+}
+
+interface OpenOptions {
+  /** 탭만 만들고 앞으로 가져오지 않는다 (세션 복원) */
+  background?: boolean;
+  mode?: Mode;
+  /** 처음 그릴 때 이 줄로 */
+  line?: number;
+  /** 새 탭 자리 (기본: 활성 탭 바로 뒤) */
+  index?: number;
 }
 
 /**
- * 다른 문서를 연다 (argv·최근 파일·링크·Ctrl+O·드롭). 수정 중이면 저장 여부를 먼저 묻는다.
- * 같은 문서를 디스크에서 다시 읽을 때는 `reload()`.
+ * 문서를 연다 (argv·두 번째 인스턴스·최근 파일·링크·Ctrl+O·드롭). 이미 열린 문서면 그 탭으로 가고, 아니면 새 탭.
+ * 디스크에서 다시 읽는 것은 F5·외부 변경(`reload()`)
  */
-async function openPath(path: string, options: { skipConfirm?: boolean } = {}): Promise<boolean> {
-  if (current && samePath(current.path, path) && !options.skipConfirm) return reload();
-  if (!options.skipConfirm && !(await confirmLeave())) return false;
+async function openPath(path: string, options: OpenOptions = {}): Promise<Tab | null> {
+  const existing = findTab(path);
+  if (existing) {
+    if (!options.background) {
+      activate(existing);
+      nav.remember(existing.doc.path, tabTitle(existing));
+    }
+    return existing;
+  }
   let doc: DocumentPayload;
   try {
     doc = await loadDocument(path);
   } catch (e) {
-    showError(String(e));
-    return false;
+    if (!options.background) await showDialog({ title: "열 수 없습니다", message: String(e), detail: path });
+    return null;
   }
-  forcedEncoding = undefined;
-  hideBanner();
-  adopt(doc, getSetting("openMode") === "source" ? "source" : "view");
-  nav.remember(doc.path, titleOf(doc.text));
-  if (IS_TAURI) await invoke("watch_document", { path: doc.path, hash: doc.hash });
-  await offerDraft(doc);
+  // 읽는 사이 같은 문서가 열렸으면(빠른 연속 열기) 그 탭으로
+  const again = findTab(doc.path);
+  if (again) {
+    if (!options.background) activate(again);
+    return again;
+  }
+  const tab = createTab(doc, options.mode ?? (getSetting("openMode") === "source" ? "source" : "view"), options.index);
+  if (options.line !== undefined) tab.restoreLine = options.line;
+  watchDocument(tab);
+  if (options.background) {
+    renderTabs();
+    saveSession();
+    return tab;
+  }
+  activate(tab);
+  nav.remember(doc.path, tabTitle(tab));
+  return tab;
+}
+
+/** 탭을 닫는다. 저장하지 않은 변경이 있으면 먼저 묻는다. 닫았으면 true */
+async function closeTab(tab: Tab): Promise<boolean> {
+  if (tab.dirty) {
+    activate(tab);
+    if (!(await confirmLeave(tab, "close"))) return false;
+  }
+  const i = tabs.indexOf(tab);
+  if (i < 0) return true;
+  if (active === tab) stash(tab);
+  tabs.splice(i, 1);
+  tab.article.remove();
+  if (editorTab === tab) editorTab = null;
+  unwatchDocument(tab.doc.path);
+  closedPaths.push(tab.doc.path);
+  if (closedPaths.length > 20) closedPaths.shift();
+  if (active === tab) {
+    active = null;
+    const next = tabs[i] ?? tabs[i - 1];
+    if (next) activate(next);
+    else showWelcome();
+  } else {
+    renderTabs();
+    saveSession();
+  }
   return true;
 }
 
+/** 여러 탭을 차례로 닫는다 — 저장 확인에서 취소하면 멈춘다 */
+async function closeTabs(list: Tab[]): Promise<void> {
+  for (const tab of list) if (!(await closeTab(tab))) return;
+}
+
+function tabMenu(tab: Tab, event: MouseEvent): void {
+  const i = tabs.indexOf(tab);
+  const others = tabs.filter((t) => t !== tab);
+  const right = tabs.slice(i + 1);
+  showContextMenu(event, [
+    { label: "닫기", action: () => void closeTab(tab) },
+    ...(others.length ? [{ label: "다른 탭 모두 닫기", action: () => void closeTabs(others) }] : []),
+    ...(right.length ? [{ label: "오른쪽 탭 모두 닫기", action: () => void closeTabs(right) }] : []),
+    { label: "경로 복사", action: () => void navigator.clipboard.writeText(tab.doc.path).then(() => flashStatus("경로를 복사했습니다")) },
+    ...(IS_TAURI
+      ? [
+          {
+            label: "파일 위치 열기",
+            action: () =>
+              void revealItemInDir(tab.doc.path).catch((e) => showDialog({ title: "파일 위치를 열 수 없습니다", message: String(e), detail: tab.doc.path })),
+          },
+        ]
+      : []),
+  ]);
+}
+
+function cycleTab(step: number): void {
+  if (!active || tabs.length < 2) return;
+  const i = tabs.indexOf(active);
+  activate(tabs[(i + step + tabs.length) % tabs.length]);
+}
+
+async function reopenClosedTab(): Promise<void> {
+  while (closedPaths.length > 0) {
+    const path = closedPaths.pop()!;
+    if (findTab(path)) continue;
+    if (await fileExists(path)) {
+      await openPath(path);
+      return;
+    }
+  }
+  flashStatus("다시 열 탭이 없습니다");
+}
+
+// ---- 다시 읽기·화면에 올리기 ---------------------------------------------------------
+
 /** 같은 문서를 디스크에서 다시 읽는다 (F5·외부 변경·"다시 읽기"·인코딩 다시 열기). 보던 위치를 지킨다 */
-async function reload(options: { discard?: boolean; encoding?: string } = {}): Promise<boolean> {
-  if (!current) return false;
-  if (!options.discard && !(await confirmLeave("reload"))) return false;
-  const encoding = options.encoding ?? forcedEncoding;
+async function reload(options: { discard?: boolean; encoding?: string } = {}, tab: Tab | null = active): Promise<boolean> {
+  if (!tab) return false;
+  if (tab !== active) return reloadInBackground(tab, options.encoding);
+  if (!options.discard && !(await confirmLeave(tab, "reload"))) return false;
+  const encoding = options.encoding ?? tab.forcedEncoding;
   let doc: DocumentPayload;
   try {
-    doc = await loadDocument(current.path, encoding);
+    doc = await loadDocument(tab.doc.path, encoding);
   } catch (e) {
-    showBanner(`다시 읽을 수 없습니다: ${e}`, [], true);
+    showBanner(`다시 읽을 수 없습니다: ${e}`, [], true, "", tab);
     return false;
   }
-  forcedEncoding = encoding;
+  if (tab !== active) return true; // 읽는 사이 탭을 바꿨다 — 그 탭은 다음에 다시 읽힌다
+  tab.forcedEncoding = encoding;
   const scrollTop = viewer.scrollTop;
-  const line = mode === "source" && editor ? editor.topLine() : null;
-  const cursor = mode === "source" && editor ? editor.view.state.selection.main.head : null;
-  hideBanner();
-  adopt(doc, mode);
-  if (mode === "view") viewer.scrollTop = scrollTop;
+  const line = tab.mode === "source" && editor ? editor.topLine() : null;
+  const cursor = tab.mode === "source" && editor ? editor.view.state.selection.main.head : null;
+  hideBanner(tab);
+  adopt(tab, doc, tab.mode);
+  if (tab.mode === "view") viewer.scrollTop = scrollTop;
   else if (editor && line !== null) {
     editor.scrollToLine(line);
     if (cursor !== null) editor.view.dispatch({ selection: { anchor: Math.min(cursor, editor.view.state.doc.length) } });
   }
-  nav.retitle(doc.path, titleOf(doc.text));
-  if (IS_TAURI) await invoke("watch_document", { path: doc.path, hash: doc.hash });
+  nav.retitle(doc.path, tabTitle(tab));
+  watchDocument(tab);
   return true;
 }
 
-/** 디스크에서 읽은 문서를 화면에 올린다 — 편집 상태는 버린다 */
-function adopt(doc: DocumentPayload, nextMode: Mode): void {
-  current = doc;
-  fileMissing = false;
-  editorDocPath = null;
-  savedDoc = null;
-  renderedText = null;
-  setDirty(false);
-  if (nextMode === "source") {
-    loadEditor(doc.text);
-    renderView(doc.text);
-    showMode("source");
-  } else {
-    renderView(doc.text);
-    showMode("view");
+/** 뒤에 있는(저장하지 않은 변경이 없는) 탭을 조용히 다시 읽는다 — 앞으로 가져올 때 보던 줄로 그린다 */
+async function reloadInBackground(tab: Tab, encoding = tab.forcedEncoding): Promise<boolean> {
+  let doc: DocumentPayload;
+  try {
+    doc = await loadDocument(tab.doc.path, encoding);
+  } catch {
+    return false;
   }
+  if (tab === active || !tabs.includes(tab) || tab.dirty) return false;
+  const line = tab.needsRender ? tab.restoreLine : tab.mode === "view" ? tab.viewLine : tab.editorLine;
+  tab.forcedEncoding = encoding;
+  adopt(tab, doc, tab.mode);
+  tab.restoreLine = line;
+  watchDocument(tab);
+  renderTabs();
+  return true;
+}
+
+/** 디스크에서 읽은 문서를 탭에 올린다 — 편집 상태는 버린다. 뒤 탭이면 앞으로 올 때 그린다 */
+function adopt(tab: Tab, doc: DocumentPayload, nextMode: Mode): void {
+  tab.doc = doc;
+  tab.missing = false;
+  tab.editorState = null;
+  tab.savedDoc = null;
+  tab.renderedText = null;
+  tab.editorScroll = null;
+  tab.sourceMemo = null;
+  if (editorTab === tab) editorTab = null;
+  tab.mode = nextMode;
+  setDirty(tab, false);
+  if (tab !== active) {
+    tab.needsRender = true;
+    return;
+  }
+  if (nextMode === "source") {
+    loadEditor(tab, doc.text);
+    renderView(tab, doc.text);
+  } else {
+    renderView(tab, doc.text);
+  }
+  showMode(nextMode);
   updateDocChrome();
 }
 
-/** 제목(front matter title → 첫 H1) — 큰 문서는 파싱을 아끼고 파일 이름만 쓴다 */
-function titleOf(text: string): string | undefined {
-  if (text.length > LARGE_SOFT_LIMIT / 2) return tocEntries.length ? docTitle(tocEntries) : undefined;
+/** 제목(front matter title → 첫 H1) — 큰 문서는 파싱을 아끼고 그린 목차만 쓴다 */
+function titleOf(text: string, tab: Tab | null = active): string | undefined {
+  if (text.length > LARGE_SOFT_LIMIT / 2) return tab?.tocEntries.length ? docTitle(tab.tocEntries) : undefined;
+  if (tab && tab.renderedText === text) return docTitle(tab.tocEntries, tab.frontMatter);
   const result = renderMarkdown(text, { baseDir: "", toAssetUrl: (p) => p });
   return docTitle(result.toc, result.frontMatter);
 }
 
+const tabTitle = (tab: Tab): string | undefined => (tab.needsRender ? undefined : docTitle(tab.tocEntries, tab.frontMatter));
+
 // ---- 보기 모드 (렌더) --------------------------------------------------------------
 
-function renderView(text: string): void {
-  if (!current) return;
+function renderView(tab: Tab, text: string): void {
   // 2 MB(스펙 largeSoftLimit)를 넘는 문서는 하이라이트를 생략하고, 이미지는 지연 로드,
   // 큰 문서 모드(블록 묶음 단위로 화면 밖 레이아웃 생략·패널 애니메이션 끔)로 그린다
-  const large = current.info.byte_len > LARGE_SOFT_LIMIT || text.length > LARGE_SOFT_LIMIT;
+  const large = tab.doc.info.byte_len > LARGE_SOFT_LIMIT || text.length > LARGE_SOFT_LIMIT;
   const result = renderMarkdown(text, {
-    baseDir: current.dir,
+    baseDir: tab.doc.dir,
     toAssetUrl,
     lazyImages: large,
     chunkBlocks: large ? LARGE_CHUNK_BLOCKS : undefined,
   });
-  app.classList.toggle("large-doc", large);
-  article.innerHTML = result.html;
-  article.hidden = false;
-  welcome.hidden = true;
-  viewer.scrollTop = 0;
-  if (!large) void highlightCodeBlocks(article);
-  renderedText = text;
-  tocEntries = result.toc;
+  tab.large = large;
+  tab.article.classList.toggle("large", large);
+  tab.article.innerHTML = result.html;
+  tab.renderSeq++;
+  if (!large) void highlightCodeBlocks(tab.article);
+  tab.renderedText = text;
+  tab.needsRender = false;
+  tab.tocEntries = result.toc;
+  tab.frontMatter = result.frontMatter;
 
-  tocLinks.clear();
-  activeLink = null;
-  toc.replaceChildren(
+  tab.tocLinks.clear();
+  tab.activeLink = null;
+  tab.tocList.replaceChildren(
     ...result.toc.map((e) => {
       const a = document.createElement("a");
       a.href = `#${e.id}`;
       a.textContent = e.text;
       a.dataset.level = String(e.level);
       a.dataset.line = String(e.line);
-      tocLinks.set(e.id, a);
+      tab.tocLinks.set(e.id, a);
       return a;
     }),
   );
-  headings = Array.from(article.querySelectorAll<HTMLElement>("h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]"));
-  indexChunks();
-  recount(large);
+  tab.headings = Array.from(tab.article.querySelectorAll<HTMLElement>("h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]"));
+  indexChunks(tab);
+  recount(tab);
+  if (tab !== active) return;
+  app.classList.toggle("large-doc", large);
+  viewer.scrollTop = 0;
   sidebar.hidden = result.toc.length === 0;
   updateActiveHeading();
   findBar.refresh();
@@ -278,9 +636,10 @@ function viewTopLine(): number {
 
 /** 보기 화면에 보이는 소스 줄 범위 `[top, bottom)` (0 기준). 마지막 블록까지 보이면 bottom은 Infinity */
 function viewLineRange(): { top: number; bottom: number } {
+  if (!active) return { top: 0, bottom: Infinity };
   const rect = viewer.getBoundingClientRect();
   let top: number | null = null;
-  for (const child of article.children as HTMLCollectionOf<HTMLElement>) {
+  for (const child of active.article.children as HTMLCollectionOf<HTMLElement>) {
     let blocks: Iterable<HTMLElement> = [child];
     if (child.classList.contains(CHUNK_CLASS)) {
       // 큰 문서의 묶음은 묶음 상자로 먼저 거른다 — 화면 밖 묶음 안의 블록을 재면 그 묶음을 배치하게 된다
@@ -305,8 +664,9 @@ function viewLineRange(): { top: number; bottom: number } {
 
 /** 소스 줄 `line`(0 기준) 이하에서 시작하는 마지막 최상위 블록을 화면 맨 위로 */
 function scrollViewToLine(line: number): void {
+  if (!active) return;
   const blocks = Array.from(
-    article.querySelectorAll<HTMLElement>(`:scope > [data-line], :scope > .${CHUNK_CLASS} > [data-line]`),
+    active.article.querySelectorAll<HTMLElement>(`:scope > [data-line], :scope > .${CHUNK_CLASS} > [data-line]`),
   );
   let lo = 0;
   let hi = blocks.length - 1;
@@ -322,23 +682,16 @@ function scrollViewToLine(line: number): void {
   else blocks[hit].scrollIntoView({ block: "start" });
 }
 
-function showError(message: string): void {
-  article.replaceChildren();
-  const p = document.createElement("p");
-  p.className = "error";
-  p.textContent = `열 수 없습니다: ${message}`;
-  article.append(p);
-  article.hidden = false;
-  welcome.hidden = true;
-}
-
 // ---- 소스 모드 (CM6, 로드맵 2-1) ---------------------------------------------------
+
+let headingTick = 0;
 
 function ensureEditor(): SourceEditor {
   if (editor) return editor;
   editor = createSourceEditor(editorHost, { onChange: onEditorChange, onPasteImages: pasteImages });
   editor.setLineWrapping(getSetting("editorLineWrap") === "wrap");
   editor.view.scrollDOM.addEventListener("scroll", () => {
+    saveSession();
     if (headingTick) return;
     headingTick = requestAnimationFrame(() => {
       headingTick = 0;
@@ -348,25 +701,41 @@ function ensureEditor(): SourceEditor {
   return editor;
 }
 
-/** 편집기에 텍스트를 올린다. 디스크 텍스트와 다르면(초안 복구) 바로 dirty */
-function loadEditor(text: string): void {
-  if (!current) return;
+/** 탭의 편집 상태를 편집기에 올린다 (이미 올라 있으면 그대로) */
+function attachEditor(tab: Tab): SourceEditor {
   const ed = ensureEditor();
-  ed.setText(current.text);
-  savedDoc = ed.view.state.doc;
-  if (text !== current.text) ed.view.dispatch({ changes: { from: 0, to: ed.view.state.doc.length, insert: text } });
+  if (editorTab === tab) return ed;
+  if (editorTab) editorTab.editorState = ed.view.state;
+  if (tab.editorState) {
+    ed.setState(tab.editorState);
+    ed.setReadOnly(tab.doc.info.lossy);
+    editorTab = tab;
+  } else {
+    loadEditor(tab, tab.doc.text);
+  }
+  return ed;
+}
+
+/** 편집기에 텍스트를 올린다. 디스크 텍스트와 다르면(초안 복구) 바로 dirty */
+function loadEditor(tab: Tab, text: string): void {
+  const ed = ensureEditor();
+  if (editorTab && editorTab !== tab) editorTab.editorState = ed.view.state;
+  editorTab = tab;
+  ed.setText(tab.doc.text);
+  tab.savedDoc = ed.view.state.doc;
+  if (text !== tab.doc.text) ed.view.dispatch({ changes: { from: 0, to: ed.view.state.doc.length, insert: text } });
   // 손실 디코드 문서는 저장할 수 없으니 편집도 막는다 (스펙 경계 사례)
-  ed.setReadOnly(current.info.lossy);
-  editorDocPath = current.path;
-  sourceMemo = null;
-  setDirty(text !== current.text);
+  ed.setReadOnly(tab.doc.info.lossy);
+  tab.editorState = null;
+  tab.sourceMemo = null;
+  setDirty(tab, text !== tab.doc.text);
 }
 
 function showMode(next: Mode): void {
-  mode = next;
+  if (active) active.mode = next;
   viewer.hidden = next !== "view";
   editorHost.hidden = next !== "source";
-  statusMode.hidden = !current;
+  statusMode.hidden = !active;
   statusMode.textContent = next === "source" ? "소스" : "보기";
   if (next === "source") findBar.close();
 }
@@ -391,15 +760,15 @@ function cursorReturn(cursorLine: number, leftAt: number, viewTop: number, viewB
 
 /** Ctrl+/ — 보던 위치를 `data-line`으로 맞춰 오간다 (T1). 보기에서 크게 움직이지 않았으면 커서도 되살린다 */
 function setMode(next: Mode): void {
-  if (!current || next === mode) return;
+  const tab = active;
+  if (!tab || next === tab.mode) return;
   if (next === "source") {
     // 보기 화면은 숨기기 전에 잰다
     const range = viewLineRange();
-    if (editorDocPath !== current.path) loadEditor(current.text);
-    const memo = sourceMemo;
-    sourceMemo = null;
+    const ed = attachEditor(tab);
+    const memo = tab.sourceMemo;
+    tab.sourceMemo = null;
     showMode("source");
-    const ed = editor!;
     // 숨겨져 있던 편집기는 크기를 다시 재야 한다. scrollIntoView 효과는 그 측정 때 반영된다
     ed.view.requestMeasure();
     const { state } = ed.view;
@@ -409,44 +778,50 @@ function setMode(next: Mode): void {
     else ed.scrollToLine(range.top, choice === "follow");
     ed.focus();
   } else {
-    const line = editor ? editor.topLine() : 0;
+    const line = editor && editorTab === tab ? editor.topLine() : 0;
     // 편집기는 숨겨지면 스크롤을 잃는다 — 문서 위치 기준 스냅샷으로 남긴다
-    const scroll = editor && editorDocPath === current.path ? editor.view.scrollSnapshot() : null;
-    const text = workingText();
-    if (text !== renderedText) renderView(text);
+    const scroll = editor && editorTab === tab ? editor.view.scrollSnapshot() : null;
+    const text = workingText(tab);
+    if (text !== tab.renderedText) renderView(tab, text);
     showMode("view");
     scrollViewToLine(line);
-    sourceMemo = scroll ? { scroll, viewLine: viewTopLine() } : null;
+    tab.sourceMemo = scroll ? { scroll, viewLine: viewTopLine() } : null;
     viewer.focus({ preventScroll: true });
   }
+  saveSession();
 }
 
 let dirtyTimer = 0;
 let previewTimer = 0;
 function onEditorChange(): void {
+  const tab = editorTab;
+  if (!tab) return;
   // 첫 입력은 바로 표시하고, 되돌리기로 원래대로 돌아왔는지는 잠시 뒤 정확히 잰다
-  if (!dirty) setDirty(true);
+  if (!tab.dirty) setDirty(tab, true);
   window.clearTimeout(dirtyTimer);
   dirtyTimer = window.setTimeout(() => {
-    if (editor && savedDoc) setDirty(!editor.view.state.doc.eq(savedDoc));
+    const doc = editorDoc(tab);
+    if (doc && tab.savedDoc) setDirty(tab, !doc.eq(tab.savedDoc));
   }, 250);
   // 작은 문서는 목차·보기 화면을 편집을 따라 갱신한다 (큰 문서는 보기로 돌아갈 때 한 번)
   window.clearTimeout(previewTimer);
   previewTimer = window.setTimeout(() => {
-    if (!current || !editor) return;
+    if (editorTab !== tab || tab !== active || !editor) return;
     const text = editor.getText();
-    if (text.length <= LARGE_SOFT_LIMIT / 4 && text !== renderedText) {
+    if (text.length <= LARGE_SOFT_LIMIT / 4 && text !== tab.renderedText) {
       const keep = viewer.scrollTop;
-      renderView(text);
+      renderView(tab, text);
       viewer.scrollTop = keep;
       updateActiveHeading();
     }
   }, 700);
 }
 
-function setDirty(next: boolean): void {
-  dirty = next;
-  updateTitle();
+function setDirty(tab: Tab, next: boolean): void {
+  if (tab.dirty === next) return;
+  tab.dirty = next;
+  if (tab === active) updateTitle();
+  renderTabs();
 }
 
 // ---- 붙여넣기·끌어다 놓기 이미지 (2-5) ---------------------------------------------------
@@ -472,7 +847,8 @@ function timestamp(): string {
 }
 
 async function pasteImages(files: File[]): Promise<string | null> {
-  if (!current) return null;
+  const tab = active;
+  if (!tab) return null;
   if (!IS_TAURI) {
     showBanner("브라우저 미리보기에서는 이미지를 저장할 수 없습니다.");
     return null;
@@ -486,11 +862,11 @@ async function pasteImages(files: File[]): Promise<string | null> {
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const rel = await invoke<string>("save_pasted_image", bytes, {
-        headers: { "x-doc-dir": encodeURIComponent(current.dir), "x-stem": encodeURIComponent(stem), "x-ext": ext },
+        headers: { "x-doc-dir": encodeURIComponent(tab.doc.dir), "x-stem": encodeURIComponent(stem), "x-ext": ext },
       });
       links.push(markdownImage("", rel));
     } catch (e) {
-      showBanner(`이미지를 저장하지 못했습니다: ${e}`, [], true, "image");
+      showBanner(`이미지를 저장하지 못했습니다: ${e}`, [], true, "image", tab);
     }
   }
   return links.length ? links.join("\n") : null;
@@ -500,25 +876,26 @@ const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
 
 /** 지난 붙여넣기·끌어다 놓기의 실패 배너는 다음 시도 때 거둔다 — 성공해도 예전 실패가 남아 보이지 않게 */
 function clearImageBanner(): void {
-  if (!banner.hidden && banner.dataset.kind === "image") hideBanner();
+  if (active?.banner?.kind === "image") hideBanner(active);
 }
 
 async function dropImages(paths: string[], position: { x: number; y: number }): Promise<void> {
-  if (!current || !editor) return;
+  const tab = active;
+  if (!tab || !editor || editorTab !== tab) return;
   const at = editor.view.posAtCoords({ x: position.x / devicePixelRatio, y: position.y / devicePixelRatio });
   if (at !== null) editor.view.dispatch({ selection: { anchor: at } });
   clearImageBanner();
   const links: string[] = [];
   for (const source of paths) {
     try {
-      const rel = await invoke<string>("copy_image_to_assets", { docDir: current.dir, source });
+      const rel = await invoke<string>("copy_image_to_assets", { docDir: tab.doc.dir, source });
       const alt = source.replace(/^.*[\\/]/, "").replace(IMAGE_EXT_RE, "");
       links.push(markdownImage(alt, rel));
     } catch (e) {
-      showBanner(`이미지를 복사하지 못했습니다: ${e}`, [], true, "image");
+      showBanner(`이미지를 복사하지 못했습니다: ${e}`, [], true, "image", tab);
     }
   }
-  if (links.length) editor.insertAtCursor(links.join("\n"));
+  if (links.length && editorTab === tab) editor.insertAtCursor(links.join("\n"));
   editor.focus();
 }
 
@@ -541,16 +918,16 @@ interface SaveOptions {
 }
 
 /** Ctrl+S. 성공(또는 저장할 것 없음)이면 true */
-async function save(options: SaveOptions = {}): Promise<boolean> {
-  if (!current) return false;
+async function save(options: SaveOptions = {}, tab: Tab | null = active): Promise<boolean> {
+  if (!tab) return false;
   if (!IS_TAURI) {
     showBanner("브라우저 미리보기에서는 저장할 수 없습니다. 앱(npm run app:dev)에서 저장하세요.");
     return false;
   }
   await flushComposition();
-  const doc = current;
-  const text = workingText();
-  if (!dirty && !options.force && !options.convertTo && !options.eol) {
+  const doc = tab.doc;
+  const text = workingText(tab);
+  if (!tab.dirty && !options.force && !options.convertTo && !options.eol) {
     flashStatus("변경 없음");
     return true;
   }
@@ -567,22 +944,23 @@ async function save(options: SaveOptions = {}): Promise<boolean> {
     doc.text = text;
     doc.hash = saved.hash;
     doc.info = saved.info;
-    if (options.convertTo) forcedEncoding = undefined;
-    if (editor && editorDocPath === doc.path) savedDoc = editor.view.state.doc;
-    setDirty(false);
-    lastDraftText = null;
+    if (options.convertTo) tab.forcedEncoding = undefined;
+    const now = editorDoc(tab);
+    if (now) tab.savedDoc = now;
+    setDirty(tab, false);
+    tab.lastDraftText = null;
     void invoke("delete_draft", { path: doc.path }).catch(() => undefined);
-    hideBanner();
-    updateDocChrome();
-    nav.retitle(doc.path, titleOf(text));
+    hideBanner(tab);
+    if (tab === active) updateDocChrome();
+    nav.retitle(doc.path, titleOf(text, tab));
     flashStatus("저장됨");
     return true;
   } catch (error) {
-    return handleSaveFailure(error as SaveFailure | string);
+    return handleSaveFailure(error as SaveFailure | string, tab);
   }
 }
 
-async function handleSaveFailure(failure: SaveFailure | string): Promise<boolean> {
+async function handleSaveFailure(failure: SaveFailure | string, tab: Tab): Promise<boolean> {
   if (typeof failure === "string" || !failure || typeof failure !== "object") {
     await showDialog({ title: "저장하지 못했습니다", message: String(failure) });
     return false;
@@ -594,7 +972,7 @@ async function handleSaveFailure(failure: SaveFailure | string): Promise<boolean
         message: failure.missing
           ? "연 뒤에 파일이 지워지거나 옮겨졌습니다. 이 내용으로 같은 자리에 다시 만들까요?"
           : "연 뒤에 다른 프로그램이 이 파일을 저장했습니다. 덮어쓰면 그 변경이 사라집니다.",
-        detail: current?.path,
+        detail: tab.doc.path,
         choices: [
           { value: "save-as", label: "다른 이름으로 저장…" },
           { value: "force", label: failure.missing ? "다시 만들기" : "덮어쓰기", kind: failure.missing ? "primary" : "danger" },
@@ -602,8 +980,8 @@ async function handleSaveFailure(failure: SaveFailure | string): Promise<boolean
         cancelLabel: "취소",
         focus: "save-as",
       });
-      if (choice === "force") return save({ force: true });
-      if (choice === "save-as") return saveAs();
+      if (choice === "force") return save({ force: true }, tab);
+      if (choice === "save-as") return saveAs(tab);
       return false;
     }
     case "unmappable": {
@@ -613,7 +991,7 @@ async function handleSaveFailure(failure: SaveFailure | string): Promise<boolean
         confirmLabel: "UTF-8로 변환해 저장",
         cancelLabel: "취소",
       });
-      return ok ? save({ convertTo: "UTF-8", bom: false }) : false;
+      return ok ? save({ convertTo: "UTF-8", bom: false }, tab) : false;
     }
     case "lossy":
       await showDialog({
@@ -627,44 +1005,60 @@ async function handleSaveFailure(failure: SaveFailure | string): Promise<boolean
   }
 }
 
-/** Ctrl+Shift+S — 원래 파일의 인코딩·줄바꿈을 그대로 가져가 새 파일로 저장하고 그 파일로 옮겨 간다 */
-async function saveAs(): Promise<boolean> {
-  if (!current) return false;
+/** Ctrl+Shift+S — 원래 파일의 인코딩·줄바꿈을 그대로 가져가 새 파일로 저장하고, 이 탭이 그 파일을 보게 한다 */
+async function saveAs(tab: Tab | null = active): Promise<boolean> {
+  if (!tab) return false;
   if (!IS_TAURI) {
     showBanner("브라우저 미리보기에서는 저장할 수 없습니다.");
     return false;
   }
   await flushComposition();
   const target = await saveDialog({
-    defaultPath: current.path,
+    defaultPath: tab.doc.path,
     filters: [{ name: "Markdown", extensions: ["md", "markdown", "mdown", "mkd", "txt"] }],
   });
   if (!target) return false;
-  const text = workingText();
-  const from = current.path;
+  const text = workingText(tab);
+  const from = tab.doc.path;
   try {
     await invoke<SavedPayload>("save_document_as", { sourcePath: from, targetPath: target, text });
   } catch (error) {
-    return handleSaveFailure(error as SaveFailure | string);
+    return handleSaveFailure(error as SaveFailure | string, tab);
   }
   void invoke("delete_draft", { path: from }).catch(() => undefined);
-  setDirty(false);
-  const keepMode = mode;
-  const opened = await openPath(target, { skipConfirm: true });
-  if (opened && keepMode !== mode) setMode(keepMode);
-  return opened;
+  let doc: DocumentPayload;
+  try {
+    doc = await loadDocument(target);
+  } catch (e) {
+    await showDialog({ title: "저장한 파일을 열 수 없습니다", message: String(e), detail: target });
+    return false;
+  }
+  // 저장한 자리를 다른 탭이 보고 있었으면 그 탭은 닫는다(방금 덮어썼다) — 그 탭에 저장하지 않은 편집이 있으면 둔다
+  const other = tabs.find((t) => t !== tab && samePath(t.doc.path, doc.path));
+  if (other && !other.dirty) await closeTab(other);
+  if (!samePath(from, doc.path)) unwatchDocument(from);
+  tab.forcedEncoding = undefined;
+  tab.lastDraftText = null;
+  hideBanner(tab);
+  adopt(tab, doc, tab.mode);
+  watchDocument(tab);
+  nav.remember(doc.path, tabTitle(tab));
+  if (tab === active) nav.setCurrent(doc.path);
+  renderTabs();
+  saveSession();
+  return true;
 }
 
 /** 수정 중이면 저장할지 묻는다. 계속해도 되면 true */
-async function confirmLeave(reason: "open" | "reload" | "close" = "open"): Promise<boolean> {
-  if (!current || !dirty) return true;
+async function confirmLeave(tab: Tab, reason: "reload" | "close"): Promise<boolean> {
+  if (!tab.dirty) return true;
   await flushComposition();
   const choice = await showChoice({
     title: "저장하지 않은 변경",
     message:
       reason === "reload"
-        ? `${current.name}을(를) 디스크에서 다시 읽으면 편집한 내용이 사라집니다.`
-        : `${current.name}의 변경 내용을 저장할까요?`,
+        ? `${tab.doc.name}을(를) 디스크에서 다시 읽으면 편집한 내용이 사라집니다.`
+        : `${tab.doc.name}의 변경 내용을 저장할까요?`,
     choices:
       reason === "reload"
         ? [{ value: "discard", label: "변경 버리고 다시 읽기", kind: "danger" }]
@@ -674,11 +1068,48 @@ async function confirmLeave(reason: "open" | "reload" | "close" = "open"): Promi
           ],
     cancelLabel: "취소",
   });
-  if (choice === "save") return save();
+  if (choice === "save") return save({}, tab);
   if (choice === "discard") {
-    void invoke("delete_draft", { path: current.path }).catch(() => undefined);
-    lastDraftText = null;
-    setDirty(false);
+    discardDraft(tab);
+    return true;
+  }
+  return false;
+}
+
+function discardDraft(tab: Tab): void {
+  void invoke("delete_draft", { path: tab.doc.path }).catch(() => undefined);
+  tab.lastDraftText = null;
+  setDirty(tab, false);
+}
+
+/** 창을 닫기 전 — 저장하지 않은 탭이 하나면 그 탭을, 여럿이면 한 번에 묻는다 */
+async function confirmCloseWindow(): Promise<boolean> {
+  const dirtyTabs = tabs.filter((t) => t.dirty);
+  if (dirtyTabs.length === 0) return true;
+  if (dirtyTabs.length === 1) {
+    activate(dirtyTabs[0]);
+    return confirmLeave(dirtyTabs[0], "close");
+  }
+  await flushComposition();
+  const choice = await showChoice({
+    title: "저장하지 않은 변경",
+    message: `문서 ${dirtyTabs.length}개에 저장하지 않은 변경이 있습니다. 모두 저장할까요?`,
+    detail: dirtyTabs.map((t) => t.doc.name).join(", "),
+    choices: [
+      { value: "discard", label: "모두 저장 안 함", kind: "danger" },
+      { value: "save", label: "모두 저장", kind: "primary" },
+    ],
+    cancelLabel: "취소",
+  });
+  if (choice === "save") {
+    for (const tab of dirtyTabs) {
+      activate(tab);
+      if (!(await save({}, tab))) return false;
+    }
+    return true;
+  }
+  if (choice === "discard") {
+    for (const tab of dirtyTabs) discardDraft(tab);
     return true;
   }
   return false;
@@ -687,29 +1118,32 @@ async function confirmLeave(reason: "open" | "reload" | "close" = "open"): Promi
 // ---- 초안 백업 (2-4) ---------------------------------------------------------------
 
 let draftTimer = 0;
-let lastDraftText: string | null = null;
 
 function scheduleDrafts(): void {
   window.clearInterval(draftTimer);
   const sec = getSetting("draftIntervalSec");
-  if (sec > 0 && IS_TAURI) draftTimer = window.setInterval(() => void writeDraft(), sec * 1000);
+  if (sec > 0 && IS_TAURI) draftTimer = window.setInterval(() => void writeDrafts(), sec * 1000);
 }
 
-async function writeDraft(): Promise<void> {
-  if (!current || !dirty) return;
-  const text = workingText();
-  if (text === lastDraftText) return;
-  try {
-    await invoke("write_draft", { path: current.path, text, baseHash: current.hash });
-    lastDraftText = text;
-  } catch {
-    // 초안은 보조 수단 — 실패해도 편집은 계속한다
+/** 저장하지 않은 탭마다 초안을 남긴다 */
+async function writeDrafts(): Promise<void> {
+  for (const tab of tabs) {
+    if (!tab.dirty) continue;
+    const text = workingText(tab);
+    if (text === tab.lastDraftText) continue;
+    try {
+      await invoke("write_draft", { path: tab.doc.path, text, baseHash: tab.doc.hash });
+      tab.lastDraftText = text;
+    } catch {
+      // 초안은 보조 수단 — 실패해도 편집은 계속한다
+    }
   }
 }
 
-/** 연 문서에 초안이 남아 있으면 복구를 제안한다 */
-async function offerDraft(doc: DocumentPayload): Promise<void> {
+/** 연 문서에 초안이 남아 있으면 복구를 제안한다 (탭이 처음 앞으로 올 때) */
+async function offerDraft(tab: Tab): Promise<void> {
   if (!IS_TAURI) return;
+  const doc = tab.doc;
   const draft = await invoke<Draft | null>("read_draft", { path: doc.path }).catch(() => null);
   if (!draft) return;
   if (draft.text === doc.text) {
@@ -731,31 +1165,39 @@ async function offerDraft(doc: DocumentPayload): Promise<void> {
     cancelLabel: "나중에",
   });
   if (choice === "discard") void invoke("delete_draft", { path: doc.path });
-  if (choice !== "recover" || !current || !samePath(current.path, doc.path)) return;
-  loadEditor(draft.text);
-  renderView(draft.text);
+  if (choice !== "recover" || !tabs.includes(tab)) return;
+  activate(tab);
+  loadEditor(tab, draft.text);
+  renderView(tab, draft.text);
   showMode("source");
   editor?.focus();
-  showBanner("초안을 복구했습니다. 저장(Ctrl+S)해야 파일에 반영됩니다.");
+  showBanner("초안을 복구했습니다. 저장(Ctrl+S)해야 파일에 반영됩니다.", [], false, "", tab);
+  saveSession();
 }
 
 // ---- 상태바·제목 ----------------------------------------------------------------------
 
 function updateTitle(): void {
-  if (!current) return;
-  const title = `${dirty ? "● " : ""}${current.name} — MdEditor`;
+  const title = active ? `${active.dirty ? "● " : ""}${active.doc.name} — MdEditor` : "MdEditor";
   document.title = title;
-  setTitleText(current.name, dirty);
   if (IS_TAURI) void getCurrentWindow().setTitle(title);
 }
 
 function updateDocChrome(): void {
-  if (!current) return;
-  const { info } = current;
   updateTitle();
-  $("#status-path").textContent = current.path;
-  $("#status-path").title = current.path;
-  statusEncoding.textContent = `${info.bom ? `${info.encoding} BOM` : info.encoding}${forcedEncoding ? " (지정)" : ""}`;
+  const tab = active;
+  statusMode.hidden = !tab;
+  statusEncoding.hidden = !tab;
+  statusEol.hidden = !tab;
+  if (!tab) {
+    statusPath.textContent = "";
+    statusPath.title = "";
+    return;
+  }
+  const { info } = tab.doc;
+  statusPath.textContent = tab.doc.path;
+  statusPath.title = tab.doc.path;
+  statusEncoding.textContent = `${info.bom ? `${info.encoding} BOM` : info.encoding}${tab.forcedEncoding ? " (지정)" : ""}`;
   statusEncoding.classList.toggle("warn", info.lossy);
   statusEncoding.title = info.lossy
     ? "일부 바이트를 해석하지 못했습니다 (손실 디코드, 읽기 전용) — 눌러서 다른 인코딩으로 다시 열기"
@@ -768,30 +1210,30 @@ function updateDocChrome(): void {
 
 // ---- 상태바 글자 수 (wordcount.ts) ---------------------------------------------------
 
-let textCount: TextCount | null = null;
 let countTimer = 0;
 const COUNT_CYCLE = ["words", "chars", "charsNoSpace"] as const;
-
 /** 보기 화면에 그린 본문을 센다. 큰 문서는 그린 뒤 잠시 있다가 (10 MB 약 0.2 s) */
-function recount(large = app.classList.contains("large-doc")): void {
+function recount(tab: Tab | null = active): void {
+  if (!tab) return;
   window.clearTimeout(countTimer);
-  textCount = null;
-  updateCount();
+  tab.textCount = null;
+  if (tab === active) updateCount();
   if (getSetting("statusCount") === "off") return;
   const run = (): void => {
-    textCount = countText(article.textContent ?? "");
-    updateCount();
+    tab.textCount = countText(tab.article.textContent ?? "");
+    if (tab === active) updateCount();
   };
-  if (large) countTimer = window.setTimeout(run, 300);
+  if (tab.large) countTimer = window.setTimeout(run, 300);
   else run();
 }
 
 function updateCount(): void {
   const kind = getSetting("statusCount");
-  statusCount.hidden = !current || kind === "off" || !textCount;
-  if (statusCount.hidden || !textCount) return;
+  const count = active?.textCount ?? null;
+  statusCount.hidden = !active || kind === "off" || !count;
+  if (statusCount.hidden || !count) return;
   const n = (v: number): string => v.toLocaleString("ko-KR");
-  const { words, chars, charsNoSpace } = textCount;
+  const { words, chars, charsNoSpace } = count;
   statusCount.textContent =
     kind === "words" ? `${n(words)}단어` : kind === "chars" ? `${n(chars)}자` : `${n(charsNoSpace)}자 (공백 제외)`;
   statusCount.title = `단어 ${n(words)} · 글자 ${n(chars)} (공백 제외 ${n(charsNoSpace)})\n보기 화면에 그린 본문 기준 — 눌러서 표시 바꾸기`;
@@ -806,24 +1248,28 @@ statusCount.addEventListener("click", () => {
 let flashTimer = 0;
 /** 상태바 경로 자리에 잠깐 알림을 띄운다 */
 function flashStatus(message: string): void {
-  const el = $("#status-path");
-  el.textContent = message;
+  statusPath.textContent = message;
   window.clearTimeout(flashTimer);
   flashTimer = window.setTimeout(() => {
-    if (current) el.textContent = current.path;
+    statusPath.textContent = active?.doc.path ?? "";
   }, 1600);
 }
 
-interface BannerAction {
-  label: string;
-  run: () => void;
+/** 배너 — 탭마다 따로 기억하고 활성 탭 것만 보인다. `tab`이 null이면(열린 문서 없음) 화면에만 */
+function showBanner(message: string, actions: BannerAction[] = [], warn = false, kind = "", tab: Tab | null = active): void {
+  const state: BannerState = { message, actions, warn, kind };
+  if (tab) tab.banner = state;
+  if (tab === active) paintBanner(state);
 }
 
-function showBanner(message: string, actions: BannerAction[] = [], warn = false, kind = ""): void {
-  $("#banner-text").textContent = message;
-  banner.dataset.kind = kind;
+function paintBanner(state: BannerState | null): void {
+  if (!state) {
+    banner.hidden = true;
+    return;
+  }
+  $("#banner-text").textContent = state.message;
   $("#banner-actions").replaceChildren(
-    ...actions.map((a) => {
+    ...state.actions.map((a) => {
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = a.label;
@@ -831,26 +1277,29 @@ function showBanner(message: string, actions: BannerAction[] = [], warn = false,
       return b;
     }),
   );
-  banner.classList.toggle("warn", warn);
+  banner.classList.toggle("warn", state.warn);
   banner.hidden = false;
 }
 
-function hideBanner(): void {
+function hideBanner(tab: Tab | null = active): void {
+  if (tab) tab.banner = null;
+  if (tab !== active) return;
   // 배너 버튼으로 닫으면 누른 버튼이 숨으면서 포커스가 body로 빠진다 — 보던 화면으로 돌려 바로 이어서 입력하게
   const hadFocus = banner.contains(document.activeElement);
   banner.hidden = true;
   if (!hadFocus) return;
-  if (mode === "source" && editor) editor.focus();
+  if (active?.mode === "source" && editor) editor.focus();
   else viewer.focus({ preventScroll: true });
 }
 
 /** 인코딩 메뉴 — "다시 열기"는 바이트를 두고 해석만(Encode in), "변환"은 저장 바이트를 바꾼다(Convert to) */
 async function encodingMenu(): Promise<void> {
-  if (!current) return;
+  if (!active) return;
   if (!IS_TAURI) {
     showBanner("브라우저 미리보기에서는 인코딩을 바꿀 수 없습니다.");
     return;
   }
+  const tab = active;
   const now = statusEncoding.textContent ?? "";
   const choice = await showChoice({
     title: "인코딩",
@@ -865,10 +1314,10 @@ async function encodingMenu(): Promise<void> {
     cancelLabel: "닫기",
     vertical: true,
   });
-  if (!choice) return;
+  if (!choice || tab !== active) return;
   const [action, label, bom] = choice.split(":");
   if (action === "reopen") {
-    await reload({ encoding: label });
+    await reload({ encoding: label }, tab);
     return;
   }
   const ok = await showDialog({
@@ -877,17 +1326,18 @@ async function encodingMenu(): Promise<void> {
     confirmLabel: "변환해 저장",
     cancelLabel: "취소",
   });
-  if (ok) await save({ convertTo: label, bom: bom === "bom" });
+  if (ok) await save({ convertTo: label, bom: bom === "bom" }, tab);
 }
 
 /** 줄바꿈 메뉴 — 모든 줄을 LF 또는 CRLF로 바꿔 바로 저장한다 (결정 D5). 평소 저장은 줄별 원래 줄바꿈을 지킨다 */
 async function eolMenu(): Promise<void> {
-  if (!current) return;
+  if (!active) return;
   if (!IS_TAURI) {
     showBanner("브라우저 미리보기에서는 줄바꿈을 바꿀 수 없습니다.");
     return;
   }
-  const { info } = current;
+  const tab = active;
+  const { info } = tab.doc;
   if (info.lossy) {
     showBanner("일부 바이트를 해석하지 못한 문서(손실 디코드)라 변환할 수 없습니다. 인코딩을 먼저 맞게 다시 여세요.", [], true);
     return;
@@ -902,36 +1352,41 @@ async function eolMenu(): Promise<void> {
     cancelLabel: "닫기",
     vertical: true,
   });
-  if (!choice) return;
+  if (!choice || tab !== active) return;
   if (!info.mixed_eol && info.eol === choice) {
     flashStatus(`이미 모든 줄이 ${choice}입니다`);
     return;
   }
   const ok = await showDialog({
     title: "줄바꿈 변환",
-    message: `이 파일의 모든 줄바꿈을 ${choice}(으)로 바꿔 저장합니다. 파일 바이트가 바뀝니다.${dirty ? " 저장하지 않은 편집도 함께 저장됩니다." : ""}`,
+    message: `이 파일의 모든 줄바꿈을 ${choice}(으)로 바꿔 저장합니다. 파일 바이트가 바뀝니다.${tab.dirty ? " 저장하지 않은 편집도 함께 저장됩니다." : ""}`,
     confirmLabel: "변환해 저장",
     cancelLabel: "취소",
   });
-  if (ok) await save({ eol: choice });
+  if (ok) await save({ eol: choice }, tab);
 }
 
 statusEncoding.addEventListener("click", () => void encodingMenu());
 statusEol.addEventListener("click", () => void eolMenu());
-statusMode.addEventListener("click", () => setMode(mode === "view" ? "source" : "view"));
+statusMode.addEventListener("click", () => setMode(active?.mode === "view" ? "source" : "view"));
 
 // ---- 링크 ------------------------------------------------------------------
 
-article.addEventListener("click", (event) => {
+/** 활성 본문 안의 id — 탭마다 본문이 따로라 `document.getElementById`는 다른 탭의 같은 id를 집을 수 있다 */
+function findInActive(id: string): HTMLElement | null {
+  return active?.article.querySelector<HTMLElement>(`#${CSS.escape(id)}`) ?? null;
+}
+
+viewer.addEventListener("click", (event) => {
   // 로컬 .md 링크는 DOMPurify가 href를 떼도 data-local-path로 열린다
   const a = (event.target as HTMLElement).closest("a[href], a[data-local-path]") as HTMLAnchorElement | null;
-  if (!a) return;
+  if (!a || !active?.article.contains(a)) return;
   const href = a.getAttribute("href") ?? "";
   event.preventDefault();
   if (a.dataset.localPath) {
     void openPath(a.dataset.localPath);
   } else if (href.startsWith("#")) {
-    document.getElementById(decodeURIComponent(href.slice(1)))?.scrollIntoView({ block: "start" });
+    findInActive(decodeURIComponent(href.slice(1)))?.scrollIntoView({ block: "start" });
   } else if (/^(https?|mailto):/i.test(href)) {
     void openUrl(href);
   }
@@ -942,48 +1397,44 @@ article.addEventListener("click", (event) => {
 // 이동은 scrollIntoView — 제목의 scroll-margin-top(설정 '제목 이동 시 위쪽 여백')만큼 위를 남긴다. 소스 모드는 그 줄로
 toc.addEventListener("click", (event) => {
   const a = (event.target as Element).closest<HTMLAnchorElement>("a[href^='#']");
-  if (!a) return;
+  if (!a || !active) return;
   event.preventDefault();
-  if (mode === "source" && editor) {
+  if (active.mode === "source" && editor) {
     editor.scrollToLine(Number(a.dataset.line ?? 0));
     return;
   }
-  document.getElementById(decodeURIComponent(a.hash.slice(1)))?.scrollIntoView({ block: "start" });
+  findInActive(decodeURIComponent(a.hash.slice(1)))?.scrollIntoView({ block: "start" });
 });
 
-/** 문서 순서의 본문 제목과 목차 링크(제목 id → 링크). `renderView()`가 채운다 */
-let headings: HTMLElement[] = [];
-/** 큰 문서의 블록 묶음(render/chunks.ts)과, 묶음마다 그 묶음 이후 첫 제목의 `headings` 번호. 묶지 않은 문서는 빈 배열 */
-let chunks: HTMLElement[] = [];
-let chunkHeadingStart: number[] = [];
-
-function indexChunks(): void {
-  chunks = Array.from(article.children as HTMLCollectionOf<HTMLElement>).filter((el) => el.classList.contains(CHUNK_CLASS));
-  const chunkIndex = new Map(chunks.map((c, i) => [c as Element, i]));
-  chunkHeadingStart = new Array<number>(chunks.length).fill(headings.length);
+function indexChunks(tab: Tab): void {
+  const { headings } = tab;
+  tab.chunks = Array.from(tab.article.children as HTMLCollectionOf<HTMLElement>).filter((el) => el.classList.contains(CHUNK_CLASS));
+  const chunkIndex = new Map(tab.chunks.map((c, i) => [c as Element, i]));
+  const start = new Array<number>(tab.chunks.length).fill(headings.length);
   for (let h = headings.length - 1; h >= 0; h--) {
     const c = chunkIndex.get(headings[h].closest(`.${CHUNK_CLASS}`)!);
-    if (c !== undefined) chunkHeadingStart[c] = h;
+    if (c !== undefined) start[c] = h;
   }
   // 제목 없는 묶음은 다음 묶음의 시작 번호를 물려받는다
-  for (let c = chunks.length - 2; c >= 0; c--) chunkHeadingStart[c] = Math.min(chunkHeadingStart[c], chunkHeadingStart[c + 1]);
+  for (let c = start.length - 2; c >= 0; c--) start[c] = Math.min(start[c], start[c + 1]);
+  tab.chunkHeadingStart = start;
 }
-const tocLinks = new Map<string, HTMLAnchorElement>();
-let activeLink: HTMLAnchorElement | null = null;
 
-let headingTick = 0;
 function updateActiveHeading(): void {
+  const tab = active;
+  if (!tab) return;
   let next: HTMLAnchorElement | null = null;
-  if (mode === "source" && editor) {
+  if (tab.mode === "source" && editor && editorTab === tab) {
     // 소스 모드: 화면 맨 위 줄 이하에서 시작한 마지막 제목
     const top = editor.topLine();
     let hit: TocEntry | undefined;
-    for (const e of tocEntries) {
+    for (const e of tab.tocEntries) {
       if (e.line <= top) hit = e;
       else break;
     }
-    next = hit ? (tocLinks.get(hit.id) ?? null) : null;
+    next = hit ? (tab.tocLinks.get(hit.id) ?? null) : null;
   } else {
+    const { headings, chunks, chunkHeadingStart } = tab;
     if (headings.length === 0) return;
     // 이동한 제목은 여백만큼 아래에 멈춘다 — 그 선까지 온 제목을 현재 제목으로 본다. 여백은 본문 줌을 따라 커진다
     const line = viewer.getBoundingClientRect().top + getSetting("headingScrollOffset") * zoom + 8;
@@ -1008,14 +1459,15 @@ function updateActiveHeading(): void {
       if (headings[mid].getBoundingClientRect().top <= line) lo = mid + 1;
       else hi = mid;
     }
-    next = lo > 0 ? (tocLinks.get(headings[lo - 1].id) ?? null) : null;
+    next = lo > 0 ? (tab.tocLinks.get(headings[lo - 1].id) ?? null) : null;
   }
-  if (next === activeLink) return;
-  activeLink?.classList.remove("active");
+  if (next === tab.activeLink) return;
+  tab.activeLink?.classList.remove("active");
   next?.classList.add("active");
-  activeLink = next;
+  tab.activeLink = next;
 }
 viewer.addEventListener("scroll", () => {
+  saveSession();
   if (headingTick) return;
   headingTick = requestAnimationFrame(() => {
     headingTick = 0;
@@ -1025,13 +1477,16 @@ viewer.addEventListener("scroll", () => {
 
 // ---- 찾기 (보기 모드, 2-5) ----------------------------------------------------------
 
-const findBar = initFindBar(article, () => viewer.focus({ preventScroll: true }));
+const findBar = initFindBar(
+  () => active?.article ?? null,
+  () => viewer.focus({ preventScroll: true }),
+);
 
 // ---- 줌·테마 ----------------------------------------------------------------------
 
 function applyZoom(next: number): void {
   zoom = Math.min(3, Math.max(0.5, Math.round(next * 10) / 10));
-  article.style.setProperty("zoom", String(zoom));
+  viewer.style.setProperty("--doc-zoom", String(zoom));
   editorHost.style.setProperty("--editor-zoom", String(zoom));
   editor?.view.requestMeasure();
   $("#status-zoom").textContent = `${Math.round(zoom * 100)}%`;
@@ -1122,8 +1577,8 @@ function applySetting(key: SettingKey): void {
   } else if (key === "draftIntervalSec") {
     scheduleDrafts();
   } else if (key === "statusCount") {
-    if (textCount || !current) updateCount();
-    else recount();
+    if (!active || active.textCount) updateCount();
+    else recount(active);
   }
 }
 SETTING_KEYS.forEach(applySetting);
@@ -1146,11 +1601,12 @@ void themePanel.reload();
 
 async function pickAndOpen(): Promise<void> {
   const picked = await openDialog({
-    multiple: false,
+    multiple: true,
     directory: false,
     filters: [{ name: "Markdown", extensions: ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn", "txt"] }],
   });
-  if (typeof picked === "string") await openPath(picked);
+  const paths = typeof picked === "string" ? [picked] : (picked ?? []);
+  for (const path of paths) await openPath(path);
 }
 
 /** 이 크기 이상인 문서는 인쇄 전에 묻는다 (결정 D7, 기준은 사용자 지정 1 MB). 2 MB에서도 미리보기가 오래 멈췄다 */
@@ -1158,20 +1614,81 @@ const PRINT_WARN_SIZE = 1024 * 1024;
 
 /** Ctrl+P — 큰 문서는 확인을 받은 뒤에만 인쇄한다. 미리보기가 멈춰 강제 종료하다 편집 중 내용을 잃는 사고를 막는다 */
 async function printDocument(): Promise<void> {
-  const size = current ? Math.max(current.info.byte_len, workingText().length) : 0;
+  const tab = active;
+  const size = tab ? Math.max(tab.doc.info.byte_len, workingText(tab).length) : 0;
   if (size >= PRINT_WARN_SIZE) {
     // primary 선택지가 없으면 처음 포커스는 취소
     const choice = await showChoice({
       title: "큰 문서 인쇄",
       message:
         `이 문서는 ${(size / 1024 / 1024).toFixed(1)} MB입니다. 큰 문서는 인쇄 미리보기가 오래 멈추거나 응답하지 않을 수 있습니다.` +
-        (dirty ? " 저장하지 않은 변경이 있으니 먼저 저장해 두세요." : ""),
+        (tabs.some((t) => t.dirty) ? " 저장하지 않은 변경이 있으니 먼저 저장해 두세요." : ""),
       choices: [{ value: "print", label: "계속" }],
       cancelLabel: "취소",
     });
     if (choice !== "print") return;
   }
   window.print();
+}
+
+// ---- 세션 복원 (로드맵 3-5) -------------------------------------------------------------
+
+let sessionTimer = 0;
+/** 세션을 시작 때 다시 열기 전에는 저장하지 않는다 — 빈 탭 목록으로 지난 세션을 덮지 않게 */
+let sessionReady = false;
+
+function saveSession(): void {
+  if (!sessionReady) return;
+  window.clearTimeout(sessionTimer);
+  sessionTimer = window.setTimeout(saveSessionNow, 500);
+}
+
+/** 탭이 지금 보는 소스 줄 — 활성 탭은 화면에서 재고, 뒤 탭은 떠날 때 남긴 값 */
+function sessionLine(tab: Tab): number {
+  if (tab.needsRender) return tab.restoreLine ?? (tab.mode === "view" ? tab.viewLine : tab.editorLine);
+  if (tab !== active) return tab.mode === "view" ? tab.viewLine : tab.editorLine;
+  if (tab.mode === "view") return viewTopLine();
+  return editor && editorTab === tab ? editor.topLine() : tab.editorLine;
+}
+
+function saveSessionNow(): void {
+  window.clearTimeout(sessionTimer);
+  if (!sessionReady || !IS_TAURI) return;
+  const session: Session = {
+    tabs: tabs.map((t) => ({ path: t.doc.path, mode: t.mode, line: sessionLine(t) })),
+    active: active ? Math.max(0, tabs.indexOf(active)) : 0,
+  };
+  writeSession(session.tabs.length ? session : null);
+}
+
+/**
+ * 지난 세션의 탭을 다시 연다. 문서는 읽어 두되 그리기는 탭이 앞으로 올 때 한다(탭 20개도 시작이 느려지지 않게).
+ * `activateSaved`면 지난 활성 탭을 앞으로, 아니면(더블클릭으로 연 파일이 있으면) 그 파일 앞에 끼워 둔다
+ */
+async function restoreSession(session: Session, activateSaved: boolean): Promise<void> {
+  let missing = 0;
+  let wanted: Tab | null = null;
+  let index = 0;
+  for (let i = 0; i < session.tabs.length; i++) {
+    const saved = session.tabs[i];
+    if (findTab(saved.path)) continue;
+    const tab = await openPath(saved.path, { background: true, mode: saved.mode, line: saved.line, index: index });
+    if (!tab) {
+      missing++;
+      continue;
+    }
+    index = tabs.indexOf(tab) + 1;
+    if (i === session.active) wanted = tab;
+  }
+  if (activateSaved) {
+    const tab = wanted ?? tabs[0];
+    if (tab) activate(tab);
+  } else renderTabs();
+  if (missing > 0) {
+    const message = `지난번에 열어 둔 파일 ${missing}개를 찾을 수 없어 다시 열지 않았습니다.`;
+    if (active) showBanner(message, [{ label: "닫기", run: () => hideBanner() }]);
+    else flashStatus(message);
+  }
 }
 
 // ---- 단축키 ------------------------------------------------------------------------
@@ -1203,16 +1720,17 @@ window.addEventListener(
       event.preventDefault();
       event.stopPropagation();
     };
+    const mode = active?.mode ?? "view";
     if (ctrl && key === "s") {
       take();
       void (event.shiftKey ? saveAs() : save());
     } else if (ctrl && (event.key === "/" || event.code === "Slash")) {
       take();
       setMode(mode === "view" ? "source" : "view");
-    } else if (ctrl && !event.shiftKey && key === "f" && mode === "view" && current) {
+    } else if (ctrl && !event.shiftKey && key === "f" && mode === "view" && active) {
       take();
       findBar.open();
-    } else if (ctrl && key === "h" && mode === "view" && current) {
+    } else if (ctrl && key === "h" && mode === "view" && active) {
       take();
       setMode("source");
       editor?.openSearch();
@@ -1222,6 +1740,20 @@ window.addEventListener(
     } else if (ctrl && key === "p") {
       take();
       void printDocument();
+    } else if (ctrl && key === "w") {
+      take();
+      if (active) void closeTab(active);
+    } else if (ctrl && event.shiftKey && key === "t") {
+      take();
+      void reopenClosedTab();
+    } else if (ctrl && (key === "tab" || key === "pagedown" || key === "pageup")) {
+      take();
+      cycleTab(key === "pageup" || (key === "tab" && event.shiftKey) ? -1 : 1);
+    } else if (ctrl && !event.shiftKey && !event.altKey && /^Digit[1-9]$/.test(event.code)) {
+      take();
+      const n = Number(event.code.slice(5));
+      const tab = n === 9 ? tabs[tabs.length - 1] : tabs[n - 1];
+      if (tab) activate(tab);
     } else if (ctrl && (event.key === "=" || event.key === "+")) {
       take();
       applyZoom(zoom + 0.1);
@@ -1236,14 +1768,14 @@ window.addEventListener(
       toggleTheme();
     } else if (ctrl && event.key === "\\") {
       take();
-      sidebar.hidden = !sidebar.hidden;
+      if (active?.tocEntries.length) sidebar.hidden = !sidebar.hidden;
     } else if (ctrl && event.shiftKey && key === "e") {
       take();
       nav.toggle();
     } else if (ctrl && event.key === ",") {
       take();
       settingsDialog.open();
-    } else if (key === "f5" && current) {
+    } else if (key === "f5" && active) {
       take();
       void reload();
     }
@@ -1271,49 +1803,60 @@ window.addEventListener("focus", () => void refreshDefaultAppStatus());
 
 // ---- 열기 경로·외부 변경·닫기 연결 ---------------------------------------------------------
 
+/** 디스크의 문서가 바뀌었다 (watch.rs) — 저장하지 않은 변경이 없으면 조용히 다시 읽고, 있으면 고르게 한다 */
+function onFileChanged(path: string, hash: string): void {
+  const tab = findTab(path);
+  if (!tab) return;
+  if (tab.missing) {
+    // 사라졌던 파일이 다시 생겼다 — 같은 내용이면 배너만 거두고, 다르면 아래로 이어서 다시 읽기·배너
+    tab.missing = false;
+    if (tab.banner?.kind === "missing") hideBanner(tab);
+  }
+  if (hash === tab.doc.hash) return; // 우리가 저장한 내용
+  if (!tab.dirty) {
+    void reload({ discard: true }, tab);
+    return;
+  }
+  // 편집 중에는 덮어쓰지 않는다 (2-3) — 고르게 하고, 유지하면 다음 저장에서 충돌 팝업이 뜬다
+  showBanner(
+    "다른 프로그램이 이 파일을 바꿨습니다. 편집한 내용은 아직 저장하지 않았습니다.",
+    [
+      { label: "다시 읽기 (내 변경 버림)", run: () => void reload({ discard: true }, tab) },
+      { label: "내 변경 유지", run: () => hideBanner(tab) },
+    ],
+    true,
+    "changed",
+    tab,
+  );
+}
+
+function onFileMissing(path: string): void {
+  const tab = findTab(path);
+  if (!tab) return;
+  tab.missing = true;
+  showBanner(
+    tab.dirty
+      ? "파일이 삭제되거나 이동됐습니다. 저장(Ctrl+S)하면 같은 자리에 다시 만들 수 있습니다."
+      : "파일이 삭제되거나 이동됐습니다. 마지막으로 읽은 내용을 보여 줍니다.",
+    [],
+    true,
+    "missing",
+    tab,
+  );
+}
+
 async function init(): Promise<void> {
   await listen<string[]>("open-file", (event) => {
-    const [first] = event.payload;
-    if (first) void openPath(first);
+    void (async () => {
+      for (const path of event.payload) await openPath(path);
+    })();
   });
 
-  await listen<{ path: string; hash: string }>("file-changed", (event) => {
-    if (!current || !samePath(event.payload.path, current.path)) return;
-    if (fileMissing) {
-      // 사라졌던 파일이 다시 생겼다 — 같은 내용이면 배너만 거두고, 다르면 아래로 이어서 다시 읽기·배너
-      fileMissing = false;
-      hideBanner();
-    }
-    if (event.payload.hash === current.hash) return; // 우리가 저장한 내용
-    if (!dirty) {
-      void reload({ discard: true });
-      return;
-    }
-    // 편집 중에는 덮어쓰지 않는다 (2-3) — 고르게 하고, 유지하면 다음 저장에서 충돌 팝업이 뜬다
-    showBanner(
-      "다른 프로그램이 이 파일을 바꿨습니다. 편집한 내용은 아직 저장하지 않았습니다.",
-      [
-        { label: "다시 읽기 (내 변경 버림)", run: () => void reload({ discard: true }) },
-        { label: "내 변경 유지", run: hideBanner },
-      ],
-      true,
-    );
-  });
+  await listen<{ path: string; hash: string }>("file-changed", (event) => onFileChanged(event.payload.path, event.payload.hash));
+  await listen<string>("file-missing", (event) => onFileMissing(event.payload));
 
   // 웹뷰 기본 오른쪽 클릭 메뉴의 '인쇄'도 Ctrl+P와 같은 큰 문서 확인을 거친다 (print_menu.rs)
   await listen("print-requested", () => void printDocument());
-
-  await listen<string>("file-missing", (event) => {
-    if (!current || !samePath(event.payload, current.path)) return;
-    fileMissing = true;
-    showBanner(
-      dirty
-        ? "파일이 삭제되거나 이동됐습니다. 저장(Ctrl+S)하면 같은 자리에 다시 만들 수 있습니다."
-        : "파일이 삭제되거나 이동됐습니다. 마지막으로 읽은 내용을 보여 줍니다.",
-      [],
-      true,
-    );
-  });
 
   await getCurrentWebview().onDragDropEvent((event) => {
     if (event.payload.type === "over" || event.payload.type === "enter") {
@@ -1321,12 +1864,13 @@ async function init(): Promise<void> {
     } else if (event.payload.type === "drop") {
       viewer.classList.remove("drag-over");
       const paths = event.payload.paths;
-      if (mode === "source" && current && paths.length > 0 && paths.every((p) => IMAGE_EXT_RE.test(p))) {
+      if (active?.mode === "source" && paths.length > 0 && paths.every((p) => IMAGE_EXT_RE.test(p))) {
         void dropImages(paths, event.payload.position);
         return;
       }
-      const [first] = paths;
-      if (first) void openPath(first);
+      void (async () => {
+        for (const path of paths.filter((p) => !IMAGE_EXT_RE.test(p))) await openPath(path);
+      })();
     } else {
       viewer.classList.remove("drag-over");
     }
@@ -1334,11 +1878,21 @@ async function init(): Promise<void> {
 
   // 저장하지 않은 변경이 있으면 창을 닫기 전에 묻는다 (제목 표시줄 닫기·Alt+F4 모두). 막지 않으면 API가 창을 없앤다
   await getCurrentWindow().onCloseRequested(async (event) => {
-    if (!(await confirmLeave("close"))) event.preventDefault();
+    if (!(await confirmCloseWindow())) {
+      event.preventDefault();
+      return;
+    }
+    saveSessionNow();
   });
 
   const pending = await invoke<string[]>("take_pending_paths");
-  if (pending[0]) await openPath(pending[0]);
+  const session = getSetting("restoreSession") === "restore" ? readSession() : null;
+  // 더블클릭으로 연 파일을 먼저 보이고, 지난 세션 탭은 그 앞에 뒤에서 채운다
+  for (const path of pending) await openPath(path);
+  if (session) await restoreSession(session, pending.length === 0);
+  sessionReady = true;
+  if (!active) showWelcome();
+  saveSession();
   void refreshDefaultAppStatus();
   // 관리자 권한 창에는 탐색기 더블클릭이 전달되지 않는다(UIPI) — 막을 수 없으니 상태바로 알린다 (스펙 경계 사례)
   $("#status-elevated").hidden = !(await invoke<boolean>("is_elevated").catch(() => false));
@@ -1351,14 +1905,13 @@ async function checkWebviewVersion(): Promise<void> {
   const version = await invoke<string | null>("webview_version").catch(() => null);
   const major = Number(version?.split(".")[0]);
   if (!version || !Number.isFinite(major) || major >= MIN_WEBVIEW2_MAJOR) return;
-  showBanner(
-    `WebView2 런타임이 ${version}입니다. ${MIN_WEBVIEW2_MAJOR} 이상에서 시험했습니다 — 한글 입력·렌더가 어긋나면 Microsoft Edge WebView2 런타임을 업데이트하세요.`,
-    [],
-    true,
-  );
+  const message = `WebView2 런타임이 ${version}입니다. ${MIN_WEBVIEW2_MAJOR} 이상에서 시험했습니다 — 한글 입력·렌더가 어긋나면 Microsoft Edge WebView2 런타임을 업데이트하세요.`;
+  if (active) showBanner(message, [], true);
+  else flashStatus(message);
 }
 
 initSidebarResize();
+updateDocChrome();
 // 저장된 열림 상태·폭을 적용한 첫 그림에서는 애니메이션을 끈다
 requestAnimationFrame(() => requestAnimationFrame(() => app.classList.remove("no-anim")));
 
@@ -1366,9 +1919,13 @@ if (IS_TAURI) {
   initTitlebar();
   void init();
 } else {
-  // Tauri 밖(브라우저에서 `npm run dev`)에서는 샘플을 직접 불러 렌더·테마를 눈으로 확인한다. ?mode=source 로 소스 모드
+  // Tauri 밖(브라우저에서 `npm run dev`)에서는 샘플을 직접 불러 렌더·테마를 눈으로 확인한다.
+  // ?sample=a.md,b.md 로 여러 탭, ?mode=source 로 소스 모드
   const params = new URLSearchParams(location.search);
-  void openPath(params.get("sample") ?? "samples/showcase.md").then(() => {
+  void (async () => {
+    for (const sample of (params.get("sample") ?? "samples/showcase.md").split(",")) await openPath(sample);
     if (params.get("mode") === "source") setMode("source");
-  });
+    sessionReady = true;
+    if (!active) showWelcome();
+  })();
 }

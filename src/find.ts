@@ -28,7 +28,8 @@ export interface FindBar {
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 
-export function initFindBar(root: HTMLElement, onClose: () => void): FindBar {
+/** `getRoot`은 지금 찾을 본문 — 탭(로드맵 3-1)마다 본문이 따로라 부를 때마다 묻는다 */
+export function initFindBar(getRoot: () => HTMLElement | null, onClose: () => void): FindBar {
   const bar = $("#find-bar");
   const input = $<HTMLInputElement>("#find-input");
   const count = $("#find-count");
@@ -49,7 +50,8 @@ export function initFindBar(root: HTMLElement, onClose: () => void): FindBar {
     ranges = [];
     index = -1;
     const query = input.value;
-    if (query === "" || root.hidden) {
+    const root = getRoot();
+    if (query === "" || !root || root.hidden) {
       count.textContent = "";
       return;
     }
@@ -95,7 +97,7 @@ export function initFindBar(root: HTMLElement, onClose: () => void): FindBar {
     if (supported) CSS.highlights.set("find-current", new Highlight(range));
     const more = ranges.length >= MAX_MATCHES ? "+" : "";
     count.textContent = `${index + 1}/${ranges.length}${more}`;
-    (range.startContainer.parentElement ?? root).scrollIntoView({ block: "center" });
+    range.startContainer.parentElement?.scrollIntoView({ block: "center" });
   }
 
   input.addEventListener("input", () => {

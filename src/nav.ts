@@ -24,6 +24,8 @@ export interface Nav {
   remember(path: string, title?: string): void;
   /** 같은 문서를 다시 읽었을 때(F5·외부 변경) — 순서는 두고 제목만 갱신 */
   retitle(path: string, title?: string): void;
+  /** 활성 탭이 바뀌었을 때 — 목록 순서는 두고 현재 파일 표시만 옮긴다. 열린 문서가 없으면 null */
+  setCurrent(path: string | null): void;
   toggle(): void;
 }
 
@@ -189,6 +191,11 @@ export function initNav(hooks: NavHooks): Nav {
     },
     retitle(path, title) {
       setRecent(retitleRecent(recent, path, title));
+    },
+    setCurrent(path) {
+      if (path === currentPath) return;
+      currentPath = path;
+      renderRecent();
     },
     toggle,
   };

@@ -63,6 +63,11 @@ export interface SourceEditor {
   getText(): string;
   /** 문서를 통째로 바꾼다 — 되돌리기 기록도 새로 시작한다 */
   setText(text: string): void;
+  /**
+   * 다른 탭의 편집기 상태로 갈아 끼운다 (로드맵 3-1 — 탭마다 되돌리기 기록·커서·선택이 남는다).
+   * 줄바꿈 설정은 탭과 관계없으니 지금 값으로 다시 맞춘다. 읽기 전용은 탭(문서)마다라 호출자가 `setReadOnly`로 맞춘다
+   */
+  setState(state: EditorState): void;
   setReadOnly(readOnly: boolean): void;
   setLineWrapping(wrap: boolean): void;
   /** 화면 맨 위에 보이는 줄 (0 기준) */
@@ -130,6 +135,10 @@ export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): Sou
     setText(text) {
       // 새 상태로 갈아 끼워 되돌리기 기록을 끊는다 (다른 파일·다시 읽기로 넘어가 되돌리기 하는 사고 방지)
       view.setState(EditorState.create({ doc: text, extensions: baseExtensions() }));
+    },
+    setState(state) {
+      view.setState(state);
+      view.dispatch({ effects: wrapping.reconfigure(wrapOn ? EditorView.lineWrapping : []) });
     },
     setReadOnly(value) {
       readOnlyOn = value;
