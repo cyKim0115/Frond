@@ -1,6 +1,6 @@
 ---
 name: add-setting
-description: MdEditor 설정 팝업에 항목·기능을 더하거나 옮길 때 왼쪽 카테고리 탭을 고르거나 새로 만들어 관련 기능만 한 탭에 모으는 규칙. src/settings.ts의 SETTINGS를 고칠 때, 하드코딩 값을 사용자 설정으로 뺄 때, 설정 팝업(settings-dialog.ts) UI를 바꿀 때, 테마 관리처럼 스키마 밖 설정 패널을 만들 때 사용.
+description: Frond 설정 팝업에 항목·기능을 더하거나 옮길 때 왼쪽 카테고리 탭을 고르거나 새로 만들어 관련 기능만 한 탭에 모으는 규칙. src/settings.ts의 SETTINGS를 고칠 때, 하드코딩 값을 사용자 설정으로 뺄 때, 설정 팝업(settings-dialog.ts) UI를 바꿀 때, 테마 관리처럼 스키마 밖 설정 패널을 만들 때 사용.
 ---
 
 # 설정 항목·기능 추가

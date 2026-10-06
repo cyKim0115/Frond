@@ -38,7 +38,7 @@ mod tests {
 
     #[test]
     fn writes_utf8_text() {
-        let path = std::env::temp_dir().join(format!("mdeditor-export-{}.html", std::process::id()));
+        let path = std::env::temp_dir().join(format!("frond-export-{}.html", std::process::id()));
         write_export(path.to_string_lossy().into_owned(), "<p>한글</p>".into()).unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), "<p>한글</p>".as_bytes());
         let _ = std::fs::remove_file(path);

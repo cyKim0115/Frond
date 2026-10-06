@@ -45,14 +45,14 @@ function htmlDepthDelta(content: string): number {
 
 /** `env.chunkBlocks`가 있을 때만 동작한다. 다른 코어 룰(목차·data-line·링크) 뒤에 둔다 */
 export function chunkPlugin(md: MarkdownIt): void {
-  md.core.ruler.push("mdeditor_chunks", chunkRule);
+  md.core.ruler.push("frond_chunks", chunkRule);
 }
 
 function chunkRule(state: StateCore): void {
   const size = (state.env as { chunkBlocks?: number }).chunkBlocks;
   if (!size || size <= 0) return;
   const marker = (nesting: 1 | -1): Token => {
-    const token = new state.Token(nesting === 1 ? "mdeditor_chunk_open" : "mdeditor_chunk_close", "div", nesting);
+    const token = new state.Token(nesting === 1 ? "frond_chunk_open" : "frond_chunk_close", "div", nesting);
     token.block = true;
     if (nesting === 1) token.attrSet("class", CHUNK_CLASS);
     return token;
