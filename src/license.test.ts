@@ -183,7 +183,7 @@ describe("구매 권유 스케줄 (store-launch A-4)", () => {
     const s = recordSave(launched(2));
     writeNagState(s);
     expect(readNagState()).toEqual({ ...s, saves: 1 });
-    localStorage.setItem("mdeditor.nag", JSON.stringify({ firstRunAt: "x" }));
+    localStorage.setItem("frond.nag", JSON.stringify({ firstRunAt: "x" }));
     expect(readNagState()).toBeNull();
   });
 
