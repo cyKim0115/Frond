@@ -41,7 +41,7 @@ fn write_into_assets(doc_dir: &Path, stem: &str, ext: &str, bytes: &[u8]) -> Res
     let dir = doc_dir.join(ASSETS_DIR);
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     let target = unique_path(&dir, &sanitize_stem(stem), ext);
-    mdeditor_core::write_atomic(&target, bytes).map_err(|e| format!("{}: {e}", target.display()))?;
+    frond_core::write_atomic(&target, bytes).map_err(|e| format!("{}: {e}", target.display()))?;
     let name = target.file_name().expect("file name").to_string_lossy();
     Ok(format!("{ASSETS_DIR}/{name}"))
 }

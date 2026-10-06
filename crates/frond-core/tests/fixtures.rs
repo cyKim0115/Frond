@@ -5,7 +5,7 @@
 //! - CP949로 표현 불가한 문자 → 조용히 손상하지 않고 오류
 
 use encoding_rs::{EUC_KR, UTF_8};
-use mdeditor_core::{DetectSource, Eol, FileDocument, SaveError, WriteMethod};
+use frond_core::{DetectSource, Eol, FileDocument, SaveError, WriteMethod};
 use std::fs;
 use std::path::PathBuf;
 
@@ -280,7 +280,7 @@ fn empty_and_bom_only_inputs() {
     assert_eq!(doc.to_bytes("").unwrap(), Vec::<u8>::new());
     assert_eq!(doc.to_bytes("a").unwrap(), b"a");
 
-    let bom = mdeditor_core::encoding::UTF8_BOM.to_vec();
+    let bom = frond_core::encoding::UTF8_BOM.to_vec();
     let doc = FileDocument::from_bytes(bom.clone());
     assert_eq!(doc.text(), "");
     assert!(doc.has_bom());

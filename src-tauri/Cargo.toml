@@ -1,5 +1,5 @@
 [package]
-name = "mdeditor"
+name = "frond"
 version = "0.1.0"
 description = "Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱"
 edition.workspace = true
@@ -9,7 +9,7 @@ repository.workspace = true
 publish = false
 
 [lib]
-name = "mdeditor_lib"
+name = "frond_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -22,7 +22,7 @@ tauri-plugin-dialog = "2.8.0"
 tauri-plugin-opener = "2.6.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-mdeditor-core = { path = "../crates/mdeditor-core" }
+frond-core = { path = "../crates/frond-core" }
 # 외부 변경 감지 (watch.rs)
 notify-debouncer-full = "0.7.0"
 blake3 = "1"
