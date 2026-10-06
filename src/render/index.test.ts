@@ -83,8 +83,15 @@ describe("samples/showcase.md", () => {
     expect(table.querySelector("th:nth-child(3)")!.getAttribute("style")).toBe("text-align:right");
   });
 
-  it("최상위 블록마다 data-line이 있다 (각주 섹션은 소스 줄이 없어 제외)", () => {
-    const blocks = Array.from(root.children).filter((el) => !el.classList.contains("footnotes-sep") && !el.classList.contains("footnotes"));
+  it("각주 섹션은 data-line을 받는다 — 정의(105줄) 뒤에도 블록이 있으면 마지막 최상위 블록(펜스 115줄) + 1", () => {
+    expect(root.querySelector("pre[data-line='115']")).not.toBeNull();
+    expect(root.querySelector("section.footnotes")!.getAttribute("data-line")).toBe("116");
+  });
+
+  it("최상위 블록마다 data-line이 있고 문서 순서대로 커진다 (보이지 않는 각주 구분선만 제외)", () => {
+    const blocks = Array.from(root.children).filter((el) => !el.classList.contains("footnotes-sep"));
+    const lines = blocks.map((el) => Number(el.getAttribute("data-line")));
+    expect(lines).toEqual([...lines].sort((a, b) => a - b));
     expect(blocks.length).toBeGreaterThan(20);
     for (const el of blocks) expect(el.getAttribute("data-line"), el.outerHTML.slice(0, 80)).toMatch(/^\d+$/);
     expect(root.querySelector("blockquote[data-line='44'] > blockquote[data-line='46']")).not.toBeNull();
@@ -375,6 +382,24 @@ describe("CJK·슬러그", () => {
     expect(toc[5].text).toBe("code bold link");
     expect(Array.from(root.querySelectorAll("h2")).map((h) => h.id)).toEqual(toc.map((e) => e.id));
     expect(slugify("  수식·다이어그램 (지원 여부) ")).toBe("수식다이어그램-지원-여부");
+  });
+
+  it("슬러그는 GitHub처럼 공백 하나마다 -: 겹친 공백·지운 기호 자리도 남는다", () => {
+    expect(slugify("a  b")).toBe("a--b");
+    expect(slugify("A & B")).toBe("a--b");
+    expect(slugify("Q&A - 자주 묻는 질문")).toBe("qa---자주-묻는-질문");
+    expect(slugify("snake_case 이름")).toBe("snake_case-이름");
+  });
+
+  it("각주 정의가 문서 중간에 있어도 각주 섹션 줄 번호는 앞 블록보다 크다", () => {
+    const { root } = render("본문[^a]\n\n[^a]: 중간 정의\n\n끝 문단\n");
+    const section = root.querySelector("section.footnotes")!;
+    const last = root.querySelector("p[data-line='4']")!;
+    expect(last.textContent).toBe("끝 문단");
+    expect(Number(section.getAttribute("data-line"))).toBe(5);
+    // 정의가 문서 끝에 모여 있으면 첫 정의 줄 그대로
+    const end = render("본문[^a][^b]\n\n끝\n\n[^a]: 하나\n[^b]: 둘\n").root;
+    expect(end.querySelector("section.footnotes")!.getAttribute("data-line")).toBe("4");
   });
 
   it("BOM이 남아 있어도 front matter를 잡는다", () => {
