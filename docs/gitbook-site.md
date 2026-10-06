@@ -25,7 +25,7 @@
 |---|---|---|---|---|
 | 0 | `.gitbook.yaml`·`docs/site/` 뼈대 커밋·푸시 | 에이전트 | U-1 | ✅ 2026-10-06 |
 | A-1 | 빈 사이트 **Frond** 만들기 (API, 공개, 스페이스 없이) | 에이전트 | U-1 | ✅ 2026-10-06 (사이트 있음, 공개 설정·게시 전) |
-| U-1 | 사이트에 스페이스 추가 → **Git Sync**: `cyKim0115/MdEditor` · `main` · 방향 **GitHub → GitBook** → 편집 잠금 | 사용자 | A-6 확인 | ✅ 2026-10-06 사이트 Git Sync(`gitbook-docs.yaml`)로 연결 |
+| U-1 | 사이트에 스페이스 추가 → **Git Sync**: `cyKim0115/Frond`(2026-10-06 `MdEditor`에서 개명) · `main` · 방향 **GitHub → GitBook** → 편집 잠금 | 사용자 | A-6 확인 | ✅ 2026-10-06 사이트 Git Sync(`gitbook-docs.yaml`)로 연결 |
 | U-2 | 블록 방침 정하기 (아래 결정) | 사용자 | A-4 | 대기 (말이 없으면 권장안) |
 | A-2 | 꾸밈 설정 (아래 값) | 에이전트 | — | ✅ 2026-10-06 (API로 주 색·토글·GitHub 헤더 링크. 언어 ko는 API가 거절해 en 유지, 아이콘·파비콘 생략) |
 | A-3 | 목차·페이지 뼈대 — `SUMMARY.md` + 빈 페이지, 페이지마다 frontmatter `icon`·`description` | 에이전트 | A-4 | ✅ 2026-10-06 (20쪽) |
@@ -38,7 +38,7 @@
 1. `git status`·`git worktree list` — main 폴더는 다른 세션과 같이 쓴다. A-3~A-5는 **임시 워크트리 `../MdEditor-gitbook`(`docs/gitbook`)**에서 하고,
    다 쓴 뒤 main에 합쳐 **한 번에 푸시**한다. GitBook은 `main`을 싱크하므로 반쯤 쓴 페이지를 main에 푸시하면 그대로 공개된다
 2. 설정 페이지는 **AI 연동 탭**(`feat/ai-hook-settings`, [next-session](next-session.md) §3-10)이 main에 들어온 뒤의 모습으로 쓴다. 아직이면 그 탭 절만 비워 두고 나머지를 먼저 쓴다
-3. [`frond-rename.md`](frond-rename.md) 1번(저장소 이름 `MdEditor` → `Frond`)을 하면 Git Sync가 새 이름을 따라가는지 GitBook에서 확인한다
+3. [`frond-rename.md`](frond-rename.md) 1번(저장소 이름 `MdEditor` → `Frond`)은 2026-10-06 완료 — Git Sync가 새 이름을 따라가는지와 A-2 헤더 GitHub 링크(옛 주소면 `https://github.com/cyKim0115/Frond`로)를 GitBook에서 확인한다 (사용자 확인 대기)
 
 ## 결정 (U-2) — GitBook 전용 블록을 얼마나 쓸지
 

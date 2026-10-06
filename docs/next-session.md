@@ -275,7 +275,7 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 5. ~~B·C 결과 → `fidelity-report.md` → MVP 닫기 → `capture-to-rag`(D6)~~ — 2026-10-06 에이전트 몫 완료(SHIPPABLE 조건부). B-2·B-9 통과하면 `ASSET.md` 상태 `verified`·`v0.1.0` 태그(사용자 결정)
 6. 단계 4~6 — [`plan.md`](plan.md) 단계 3 실행 순서대로. 단계마다 사용자 실기 목록을 §2에 더한다. **단계 4(+4-1·4-2)는 2026-10-06 완료(§2 G), 단계 5도 2026-10-06 완료(§2 H), 단계 6은 실험 구현(§2 I, main 미병합)** — 다음은 사용자 실기 결과 대응: B-2·B-9(V1 닫기), G·H 문제 고치기, I 결과로 라이브프리뷰를 합칠지 보관할지. 맨 앞은 **3-6 AI 훅 받은 목록**(2026-10-06 사용자 요청: 훅이 연 문서가 보던 문서를 바꿔 읽던 자리를 잃는다 → 훅만 표식으로 구별해 탐색 영역 '새 문서' 탭에 쌓기, 설계 [`roadmap.md`](roadmap.md) Phase 3 · 3-6)
 7. ~~AI 훅 컨테이너 실행~~ — 2026-10-06 `open-new-md.ps1`이 WMI(`Win32_Process.Create`)로 밖에서 띄우게 고침(실패하면 `Start-Process`). 시험 앱으로 확인: WMI로 띄우면 실제 `%LOCALAPPDATA%`에, 예전 방식은 Claude 패키지 LocalCache에 썼다. 원래 메모: AI 훅이 Claude 데스크톱 세션에서 앱을 **새로** 띄우면 그 앱도 MSIX 컨테이너 안에서 돈다 → 테마·초안 쓰기가 Claude 패키지 LocalCache로 가서 사용자가 직접 띄운 앱에는 안 보인다(이미 떠 있는 앱으로 넘길 때는 상관없음). `integrations/open-new-md.ps1`이 `Win32_Process.Create`(WMI)나 탐색기 경유로 밖에서 띄우게 고친다. Codex 등 컨테이너 밖 도구는 지금 그대로. 2026-10-06 Frond 이전 설치 중 발견
-8. **남은 MdEditor 이름 → Frond 정리 (2026-10-06 할 일, 사용자가 실행 지시하면)** — 저장소 이름·크레이트·localStorage 접두사는 바꾸고
+8. **남은 MdEditor 이름 → Frond 정리 (2026-10-06 할 일, 사용자가 실행 지시하면)** — **1번 저장소 이름은 2026-10-06 완료**(`cyKim0115/Frond`, 다른 PC는 `git remote set-url origin git@github.com:cyKim0115/Frond.git`). 크레이트·localStorage 접두사는 바꾸고
    ProgId·identifier·exe 이름은 남긴다. 범위·순서·검증: [`frond-rename.md`](frond-rename.md)
 9. **Store 출시·선택 구매 먼저 할 일 (2026-10-06 할 일, 사용자가 실행 지시하면)** — 결정: Store MSIX + Durable add-on, 라이선스 MIT 확정(LICENSE·`TRADEMARKS.md` 추가 완료).
    에이전트 A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문.

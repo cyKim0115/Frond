@@ -12,7 +12,7 @@
 ## 0. 한눈에
 
 ```
-저장소 (cyKim0115/MdEditor → frond-rename 뒤 cyKim0115/Frond)
+저장소 (cyKim0115/Frond — 2026-10-06 MdEditor에서 개명)
 ├─ website/           제품 페이지, Astro 정적 ──(U-2)──▶ Cloudflare Workers 정적 자산 → https://<도메인>/
 │                      /docs → 302 → GitBook        (도메인 전에 공개가 필요하면 frond-site.<계정>.workers.dev)
 ├─ docs/site/         사용 설명서 (gitbook-site.md) ──▶ GitBook Git Sync → https://cykim.gitbook.io/frond/
