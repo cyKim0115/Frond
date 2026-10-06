@@ -17,7 +17,7 @@ icon: file-code
 }
 ```
 
-완성된 예제는 [sepia.json](https://github.com/cyKim0115/MdEditor/blob/main/docs/themes/sepia.json)입니다. 가장 쉬운 시작은 설정의 테마 목록에서 **복제**한 파일을 고치는 것입니다.
+완성된 예제는 [sepia.json](https://github.com/cyKim0115/Frond/blob/main/docs/themes/sepia.json)입니다. 가장 쉬운 시작은 설정의 테마 목록에서 **복제**한 파일을 고치는 것입니다.
 
 ## 키
 
