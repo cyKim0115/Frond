@@ -28,6 +28,7 @@ import { initTreePanel } from "./tree-panel";
 import { initNav } from "./nav";
 import { docTitle, samePath } from "./recent";
 import { CHUNK_CLASS, highlightCodeBlocks, LARGE_CHUNK_BLOCKS, LARGE_SOFT_LIMIT, renderMarkdown, type TocEntry } from "./render";
+import { renderMath } from "./render/math-render";
 import { DIAGRAM_CLASS, renderDiagrams } from "./render/mermaid";
 import { setBlocks } from "./render/morph";
 import { initSidebarResize } from "./resize";
@@ -677,7 +678,9 @@ function renderView(tab: Tab, text: string): void {
   if (syncCache?.tab === tab) syncCache = null;
   const seq = ++tab.renderSeq;
   if (!large) void highlightCodeBlocks(tab.article);
-  void renderDiagrams(tab.article, isDarkTheme(), () => tab.renderSeq !== seq || !tab.article.isConnected);
+  const stale = (): boolean => tab.renderSeq !== seq || !tab.article.isConnected;
+  void renderDiagrams(tab.article, isDarkTheme(), stale);
+  void renderMath(tab.article, stale);
   tab.renderedText = text;
   tab.needsRender = false;
   tab.tocEntries = result.toc;

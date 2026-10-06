@@ -7,6 +7,7 @@
  * front matter는 닫는 줄이 있는 YAML 해시일 때만 인정한다(`hasClosedFrontMatter`) — 첫 줄 `---`만으로는 `<hr>`.
  *
  * 원문 HTML은 허용 목록 태그(`<details>`·`<img width>`·`<br>`·`<kbd>`…)만 렌더하고 나머지 태그는 글자 그대로 둔다 (html.ts, 결정 D1).
+ * 수식(`$…$`·`$$`·```math)은 math.ts가 자리만 표시하고 셸이 DOM에 넣은 뒤 math-render.ts가 KaTeX로 그린다(4-3).
  * GitHub Alerts(`> [!NOTE]`)는 alerts.ts(로드맵 4-2). Mermaid 펜스는 보통 코드 블록으로 내고 셸이 DOM에 넣은 뒤 mermaid.ts가 그린다(4-1).
  */
 
@@ -21,6 +22,7 @@ import { chunkPlugin } from "./chunks";
 import { dataLinePlugin } from "./data-line";
 import { htmlAllowlistPlugin } from "./html";
 import { isAllowedLink, rewriteInlineLinks } from "./links";
+import { mathFenceHtml, mathPlugin } from "./math";
 import { sanitizeHtml } from "./sanitize";
 import { taskListsPlugin } from "./task-lists";
 import type { RenderOptions, RenderResult, TocEntry } from "./types";
@@ -62,6 +64,7 @@ function createMarkdownIt(): MarkdownItInstance {
     .use(taskListsPlugin)
     .use(footnote)
     .use(alertsPlugin)
+    .use(mathPlugin)
     .use(dataLinePlugin);
 
   // GFM 자동 링크 범위: 스킴 있는 URL·이메일·`www.`로 시작하는 주소 (결정 D2). linkify-it에 `www.` 전용 옵션이 없어 퍼지 링크를 켜고
@@ -77,6 +80,7 @@ function createMarkdownIt(): MarkdownItInstance {
     const info = token.info ? md.utils.unescapeAll(token.info).trim() : "";
     const lang = info.split(/\s+/)[0];
     const attrs = renderer.renderAttrs(token); // data-line
+    if (lang === "math") return mathFenceHtml(token.content, attrs, md.utils.escapeHtml);
     const body = md.utils.escapeHtml(token.content);
     if (lang === "") return `<pre${attrs}><code>${body}</code></pre>\n`;
     const safeLang = md.utils.escapeHtml(lang);
