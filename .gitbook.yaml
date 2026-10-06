@@ -1,0 +1,3 @@
+# GitBook: 사람용 사용 설명서만 docs/site 아래에 둔다.
+# 개발 문서(docs/decisions·qa·research·next-session 등)와 에이전트 룰(.claude·.cursor)은 이 루트 밖이라 싱크되지 않는다.
+root: ./docs/site/

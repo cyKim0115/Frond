@@ -50,6 +50,7 @@ docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ide
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
 docs/qa/               실기 증거 — <날짜>-<범위>/ 캡처·바이트 로그 (판정 표는 next-session.md)
 docs/research/         조사 보고서 — reports/<제목>.md + research_notes/<제목>/ 근거 노트 (배포 채널 조사 2026-10-06)
+docs/site/             GitBook 사용 설명서 — Git Sync 루트(루트 .gitbook.yaml), README.md 첫 페이지 + SUMMARY.md 목차. 개발 문서는 여기 두지 않는다
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
 Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
 crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
