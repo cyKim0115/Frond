@@ -1,6 +1,6 @@
 # 남은 MdEditor 이름 → Frond 정리 (2026-10-06 할 일)
 
-작성: 2026-10-06 · 상태: **대기 — 사용자가 "실행"이라고 하면 이 문서 순서대로 한다**
+작성: 2026-10-06 · 상태: **1번 완료(2026-10-06), 2번부터 대기 — 사용자가 "실행"이라고 하면 2번부터 이 문서 순서대로 한다**
 배경: 앱 표시 이름은 2026-10-06 Frond로 바꿨다([`decisions/ideation/20261006-app-name.md`](decisions/ideation/20261006-app-name.md)).
 남은 `MdEditor`는 저장소·크레이트·내부 식별자다. 판단은 2026-10-06 세션에서 했고 이 문서가 그 결과다.
 
@@ -31,7 +31,11 @@
 
 ## 순서
 
-### 1. GitHub 저장소 이름 (A)
+### 1. GitHub 저장소 이름 (A) — 완료 2026-10-06
+
+사용자가 GitHub에서 `Frond`로 바꿨다. 에이전트가 `origin`을 새 주소로 바꾸고 `git fetch` 확인, `Cargo.toml` `repository`와
+`docs/site/` 안 GitHub 링크를 새 주소로 고쳤다. 남은 확인: GitBook Git Sync·헤더 링크([`gitbook-site.md`](gitbook-site.md) 시작 전 확인 3), 다른 PC의 `origin`
+
 
 - `gh repo rename Frond -R cyKim0115/MdEditor --yes` (gh가 없거나 인증이 안 되면 사용자가 GitHub 웹 Settings → Repository name에서 바꾼다)
 - `git remote set-url origin git@github.com:cyKim0115/Frond.git` — v2 워크트리는 같은 설정을 쓰므로 한 번이면 된다
