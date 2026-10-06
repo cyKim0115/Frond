@@ -267,6 +267,8 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 
 설치기판은 구매자 기능이 모두 열려 있어(결정) 평소 화면은 거의 같다. 바뀐 것만 본다.
 
+0. **재설치(에이전트, Frond를 닫았을 때)** — 2026-10-06 이름 정리 때 설치본이 문서를 연 채 떠 있어 건너뛰었다. Frond를 모두 닫은 뒤 `target\release\bundle\nsis\Frond_0.1.0_x64-setup.exe /S /NS`를 WMI로 실행 →
+   설정·최근 파일·지난 탭이 그대로인지(localStorage `mdeditor.` → `frond.` 복사), 탐색기 `.md` 더블클릭이 Frond로 열리는지(ProgId 유지)
 1. 설정 → 테마 → **폴더 열기**가 `문서\Frond\themes`를 여는지, 예전 `%APPDATA%\Frond\themes`의 테마 파일이 옮겨져 목록에 그대로 있는지
 2. **추천 테마…** 팝업: '추가' 없이 **적용**만, 맨 아래 **구매자 전용** 4종(설치기판은 적용됨). 예전에 추가해 둔 추천 테마가 목록에 두 번 보이지 않는지
 3. 설정 **정보** 탭: 버전 0.1.0 · 설치 방식 '설치기' · 상태 '모든 기능 열림 — Store 밖 설치본'
@@ -288,7 +290,7 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 5. ~~B·C 결과 → `fidelity-report.md` → MVP 닫기 → `capture-to-rag`(D6)~~ — 2026-10-06 에이전트 몫 완료(SHIPPABLE 조건부). B-2·B-9 통과하면 `ASSET.md` 상태 `verified`·`v0.1.0` 태그(사용자 결정)
 6. 단계 4~6 — [`plan.md`](plan.md) 단계 3 실행 순서대로. 단계마다 사용자 실기 목록을 §2에 더한다. **단계 4(+4-1·4-2)는 2026-10-06 완료(§2 G), 단계 5도 2026-10-06 완료(§2 H), 단계 6은 실험 구현(§2 I, main 미병합)** — 다음은 사용자 실기 결과 대응: B-2·B-9(V1 닫기), G·H 문제 고치기, I 결과로 라이브프리뷰를 합칠지 보관할지. 맨 앞은 **3-6 AI 훅 받은 목록**(2026-10-06 사용자 요청: 훅이 연 문서가 보던 문서를 바꿔 읽던 자리를 잃는다 → 훅만 표식으로 구별해 탐색 영역 '새 문서' 탭에 쌓기, 설계 [`roadmap.md`](roadmap.md) Phase 3 · 3-6)
 7. ~~AI 훅 컨테이너 실행~~ — 2026-10-06 `open-new-md.ps1`이 WMI(`Win32_Process.Create`)로 밖에서 띄우게 고침(실패하면 `Start-Process`). 시험 앱으로 확인: WMI로 띄우면 실제 `%LOCALAPPDATA%`에, 예전 방식은 Claude 패키지 LocalCache에 썼다. 원래 메모: AI 훅이 Claude 데스크톱 세션에서 앱을 **새로** 띄우면 그 앱도 MSIX 컨테이너 안에서 돈다 → 테마·초안 쓰기가 Claude 패키지 LocalCache로 가서 사용자가 직접 띄운 앱에는 안 보인다(이미 떠 있는 앱으로 넘길 때는 상관없음). `integrations/open-new-md.ps1`이 `Win32_Process.Create`(WMI)나 탐색기 경유로 밖에서 띄우게 고친다. Codex 등 컨테이너 밖 도구는 지금 그대로. 2026-10-06 Frond 이전 설치 중 발견
-8. ~~**남은 MdEditor 이름 → Frond 정리**~~ — **2026-10-06 완료**(저장소 `cyKim0115/Frond`, 크레이트 `frond-core`·`frond`, localStorage `frond.`, 재설치 — [`frond-rename.md`](frond-rename.md) "결과"). 원래 계획: — 저장소 이름·크레이트·localStorage 접두사는 바꾸고
+8. ~~**남은 MdEditor 이름 → Frond 정리**~~ — **2026-10-06 완료**(저장소 `cyKim0115/Frond`, 크레이트 `frond-core`·`frond`, localStorage `frond.` — [`frond-rename.md`](frond-rename.md) "결과"). 설치본 재설치만 남음(§2 L 0번). 원래 계획: — 저장소 이름·크레이트·localStorage 접두사는 바꾸고
    ProgId·identifier·exe 이름은 남긴다. 범위·순서·검증: [`frond-rename.md`](frond-rename.md)
 9. ~~**Store 출시·선택 구매 먼저 할 일**~~ — **에이전트 몫 A-1~A-5 2026-10-06 완료**(main 합침, 푸시 안 함, 실기 §2 L). 남은 것: 사용자 U-1·U-2·가격, 그다음 R-2 MSIX. 원래 계획: — 결정: Store MSIX + Durable add-on, 라이선스 MIT 확정(LICENSE·`TRADEMARKS.md` 추가 완료).
    에이전트 A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문.
