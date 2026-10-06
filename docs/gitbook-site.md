@@ -1,7 +1,10 @@
 # GitBook 사용 설명서 — 꾸밀 계획 (2026-10-06 할 일)
 
 작성: 2026-10-06 · 상태: **대기 — 에이전트 몫(A)은 사용자가 "실행"이라고 하면 아래 순서대로, 사용자 몫(U)은 사용자가 직접**
-싱크 설정: 루트 [`.gitbook.yaml`](../.gitbook.yaml) → [`site/`](site/README.md) (`c722719`, 푸시 완료). 개발 문서(`docs/` 나머지)는 싱크되지 않는다
+싱크 설정: **사이트 Git Sync** — 루트 [`gitbook-docs.yaml`](../gitbook-docs.yaml)(`a6274be`)이 스페이스 **사용 설명서**(path `guide`, ko, 기본) → [`site/`](site/README.md)를 가리킨다.
+2026-10-06 첫 가져오기 success, 스페이스 편집 잠금 확인. 예전 스페이스용 [`.gitbook.yaml`](../.gitbook.yaml)(`c722719`)도 남아 있다. 개발 문서(`docs/` 나머지)는 싱크되지 않는다.
+사이트는 아직 **게시 전**(published false) — `cykim.gitbook.io/frond`는 게시해야 열린다
+보고: `docs/site/`를 고쳐 푸시한 작업은 웹훅 보고에 **GitBook 링크**를 붙인다 — 게시 뒤엔 공개 주소(해당 페이지까지), 게시 전엔 GitBook 앱의 Frond 사이트 링크(사용자 지시 2026-10-06)
 참고 조사(다른 세션, 진행 중): [`research/research_notes/Frond 웹사이트 구축 방법/`](research/research_notes/Frond%20웹사이트%20구축%20방법/docs_platforms.md) —
 문서 플랫폼은 Starlight가 권장안, **GitBook Free + Git Sync가 차선안**이다. 이 계획은 사용자가 GitBook을 고른 것(2026-10-06)을 따르되, 나중에 옮기기 쉽게 쓴다
 
@@ -21,8 +24,8 @@
 | # | 할 일 | 담당 | 이게 막는 것 | 상태 |
 |---|---|---|---|---|
 | 0 | `.gitbook.yaml`·`docs/site/` 뼈대 커밋·푸시 | 에이전트 | U-1 | ✅ 2026-10-06 |
-| A-1 | 빈 사이트 **Frond** 만들기 (API, 공개, 스페이스 없이) | 에이전트 | U-1 | "실행" 대기 |
-| U-1 | 사이트에 스페이스 추가 → **Git Sync**: `cyKim0115/MdEditor` · `main` · 방향 **GitHub → GitBook** → 편집 잠금 | 사용자 | A-6 확인 | A-1 뒤 |
+| A-1 | 빈 사이트 **Frond** 만들기 (API, 공개, 스페이스 없이) | 에이전트 | U-1 | ✅ 2026-10-06 (사이트 있음, 공개 설정·게시 전) |
+| U-1 | 사이트에 스페이스 추가 → **Git Sync**: `cyKim0115/MdEditor` · `main` · 방향 **GitHub → GitBook** → 편집 잠금 | 사용자 | A-6 확인 | ✅ 2026-10-06 사이트 Git Sync(`gitbook-docs.yaml`)로 연결 |
 | U-2 | 블록 방침 정하기 (아래 결정) | 사용자 | A-4 | 대기 (말이 없으면 권장안) |
 | A-2 | 꾸밈 설정 (아래 값) | 에이전트 | — | "실행" 대기 |
 | A-3 | 목차·페이지 뼈대 — `SUMMARY.md` + 빈 페이지, 페이지마다 frontmatter `icon`·`description` | 에이전트 | A-4 | "실행" 대기 |

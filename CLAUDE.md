@@ -13,6 +13,7 @@ Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 
 - 확정된 결정은 system-crew 형식으로 `docs/decisions/` 아래에 남긴다 (아래 표). 대화로만 정한 것은 다음 세션에 사라진다
 - `samples/raw/`는 바이트 단위 테스트 픽스처다. 편집기로 열어 저장하거나 줄바꿈을 정규화하지 않는다
 - 커밋은 전역 `korean-git-commit` 룰을 따른다
+- `docs/site/`(GitBook 사용 설명서)를 고쳐 푸시한 작업은 웹훅 보고에 GitBook 링크를 붙인다 ([docs/gitbook-site.md](docs/gitbook-site.md) 머리)
 - Phase 1 스캐폴딩 시 이 파일의 `구조`·`빌드` 절을 채우고 `.gitignore`에 `node_modules/`·`dist/`·`src-tauri/target/`을 추가한다
 
 ## system-crew (호출형)
@@ -51,7 +52,7 @@ docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ide
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
 docs/qa/               실기 증거 — <날짜>-<범위>/ 캡처·바이트 로그 (판정 표는 next-session.md)
 docs/research/         조사 보고서 — reports/<제목>.md + research_notes/<제목>/ 근거 노트 (배포 채널 조사 2026-10-06)
-docs/site/             GitBook 사용 설명서 — Git Sync 루트(루트 .gitbook.yaml), README.md 첫 페이지 + SUMMARY.md 목차. 개발 문서는 여기 두지 않는다
+docs/site/             GitBook 사용 설명서 — 사이트 Git Sync(루트 gitbook-docs.yaml, 스페이스 '사용 설명서'), README.md 첫 페이지 + SUMMARY.md 목차. 개발 문서는 여기 두지 않는다
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
 Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
 crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
