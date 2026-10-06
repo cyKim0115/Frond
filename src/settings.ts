@@ -5,7 +5,8 @@
  */
 
 import { readPref, writePref } from "./prefs";
-import { listThemes, type ThemeBase } from "./theme/themes";
+import { listThemes } from "./theme/catalog";
+import type { ThemeBase } from "./theme/themes";
 
 /** 설정 팝업 왼쪽 탭 — id·라벨·순서는 여기 한 곳에서만 정한다. 자주 쓰는 것을 위에 둔다 */
 export const SETTING_CATEGORIES = [
@@ -43,7 +44,7 @@ export interface SelectDef extends BaseDef {
 }
 export type SettingDef = NumberDef | SelectDef;
 
-/** 테마 목록(내장 + 가져온 테마) — `base`를 주면 그쪽 테마만 */
+/** 테마 목록(내장 + 추천 + 테마 폴더) — `base`를 주면 그쪽 테마만 */
 const themeOptions = (base?: ThemeBase) => (): SelectOption[] =>
   listThemes()
     .filter((t) => base === undefined || t.base === base)

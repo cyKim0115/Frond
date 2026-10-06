@@ -37,7 +37,8 @@ import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey 
 import { initSettingsDialog } from "./settings-dialog";
 import { buildSyncMap, initSplitResize, lineForY, type SyncMap, yForLine } from "./split";
 import { initTabStrip } from "./tabs";
-import { applyTheme, findTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
+import { findTheme } from "./theme/catalog";
+import { applyTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
 import { createThemePanel } from "./theme-panel";
 import { initTitlebar } from "./titlebar";
 import { countText, type TextCount } from "./wordcount";

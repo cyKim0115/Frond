@@ -1,4 +1,8 @@
-//! 사용자 테마 파일 (로드맵 S-4) — `%APPDATA%\Frond\themes\<id>.json`(appdata.rs).
+//! 사용자 테마 파일 (로드맵 S-4) — `문서\Frond\themes\<id>.json`.
+//!
+//! 2026-10-06(store-launch A-2·U-3)부터 테마 폴더는 사용자 문서 폴더 아래다. MSIX로 설치하면 `%APPDATA%`가 패키지 전용 위치로
+//! 가상화돼 탐색기에서 안 보이고 앱을 지우면 같이 지워지기 때문이다. 초안(`drafts`)은 `%APPDATA%\Frond`(appdata.rs)에 남는다.
+//! 예전 폴더(`%APPDATA%\Frond\themes`)가 있고 새 폴더가 없으면 처음 부를 때 한 번 옮긴다(`migrate`).
 //!
 //! 형식 검증(토큰 이름·색 값)은 프런트(src/theme/themes.ts `parseThemeFile`)가 한다 — CSS 색 문법 판정이
 //! 웹뷰의 `CSS.supports`에 있기 때문이다. 여기서는 파일 이름으로 쓰는 id만 검사해 폴더 밖으로 나가지 못하게 한다.
@@ -6,14 +10,55 @@
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 /// 테마 파일 하나의 크기 상한 — 토큰 60여 개짜리 JSON은 수 KB다
 const MAX_THEME_BYTES: u64 = 256 * 1024;
 const MAX_THEME_FILES: usize = 200;
 
 fn themes_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(crate::appdata::root(app)?.join("themes"))
+    let docs = app.path().document_dir().map_err(|e| e.to_string())?;
+    let old = crate::appdata::root(app)?.join("themes");
+    Ok(migrate(&old, &docs.join("Frond").join("themes")))
+}
+
+/// 예전 테마 폴더를 새 위치로 한 번 옮긴다. 새 폴더가 이미 있으면(옮겼거나 사용자가 만들었으면) 다시 하지 않는다.
+/// 같은 볼륨이면 이름 바꾸기 한 번, 문서 폴더가 다른 드라이브(OneDrive 등)면 파일을 복사한 뒤 옛 폴더를 지운다.
+/// 옮기지 못하면 이번에는 옛 폴더를 쓴다 — 테마를 잃지 않는 쪽
+fn migrate(old: &Path, new: &Path) -> PathBuf {
+    if new.exists() || !old.is_dir() {
+        return new.to_path_buf();
+    }
+    if let Some(parent) = new.parent() {
+        if std::fs::create_dir_all(parent).is_err() {
+            return old.to_path_buf();
+        }
+    }
+    if std::fs::rename(old, new).is_ok() {
+        return new.to_path_buf();
+    }
+    match copy_files(old, new) {
+        Ok(()) => {
+            let _ = std::fs::remove_dir_all(old);
+            new.to_path_buf()
+        }
+        Err(_) => {
+            let _ = std::fs::remove_dir_all(new);
+            old.to_path_buf()
+        }
+    }
+}
+
+/// 테마 폴더는 평평하다(하위 폴더 없음) — 파일만 복사한다
+fn copy_files(from: &Path, to: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(to)?;
+    for entry in std::fs::read_dir(from)? {
+        let entry = entry?;
+        if entry.file_type()?.is_file() {
+            std::fs::copy(entry.path(), to.join(entry.file_name()))?;
+        }
+    }
+    Ok(())
 }
 
 /// 파일 이름이 되는 id — 영문·숫자로 시작하고 영문·숫자·`-`·`_`만, 64자까지
@@ -136,6 +181,45 @@ mod tests {
         assert!(!valid_id("a/b"));
         assert!(!valid_id("세피아"));
         assert!(!valid_id(&"a".repeat(65)));
+    }
+
+    #[test]
+    fn migrates_old_folder_once() {
+        let base = tempfile::tempdir().unwrap();
+        let old = base.path().join("appdata").join("Frond").join("themes");
+        let new = base.path().join("docs").join("Frond").join("themes");
+        save_in(&old, "sepia", "{}").unwrap();
+
+        assert_eq!(migrate(&old, &new), new);
+        assert_eq!(std::fs::read_to_string(new.join("sepia.json")).unwrap(), "{}");
+        assert!(!old.exists());
+
+        // 새 폴더가 생긴 뒤에는 옛 폴더가 다시 생겨도 건드리지 않는다
+        save_in(&old, "old-only", "{}").unwrap();
+        assert_eq!(migrate(&old, &new), new);
+        assert!(old.join("old-only.json").exists());
+        assert!(!new.join("old-only.json").exists());
+    }
+
+    #[test]
+    fn copies_when_rename_is_not_possible() {
+        let base = tempfile::tempdir().unwrap();
+        let old = base.path().join("old");
+        let new = base.path().join("new");
+        save_in(&old, "a", "1").unwrap();
+        save_in(&old, "b", "2").unwrap();
+        copy_files(&old, &new).unwrap();
+        let mut names: Vec<_> = list_in(&new).into_iter().map(|t| t.stem).collect();
+        names.sort();
+        assert_eq!(names, ["a", "b"]);
+    }
+
+    #[test]
+    fn fresh_install_points_to_new_folder() {
+        let base = tempfile::tempdir().unwrap();
+        let new = base.path().join("docs").join("Frond").join("themes");
+        assert_eq!(migrate(&base.path().join("none"), &new), new);
+        assert!(!new.exists());
     }
 
     #[test]

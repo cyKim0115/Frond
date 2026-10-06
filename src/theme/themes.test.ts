@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { normalizeSetting, SETTINGS } from "../settings";
+import { findTheme, listThemes } from "./catalog";
 import { contrast } from "./palette";
+import { RECOMMENDED_THEMES } from "./recommended";
 import {
   BUILTIN_THEMES,
   DOC_TOKENS,
-  findTheme,
   GITHUB_LIGHT,
-  listThemes,
   parseThemeFile,
   resolveTheme,
   setUserThemes,
@@ -96,12 +96,12 @@ describe("themeCss", () => {
 });
 
 describe("사용자 테마 목록", () => {
-  it("내장 뒤에 붙고, 내장 id와 겹치면 버린다", () => {
+  it("내장·추천 뒤에 붙고, 내장 id와 겹치면 버린다", () => {
     setUserThemes([
       { id: "dark", name: "가짜 다크", base: "dark" },
       { id: "mine", name: "내 테마", base: "dark" },
     ]);
-    expect(listThemes().map((t) => t.id)).toEqual(["light", "dark", "mine"]);
+    expect(listThemes().map((t) => t.id)).toEqual(["light", "dark", ...RECOMMENDED_THEMES.map((e) => e.theme.id), "mine"]);
     expect(findTheme("dark")!.name).toBe("다크");
   });
 
