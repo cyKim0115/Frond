@@ -3,14 +3,18 @@
  *
  * - 셸 토큰(`SHELL_TOKENS`) → `:root`의 `--fg` `--bg` … (src/style.css가 쓰는 이름)
  * - 문서 토큰(`DOC_TOKENS`) → `.markdown-body` 팔레트(github-markdown-css 변수 이름) + 선택 영역 색. 편집기(CM6)도 같은 토큰을 쓴다
- * - 빠진 토큰은 `base` 쪽 내장 테마 값으로 채운다 (`resolveTheme`)
+ * - 빠진 토큰은 `base` 쪽 기본 팔레트(GitHub 라이트·다크) 값으로 채운다 (`resolveTheme`)
+ * - 내장 라이트·다크는 2026-10-06부터 미니멀 화이트 세이지 차콜 팔레트(palette.ts)를 기본 팔레트 위에 얹은 것이다.
+ *   기본 팔레트는 예전 내장 테마 그대로라 사용자 테마의 빈 토큰은 전과 같은 값으로 채워진다
  *
  * 적용은 `themeCss()`가 만든 `:root`·`.markdown-body`·`.cm-editor` 변수 한 벌을 `<style id="theme-vars">`에 쓰는 방식이다
  * (`applyTheme`). 화면에만 적용하고(`@media screen`) 인쇄는 CSS의 라이트 팔레트를 그대로 쓴다.
- * 내장 값은 github-markdown.css·style.css·dark.css의 CSS 팔레트와 같다 — 그쪽은 JS 적용 전 첫 그림과 인쇄용 대체값이다.
+ * CSS 팔레트는 JS 적용 전 첫 그림과 인쇄용 대체값이다 — style.css 셸 토큰은 내장 라이트·다크와 같고(테스트가 지킨다),
+ * 문서 팔레트(github-markdown.css·dark.css)는 기본 팔레트(GitHub)라 인쇄는 흰 바탕 GitHub 색이다.
  */
 
 import { readPref, writePref } from "../prefs";
+import { paletteTheme, sageCharcoalDark, sageCharcoalLight } from "./palette";
 
 export type ThemeBase = "light" | "dark";
 
@@ -97,7 +101,8 @@ export interface ResolvedTheme {
   doc: Record<DocToken, string>;
 }
 
-const LIGHT = {
+/** 기본 팔레트 — 2026-10-06까지의 내장 라이트(GitHub). 빈 토큰 채우기·추천 테마 'GitHub 라이트'가 쓴다 */
+export const GITHUB_LIGHT = {
   id: "light",
   name: "라이트",
   base: "light",
@@ -163,7 +168,8 @@ const LIGHT = {
   },
 } satisfies ResolvedTheme;
 
-const DARK = {
+/** 기본 팔레트 — 2026-10-06까지의 내장 다크(GitHub) */
+export const GITHUB_DARK = {
   id: "dark",
   name: "다크",
   base: "dark",
@@ -229,9 +235,14 @@ const DARK = {
   },
 } satisfies ResolvedTheme;
 
-/** 내장 테마 — 지우거나 고칠 수 없다. `base`로 쓰이므로 두 개 모두 모든 토큰을 갖는다 */
+const BASE_PALETTE: Record<ThemeBase, ResolvedTheme> = { light: GITHUB_LIGHT, dark: GITHUB_DARK };
+
+/** 내장 라이트·다크 — 세이지 차콜 팔레트를 기본 팔레트 위에 얹어 모든 토큰을 갖는다 */
+const LIGHT = resolveTheme(paletteTheme("light", "라이트", "light", sageCharcoalLight()));
+const DARK = resolveTheme(paletteTheme("dark", "다크", "dark", sageCharcoalDark()));
+
+/** 내장 테마 — 지우거나 고칠 수 없다. 둘 다 모든 토큰을 갖는다 */
 export const BUILTIN_THEMES: readonly ResolvedTheme[] = [LIGHT, DARK];
-const BUILTIN_BY_BASE: Record<ThemeBase, ResolvedTheme> = { light: LIGHT, dark: DARK };
 
 export function isBuiltinTheme(id: string): boolean {
   return BUILTIN_THEMES.some((t) => t.id === id);
@@ -269,9 +280,9 @@ export function findTheme(id: string): ThemeDef | undefined {
   return listThemes().find((t) => t.id === id);
 }
 
-/** 빠진 토큰을 `base` 내장 테마로 채운다 */
+/** 빠진 토큰을 `base` 기본 팔레트로 채운다 */
 export function resolveTheme(def: ThemeDef): ResolvedTheme {
-  const base = BUILTIN_BY_BASE[def.base];
+  const base = BASE_PALETTE[def.base];
   return {
     id: def.id,
     name: def.name,

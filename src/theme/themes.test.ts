@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { normalizeSetting, SETTINGS } from "../settings";
+import { contrast } from "./palette";
 import {
   BUILTIN_THEMES,
   DOC_TOKENS,
   findTheme,
+  GITHUB_LIGHT,
   listThemes,
   parseThemeFile,
   resolveTheme,
@@ -26,15 +29,58 @@ describe("내장 테마", () => {
       ["dark", "dark"],
     ]);
   });
+
+  const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+
+  it("라이트는 미니멀 화이트 세이지 차콜 — 사이드바·본문·글자·선 모두 초록빛이 돌고, 사이드바 위 흐린 글자도 읽힌다", () => {
+    const t = BUILTIN_THEMES[0];
+    for (const key of ["sidebar-bg", "bg", "fg", "line"] as const) {
+      const [r, g, b] = channels(t.shell[key]);
+      expect(g, key).toBeGreaterThan(r);
+      expect(g, key).toBeGreaterThanOrEqual(b);
+    }
+    expect(contrast(t.shell.fg, t.shell.bg)).toBeGreaterThanOrEqual(7);
+    expect(contrast(t.shell.muted, t.shell["sidebar-bg"])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("다크는 그 짝 — 어두운 초록 차콜이고, 사이드바 위 흐린 글자도 읽힌다", () => {
+    const t = BUILTIN_THEMES[1];
+    for (const key of ["sidebar-bg", "bg"] as const) {
+      const [r, g, b] = channels(t.shell[key]);
+      expect(g, key).toBeGreaterThan(r);
+      expect(g, key).toBeGreaterThanOrEqual(b);
+      expect(r + g + b, key).toBeLessThan(255 * 3 * 0.25);
+    }
+    expect(contrast(t.shell.fg, t.shell.bg)).toBeGreaterThanOrEqual(7);
+    expect(contrast(t.shell.muted, t.shell["sidebar-bg"])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("style.css의 셸 대체값(첫 그림)이 내장 라이트·다크와 같다", () => {
+    // vitest root(= 프로젝트 루트) 기준
+    const styleCss = readFileSync("src/style.css", "utf8");
+    const block = (selector: string) => {
+      const start = styleCss.indexOf(`${selector} {`);
+      expect(start, selector).toBeGreaterThanOrEqual(0);
+      return styleCss.slice(start, styleCss.indexOf("}", start));
+    };
+    const blocks = [
+      [block(":root"), BUILTIN_THEMES[0]],
+      [block(':root:not([data-theme="light"])'), BUILTIN_THEMES[1]],
+      [block(':root[data-theme="dark"]'), BUILTIN_THEMES[1]],
+    ] as const;
+    for (const [css, theme] of blocks) {
+      for (const k of SHELL_TOKENS) expect(css, `${theme.id} --${k}`).toContain(`--${k}: ${theme.shell[k]};`);
+    }
+  });
 });
 
 describe("resolveTheme", () => {
-  it("빠진 토큰은 base 내장 테마로 채우고 준 값은 덮는다", () => {
+  it("빠진 토큰은 base 기본 팔레트(GitHub — 예전 내장)로 채우고 준 값은 덮는다", () => {
     const resolved = resolveTheme({ id: "sepia", name: "세피아", base: "light", shell: { bg: "#f4ecd8" }, doc: { "bgColor-default": "#f4ecd8" } });
     expect(resolved.shell.bg).toBe("#f4ecd8");
-    expect(resolved.shell.fg).toBe(findTheme("light")!.shell!.fg);
+    expect(resolved.shell.fg).toBe(GITHUB_LIGHT.shell.fg);
     expect(resolved.doc["bgColor-default"]).toBe("#f4ecd8");
-    expect(resolved.doc["fgColor-default"]).toBe(findTheme("light")!.doc!["fgColor-default"]);
+    expect(resolved.doc["fgColor-default"]).toBe(GITHUB_LIGHT.doc["fgColor-default"]);
   });
 });
 
@@ -44,8 +90,8 @@ describe("themeCss", () => {
     expect(css.startsWith("@media screen {")).toBe(true);
     expect(css).toContain("html:root[data-theme] { color-scheme: dark;");
     expect(css).toContain("html:root[data-theme] .markdown-body, html:root[data-theme] .cm-editor");
-    expect(css).toContain("--bg: #0d1117;");
-    expect(css).toContain("--fgColor-default: #f0f6fc;");
+    expect(css).toContain(`--bg: ${BUILTIN_THEMES[1].shell.bg};`);
+    expect(css).toContain(`--fgColor-default: ${BUILTIN_THEMES[1].doc["fgColor-default"]};`);
   });
 });
 
