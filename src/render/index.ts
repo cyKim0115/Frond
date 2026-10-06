@@ -39,11 +39,12 @@ type RenderEnv = {
 };
 
 /**
- * GitHub식 슬러그: trim·소문자·공백→`-`·유니코드 문자/숫자/결합 부호/`-`/`_` 외 제거. 한글은 그대로 남는다.
+ * GitHub식 슬러그(github-slugger): trim·소문자 → 유니코드 문자/숫자/결합 부호/연결 부호(`_`)/`-`/공백 외 제거 → 공백 하나마다 `-`.
+ * 한글은 그대로 남는다. 공백을 묶지 않으므로 `a  b`·`a & b`는 GitHub처럼 `a--b`.
  * 중복은 markdown-it-anchor가 `-1`, `-2`를 붙여 푼다. 문장 부호뿐인 제목은 `section`
  */
 export function slugify(text: string): string {
-  const slug = text.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\p{L}\p{N}\p{M}_-]/gu, "");
+  const slug = text.trim().toLowerCase().replace(/[^\p{L}\p{N}\p{M}\p{Pc} -]/gu, "").replace(/ /g, "-");
   return slug === "" ? "section" : slug;
 }
 
