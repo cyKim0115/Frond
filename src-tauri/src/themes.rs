@@ -23,7 +23,7 @@ fn themes_dir(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// 예전 테마 폴더를 새 위치로 한 번 옮긴다. 새 폴더가 이미 있으면(옮겼거나 사용자가 만들었으면) 다시 하지 않는다.
-/// 같은 볼륨이면 이름 바꾸기 한 번, 문서 폴더가 다른 드라이브(OneDrive 등)면 파일을 복사한 뒤 옛 폴더를 지운다.
+/// 같은 볼륨이면 이름 바꾸기 한 번, 문서 폴더가 다른 드라이브(OneDrive 등)면 폴더째 복사한 뒤 옛 폴더를 지운다.
 /// 옮기지 못하면 이번에는 옛 폴더를 쓴다 — 테마를 잃지 않는 쪽
 fn migrate(old: &Path, new: &Path) -> PathBuf {
     if new.exists() || !old.is_dir() {
@@ -37,7 +37,7 @@ fn migrate(old: &Path, new: &Path) -> PathBuf {
     if std::fs::rename(old, new).is_ok() {
         return new.to_path_buf();
     }
-    match copy_files(old, new) {
+    match copy_tree(old, new) {
         Ok(()) => {
             let _ = std::fs::remove_dir_all(old);
             new.to_path_buf()
@@ -49,13 +49,20 @@ fn migrate(old: &Path, new: &Path) -> PathBuf {
     }
 }
 
-/// 테마 폴더는 평평하다(하위 폴더 없음) — 파일만 복사한다
-fn copy_files(from: &Path, to: &Path) -> std::io::Result<()> {
+/// 앱은 맨 위 `*.json`만 읽지만, 사용자가 테마 폴더에 둔 다른 파일·하위 폴더도 같이 옮겨야 옛 폴더를 지울 수 있다.
+/// 일반 파일·폴더가 아닌 항목(심볼릭 링크 등)이 있으면 실패로 돌려 옛 폴더를 그대로 쓴다
+fn copy_tree(from: &Path, to: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(to)?;
     for entry in std::fs::read_dir(from)? {
         let entry = entry?;
-        if entry.file_type()?.is_file() {
-            std::fs::copy(entry.path(), to.join(entry.file_name()))?;
+        let kind = entry.file_type()?;
+        let dest = to.join(entry.file_name());
+        if kind.is_dir() {
+            copy_tree(&entry.path(), &dest)?;
+        } else if kind.is_file() {
+            std::fs::copy(entry.path(), dest)?;
+        } else {
+            return Err(std::io::Error::other("일반 파일·폴더가 아닌 항목"));
         }
     }
     Ok(())
@@ -208,10 +215,13 @@ mod tests {
         let new = base.path().join("new");
         save_in(&old, "a", "1").unwrap();
         save_in(&old, "b", "2").unwrap();
-        copy_files(&old, &new).unwrap();
+        // 사용자가 따로 둔 하위 폴더도 같이 옮긴다 — 옛 폴더를 통째로 지우기 때문
+        save_in(&old.join("backup"), "c", "3").unwrap();
+        copy_tree(&old, &new).unwrap();
         let mut names: Vec<_> = list_in(&new).into_iter().map(|t| t.stem).collect();
         names.sort();
         assert_eq!(names, ["a", "b"]);
+        assert_eq!(std::fs::read_to_string(new.join("backup").join("c.json")).unwrap(), "3");
     }
 
     #[test]
