@@ -77,6 +77,8 @@
 - 링크는 상대 `.md` 경로. `docs/site/` 밖 파일(`integrations/`·`docs/themes/` 등)은 루트 밖이라 싱크되지 않으니 GitHub 주소로 건다
 - 그림은 `docs/site/images/`에 두고 상대 경로로. 지금 [`docs/screenshots/`](screenshots/)는 2026-09-30 GitHub 색이라 **기본 테마 세이지 차콜로 다시 찍는다**
   (설치본을 CDP로 띄워 캡처, 라이트 기본·다크는 테마 페이지에만). 창 크기는 한 가지로 맞춘다
+  — 2026-10-06 추가: 캡처는 웹사이트 계획 [`website-launch.md`](website-launch.md) A-3의 장면 스크립트와 **같이 쓴다**(앱 기본 창 1100×800·DPR 2,
+  설치본 대신 브라우저 미리보기 또는 식별자를 바꾼 빌드, 중립 경로의 데모 문서). 먼저 하는 쪽이 스크립트를 만든다
 - 바이트 픽스처 `samples/raw/`는 예시로 열지 않는다
 
 ## 완료 조건 (A-6)
@@ -91,7 +93,8 @@
 
 ## 그다음 (오늘 할 일 아님)
 
-- 개인정보처리방침 페이지 — [`store-launch.md`](store-launch.md) A-5와 합쳐 Store 제출용 공개 URL로 쓴다
+- 개인정보처리방침 페이지 — [`store-launch.md`](store-launch.md) A-5와 합쳐 Store 제출용 공개 URL로 쓴다. 원본은 `docs/site/privacy.md` 하나 —
+  웹사이트 `/privacy/`도 이 파일을 그린다([`website-launch.md`](website-launch.md) §7, 2026-10-06 결정 W9)
 - 릴리스 노트 — GitHub Releases 배포가 시작되면
 - 영어 variant — 한국어판이 자리 잡은 뒤
 - 랜딩·다운로드 사이트와 도메인 — 웹사이트 조사 보고서가 나오면 정한다. GitBook 무료는 `gitbook.io` 주소·배지가 고정이라 랜딩은 따로 둔다
