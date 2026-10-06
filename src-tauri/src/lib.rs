@@ -13,6 +13,7 @@ mod assets;
 mod assoc;
 mod drafts;
 mod elevation;
+mod print_menu;
 mod save;
 mod themes;
 mod watch;
@@ -134,7 +135,7 @@ pub fn run() {
             // 창은 코드로 만든다 — on_navigation 훅은 빌더에만 있다.
             // 웹뷰 안에서의 이동은 앱 자체 URL만 허용. 외부 링크는 프런트가 opener로 연다 (스택 판정 조건 5)
             // 제목 표시줄은 프런트가 그린다(src/titlebar.ts) — 테두리 없는 창도 가장자리 리사이즈·그림자는 런타임이 준다
-            WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+            let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("MdEditor")
                 .decorations(false)
                 .inner_size(1100.0, 800.0)
@@ -148,6 +149,7 @@ pub fn run() {
                         )
                 })
                 .build()?;
+            print_menu::route_print_to_app(&window);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
