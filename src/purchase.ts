@@ -28,7 +28,7 @@ import {
   writeNagState,
 } from "./license";
 
-const REPO_URL = "https://github.com/cyKim0115/MdEditor";
+const REPO_URL = "https://github.com/cyKim0115/Frond";
 
 /** 무엇이 무료이고 무엇이 열리는지 — 정보 탭과 안내 팝업이 같은 글을 쓴다 */
 export const PURCHASE_SUMMARY =

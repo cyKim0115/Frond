@@ -23,10 +23,10 @@ export interface RecommendedTheme {
   palette?: readonly string[];
 }
 
-export type RecommendedGroupId = "mdeditor" | "wedding";
+export type RecommendedGroupId = "frond" | "wedding";
 
 export const RECOMMENDED_GROUPS: readonly { id: RecommendedGroupId; label: string; source?: string }[] = [
-  { id: "mdeditor", label: "Frond" },
+  { id: "frond", label: "Frond" },
   { id: "wedding", label: "웨딩 컬러 팔레트", source: "색 출처: media.io '웨딩 컬러 팔레트'" },
 ];
 
@@ -81,13 +81,13 @@ const WEDDING: readonly RecommendedTheme[] = [
 
 function fromFile(text: string, stem: string, description: string): RecommendedTheme[] {
   const parsed = parseThemeFile(text, stem);
-  return parsed.ok ? [{ theme: parsed.theme, group: "mdeditor", description }] : [];
+  return parsed.ok ? [{ theme: parsed.theme, group: "frond", description }] : [];
 }
 
 /** 예전 내장 테마 — 모든 토큰을 다 가진 팔레트를 id·이름만 바꿔 사용자 테마로 */
 const GITHUB: readonly RecommendedTheme[] = [
-  { theme: { ...GITHUB_LIGHT, id: "github-light", name: "GitHub 라이트" }, group: "mdeditor", description: "2026-10-06까지의 기본 라이트 — 흰 바탕에 GitHub 파랑" },
-  { theme: { ...GITHUB_DARK, id: "github-dark", name: "GitHub 다크" }, group: "mdeditor", description: "2026-10-06까지의 기본 다크 — GitHub 다크 색" },
+  { theme: { ...GITHUB_LIGHT, id: "github-light", name: "GitHub 라이트" }, group: "frond", description: "2026-10-06까지의 기본 라이트 — 흰 바탕에 GitHub 파랑" },
+  { theme: { ...GITHUB_DARK, id: "github-dark", name: "GitHub 다크" }, group: "frond", description: "2026-10-06까지의 기본 다크 — GitHub 다크 색" },
 ];
 
 /** 팝업 순서 = 묶음 순서(RECOMMENDED_GROUPS) → 묶음 안 순서 */
