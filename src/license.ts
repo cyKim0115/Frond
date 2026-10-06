@@ -92,3 +92,113 @@ export function installKindLabel(kind: InstallKind): string {
 export function reloadEntitlement(): void {
   current = readPref(KEY, OPEN, isEntitlement);
 }
+
+// ---- 구매 권유 스케줄 (store-launch A-4) ------------------------------------------------
+//
+// 결정 `20261006-store-monetization`: 첫 실행 뒤 7일·실행 5회 유예, 14일 간격, '나중에'마다 14 → 30 → 60일.
+// 비구매자에게만, Store판(Packaged)에서만(개발용 무료 흉내 포함). 권유 끄기 설정은 두지 않고 주기는 이 상수로만 바꾼다.
+// 상태는 localStorage(잃어도 되는 값) — 지워지면 유예부터 다시 센다.
+
+const DAY = 24 * 60 * 60 * 1000;
+
+export const NAG = {
+  graceMs: 7 * DAY,
+  graceLaunches: 5,
+  intervalMs: 14 * DAY,
+  /** '나중에'를 누른 횟수별 다음 간격 — 마지막 값을 계속 쓴다 */
+  snoozeMs: [14 * DAY, 30 * DAY, 60 * DAY],
+  /** 마지막 입력 뒤 이만큼은 띄우지 않는다 */
+  idleMs: 10_000,
+  /** 시작 흐름이 끝난 뒤 첫 시도까지 (3–10분 사이 무작위) */
+  firstTryMs: [3 * 60_000, 10 * 60_000],
+  /** 가드에 막히면 다시 볼 간격 */
+  retryMs: 60_000,
+} as const;
+
+export interface NagState {
+  firstRunAt: number;
+  launches: number;
+  /** 저장 성공 횟수 — 지금은 세기만 한다 */
+  saves: number;
+  lastShownAt: number | null;
+  /** '나중에'를 누른 횟수 */
+  snoozes: number;
+  /** 이 시각 전에는 띄우지 않는다 */
+  nextAt: number | null;
+}
+
+/** 띄우면 안 되는 순간 — 하나라도 걸리면 이번에는 건너뛴다 */
+export interface NagGuards {
+  /** 한글 IME 조합 중 (editor.view.composing) */
+  composing: boolean;
+  /** 마지막 키·마우스 입력 뒤 지난 시간 */
+  idleMs: number;
+  /** 저장·인쇄·내보내기 중 */
+  busy: boolean;
+  /** 열린 `<dialog>`가 있음 — 앱 팝업(showChoice)은 열린 팝업을 닫아 저장 충돌 질문을 취소시킨다(dialog.ts) */
+  dialogOpen: boolean;
+  /** 창에 포커스가 있음 */
+  focused: boolean;
+  /** 관리자 권한 실행 — Store 구매 창이 뜨지 않는다 */
+  elevated: boolean;
+}
+
+const NAG_KEY = "nag";
+
+function isNagState(v: unknown): v is NagState {
+  if (typeof v !== "object" || v === null) return false;
+  const s = v as Record<string, unknown>;
+  const num = (x: unknown) => typeof x === "number" && Number.isFinite(x);
+  const numOrNull = (x: unknown) => x === null || num(x);
+  return num(s.firstRunAt) && num(s.launches) && num(s.saves) && numOrNull(s.lastShownAt) && num(s.snoozes) && numOrNull(s.nextAt);
+}
+
+export function readNagState(): NagState | null {
+  return readPref<NagState | null>(NAG_KEY, null, (v): v is NagState | null => v === null || isNagState(v));
+}
+
+export function writeNagState(state: NagState): void {
+  writePref(NAG_KEY, state);
+}
+
+/** 실행 한 번 — 처음이면 첫 실행 시각을 남긴다 */
+export function recordLaunch(state: NagState | null, now: number): NagState {
+  const base = state ?? { firstRunAt: now, launches: 0, saves: 0, lastShownAt: null, snoozes: 0, nextAt: null };
+  return { ...base, launches: base.launches + 1 };
+}
+
+export function recordSave(state: NagState): NagState {
+  return { ...state, saves: state.saves + 1 };
+}
+
+/** 띄웠다 — 아무것도 누르지 않고 끝나도 다음은 14일 뒤 */
+export function afterShown(state: NagState, now: number): NagState {
+  return { ...state, lastShownAt: now, nextAt: now + NAG.intervalMs };
+}
+
+/** '나중에'·닫기 — 누를 때마다 간격이 늘어난다 (14 → 30 → 60일) */
+export function afterSnooze(state: NagState, now: number): NagState {
+  const wait = NAG.snoozeMs[Math.min(state.snoozes, NAG.snoozeMs.length - 1)];
+  return { ...state, snoozes: state.snoozes + 1, nextAt: now + wait };
+}
+
+/** 권유 대상인지 — 구매자·Store 밖 설치본은 아니다. 개발용 무료 흉내는 대상(시험용) */
+export function nagApplies(e: Entitlement, kind: InstallKind | null): boolean {
+  if (isSupporter(e)) return false;
+  return kind === "packaged" || e.source === "dev";
+}
+
+/** 시간 조건 — 유예(7일·5회)가 지났고 다음 시각이 됐는지 */
+export function nagDue(state: NagState, now: number): boolean {
+  if (now - state.firstRunAt < NAG.graceMs || state.launches < NAG.graceLaunches) return false;
+  return state.nextAt === null || now >= state.nextAt;
+}
+
+export function nagBlocked(g: NagGuards): boolean {
+  return g.composing || g.idleMs < NAG.idleMs || g.busy || g.dialogOpen || !g.focused || g.elevated;
+}
+
+/** 지금 띄울지 — 대상 · 시간 · 가드를 모두 본다 */
+export function shouldNag(state: NagState, now: number, guards: NagGuards, e: Entitlement, kind: InstallKind | null): boolean {
+  return nagApplies(e, kind) && nagDue(state, now) && !nagBlocked(guards);
+}

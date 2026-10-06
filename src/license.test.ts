@@ -1,15 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  afterShown,
+  afterSnooze,
   canImport,
   canUseTheme,
   type Entitlement,
   entitlement,
   entitlementLabel,
   isEntitlement,
+  NAG,
+  type NagGuards,
+  type NagState,
   onEntitlementChange,
   OPEN,
+  readNagState,
+  recordLaunch,
+  recordSave,
   reloadEntitlement,
   setEntitlement,
+  shouldNag,
+  writeNagState,
 } from "./license";
 import { getSetting, reloadSettings, setSetting } from "./settings";
 import { contrast } from "./theme/palette";
@@ -108,5 +118,80 @@ describe("구매자 전용 테마 묶음", () => {
       expect(contrast(t.doc["fgColor-accent"], t.doc["bgColor-default"]), `${t.id} link`).toBeGreaterThanOrEqual(4.5);
       expect(contrast(t.shell["on-accent"], t.shell.accent), `${t.id} on-accent`).toBeGreaterThanOrEqual(4.5);
     }
+  });
+});
+
+describe("구매 권유 스케줄 (store-launch A-4)", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const T0 = Date.UTC(2026, 9, 6);
+  const calm: NagGuards = { composing: false, idleMs: 60_000, busy: false, dialogOpen: false, focused: true, elevated: false };
+  const STORE_FREE = { tier: "free", source: "none" } as const;
+  /** 실행을 n번 한 상태 (첫 실행 T0) */
+  function launched(n: number): NagState {
+    let s: NagState | null = null;
+    for (let i = 0; i < n; i++) s = recordLaunch(s, T0 + i);
+    return s!;
+  }
+
+  it("첫 실행 뒤 7일과 실행 5회가 모두 지나야 한다", () => {
+    expect(shouldNag(launched(5), T0 + 7 * DAY - 1, calm, STORE_FREE, "packaged")).toBe(false);
+    expect(shouldNag(launched(4), T0 + 30 * DAY, calm, STORE_FREE, "packaged")).toBe(false);
+    expect(shouldNag(launched(5), T0 + 7 * DAY, calm, STORE_FREE, "packaged")).toBe(true);
+  });
+
+  it("Store판 비구매자에게만 — 구매자·Store 밖 설치본은 없다, 개발용 무료 흉내는 시험용으로 뜬다", () => {
+    const s = launched(5);
+    const t = T0 + 8 * DAY;
+    expect(shouldNag(s, t, calm, { tier: "supporter", source: "store" }, "packaged")).toBe(false);
+    for (const kind of ["installed", "scoop", "dev", null] as const) expect(shouldNag(s, t, calm, STORE_FREE, kind)).toBe(false);
+    expect(shouldNag(s, t, calm, OPEN, "installed")).toBe(false);
+    expect(shouldNag(s, t, calm, { tier: "free", source: "dev" }, "dev")).toBe(true);
+  });
+
+  it("가드 하나라도 걸리면 건너뛴다 — 조합 중·입력 10초 안·저장/인쇄/내보내기·열린 팝업·포커스 없음·관리자", () => {
+    const s = launched(5);
+    const t = T0 + 8 * DAY;
+    const cases: Partial<NagGuards>[] = [
+      { composing: true },
+      { idleMs: 9_999 },
+      { busy: true },
+      { dialogOpen: true },
+      { focused: false },
+      { elevated: true },
+    ];
+    for (const c of cases) expect(shouldNag(s, t, { ...calm, ...c }, STORE_FREE, "packaged"), JSON.stringify(c)).toBe(false);
+    expect(shouldNag(s, t, { ...calm, idleMs: 10_000 }, STORE_FREE, "packaged")).toBe(true);
+  });
+
+  it("띄우면 14일, '나중에'마다 14 → 30 → 60 → 60일 뒤", () => {
+    let s = launched(5);
+    let t = T0 + 8 * DAY;
+    s = afterShown(s, t);
+    expect(shouldNag(s, t + 14 * DAY - 1, calm, STORE_FREE, "packaged")).toBe(false);
+    expect(shouldNag(s, t + 14 * DAY, calm, STORE_FREE, "packaged")).toBe(true);
+    for (const days of [14, 30, 60, 60]) {
+      s = afterSnooze(afterShown(s, t), t);
+      expect(shouldNag(s, t + days * DAY - 1, calm, STORE_FREE, "packaged"), `${days}`).toBe(false);
+      expect(shouldNag(s, t + days * DAY, calm, STORE_FREE, "packaged"), `${days}`).toBe(true);
+      t += days * DAY;
+    }
+    expect(s.snoozes).toBe(4);
+  });
+
+  it("상태는 localStorage에 남고, 저장 성공은 카운터만 올린다", () => {
+    expect(readNagState()).toBeNull();
+    const s = recordSave(launched(2));
+    writeNagState(s);
+    expect(readNagState()).toEqual({ ...s, saves: 1 });
+    localStorage.setItem("mdeditor.nag", JSON.stringify({ firstRunAt: "x" }));
+    expect(readNagState()).toBeNull();
+  });
+
+  it("주기 상수는 결정 기록과 같다", () => {
+    expect(NAG.graceMs).toBe(7 * DAY);
+    expect(NAG.graceLaunches).toBe(5);
+    expect(NAG.intervalMs).toBe(14 * DAY);
+    expect(NAG.snoozeMs).toEqual([14 * DAY, 30 * DAY, 60 * DAY]);
+    expect(NAG.idleMs).toBe(10_000);
   });
 });
