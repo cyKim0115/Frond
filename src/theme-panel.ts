@@ -1,7 +1,7 @@
 /**
  * 설정 '테마' 탭의 테마 목록·가져오기 (로드맵 S-4) — settings-dialog의 커스텀 패널(`addPanel("theme", …)`).
  *
- * 목록 = 내장 + 테마 폴더(`%APPDATA%\MdEditor\themes\*.json`). 폴더가 원본이고 localStorage 캐시는 시작용이다(themes.ts).
+ * 목록 = 내장 + 테마 폴더(`%APPDATA%\Frond\themes\*.json`). 폴더가 원본이고 localStorage 캐시는 시작용이다(themes.ts).
  * 가져오기는 파일을 검증(`parseThemeFile`: 토큰 이름·색 값, url()·@import 거부)한 뒤에만 폴더에 복사한다.
  * 파일 읽기·쓰기는 백엔드 커맨드(themes.rs) — fs 플러그인 금지.
  */

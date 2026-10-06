@@ -78,7 +78,7 @@
 
 ## 2. 사용자가 할 일 ★ 실기 테스트
 
-**설치본은 최신** — 2026-10-06 사용자 요청으로 아이콘을 세이지 초록(#637d63) 배경·흰 커서로 바꾼 `dda4c6e` 빌드로 재설치했다(`setup.exe /S /NS` 무인, 바로가기는 건드리지 않음, 설치된 exe = 릴리스 빌드에서 번들 표식 3바이트만 다름, `.md` 연결·RegisteredApplications 그대로, `ie4uinit -show`로 아이콘 캐시 갱신). 기능은 그 전 `620ab78`(V1.1 다듬기) 설치본과 같다. 다시 설치할 필요 없다.
+**설치본은 이름만 뒤처짐** — 설치된 것은 2026-10-06 `dda4c6e`(세이지 초록 아이콘) 빌드의 **MdEditor**다(`setup.exe /S /NS` 무인, `.md` 연결·RegisteredApplications 그대로, `ie4uinit -show`로 아이콘 캐시 갱신). 같은 날 앱 이름을 **Frond**로 바꿨고(`ccfec00`, 결정 [`ideation/20261006-app-name.md`](decisions/ideation/20261006-app-name.md)) `Frond_0.1.0_x64-setup.exe`는 빌드했지만 이전 설치(옛 MdEditor 무인 제거 → Frond 설치, 설치 폴더 `%LOCALAPPDATA%\Frond`, 시작 메뉴 이름 변경)는 사용자 확인 대기다. 기능은 설치본과 같다.
 **`samples/raw/`는 바이트 픽스처라 직접 편집·저장하지 말고 복사본으로 시험한다.**
 
 ### B. Phase 2 편집·저장

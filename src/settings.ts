@@ -156,7 +156,7 @@ export const SETTINGS = {
     kind: "number",
     section: "file",
     label: "초안 백업 간격",
-    hint: "저장하지 않은 편집을 이 간격으로 %APPDATA%\\MdEditor\\drafts에 남깁니다. 강제 종료 뒤 같은 파일을 열면 복구를 제안합니다. 0이면 끕니다",
+    hint: "저장하지 않은 편집을 이 간격으로 %APPDATA%\\Frond\\drafts에 남깁니다. 강제 종료 뒤 같은 파일을 열면 복구를 제안합니다. 0이면 끕니다",
     default: 60,
     min: 0,
     max: 300,

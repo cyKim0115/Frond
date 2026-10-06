@@ -1,4 +1,4 @@
-//! 사용자 테마 파일 (로드맵 S-4) — `%APPDATA%\MdEditor\themes\<id>.json`.
+//! 사용자 테마 파일 (로드맵 S-4) — `%APPDATA%\Frond\themes\<id>.json`(appdata.rs).
 //!
 //! 형식 검증(토큰 이름·색 값)은 프런트(src/theme/themes.ts `parseThemeFile`)가 한다 — CSS 색 문법 판정이
 //! 웹뷰의 `CSS.supports`에 있기 때문이다. 여기서는 파일 이름으로 쓰는 id만 검사해 폴더 밖으로 나가지 못하게 한다.
@@ -6,15 +6,14 @@
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 /// 테마 파일 하나의 크기 상한 — 토큰 60여 개짜리 JSON은 수 KB다
 const MAX_THEME_BYTES: u64 = 256 * 1024;
 const MAX_THEME_FILES: usize = 200;
 
 fn themes_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let base = app.path().data_dir().map_err(|e| e.to_string())?;
-    Ok(base.join("MdEditor").join("themes"))
+    Ok(crate::appdata::root(app)?.join("themes"))
 }
 
 /// 파일 이름이 되는 id — 영문·숫자로 시작하고 영문·숫자·`-`·`_`만, 64자까지

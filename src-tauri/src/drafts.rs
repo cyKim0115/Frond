@@ -1,4 +1,4 @@
-//! 초안 백업 (로드맵 2-4) — 저장하지 않은 편집을 `%APPDATA%\MdEditor\drafts\`에 주기적으로 남긴다.
+//! 초안 백업 (로드맵 2-4) — 저장하지 않은 편집을 `%APPDATA%\Frond\drafts\`(appdata.rs)에 주기적으로 남긴다.
 //!
 //! 문서 경로(소문자)의 blake3 앞 32자를 파일 이름으로 쓰는 JSON 한 개가 문서 하나다. 자동 저장이 아니라
 //! 강제 종료·정전 뒤 복구용이다: 문서를 다시 열 때 초안이 디스크 내용과 다르면 프런트가 복구를 제안한다.
@@ -7,7 +7,7 @@
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 #[derive(Serialize, Deserialize)]
 pub struct Draft {
@@ -20,8 +20,7 @@ pub struct Draft {
 }
 
 fn drafts_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let base = app.path().data_dir().map_err(|e| e.to_string())?;
-    Ok(base.join("MdEditor").join("drafts"))
+    Ok(crate::appdata::root(app)?.join("drafts"))
 }
 
 fn draft_file(app: &AppHandle, path: &str) -> Result<PathBuf, String> {

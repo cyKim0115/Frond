@@ -2,7 +2,7 @@
  * github-markdown-css 5.9.0 — https://github.com/sindresorhus/github-markdown-css
  * MIT License, Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
  *
- * MdEditor 수정 사항 — 아래 "팔레트" 절만 손댔고 그 뒤는 원본(npm 패키지의 github-markdown.css) 그대로다:
+ * Frond 수정 사항 — 아래 "팔레트" 절만 손댔고 그 뒤는 원본(npm 패키지의 github-markdown.css) 그대로다:
  *   원본의 `@media (prefers-color-scheme: dark|light) { .markdown-body, [data-theme=…] { …변수… } }` 블록 두 개를
  *   변수 값은 그대로 둔 채 앱 셸(src/style.css)과 같은 두 모드 셀렉터 계약으로 옮겼다.
  *     라이트(기본)  .markdown-body
