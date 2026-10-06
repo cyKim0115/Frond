@@ -37,8 +37,8 @@ import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey 
 import { initSettingsDialog } from "./settings-dialog";
 import { buildSyncMap, initSplitResize, lineForY, type SyncMap, yForLine } from "./split";
 import { initTabStrip } from "./tabs";
-import { canUseTheme, type Entitlement, onEntitlementChange, setEntitlement } from "./license";
-import { createAboutPanel, showPurchaseInfo } from "./purchase";
+import { canUseTheme, type Entitlement, onEntitlementChange, setEntitlement, writeNagState } from "./license";
+import { createAboutPanel, noteSaved, showPurchaseInfo, startNagScheduler } from "./purchase";
 import { visibleTheme } from "./theme/catalog";
 import { applyTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
 import { createThemePanel } from "./theme-panel";
@@ -1092,8 +1092,23 @@ interface SaveOptions {
   eol?: string;
 }
 
+/** 저장·인쇄·내보내기 중인 작업 수 — 구매 권유가 그 사이에 뜨지 않게 (store-launch A-4) */
+let busyTasks = 0;
+async function whileBusy<T>(task: () => Promise<T>): Promise<T> {
+  busyTasks++;
+  try {
+    return await task();
+  } finally {
+    busyTasks--;
+  }
+}
+
 /** Ctrl+S. 성공(또는 저장할 것 없음)이면 true */
-async function save(options: SaveOptions = {}, tab: Tab | null = active): Promise<boolean> {
+function save(options: SaveOptions = {}, tab: Tab | null = active): Promise<boolean> {
+  return whileBusy(() => saveNow(options, tab));
+}
+
+async function saveNow(options: SaveOptions, tab: Tab | null): Promise<boolean> {
   if (!tab) return false;
   if (!IS_TAURI) {
     showBanner("브라우저 미리보기에서는 저장할 수 없습니다. 앱(npm run app:dev)에서 저장하세요.");
@@ -1134,6 +1149,7 @@ async function save(options: SaveOptions = {}, tab: Tab | null = active): Promis
     }
     nav.retitle(doc.path, titleOf(text, tab));
     flashStatus("저장됨");
+    noteSaved();
     return true;
   } catch (error) {
     return handleSaveFailure(error as SaveFailure | string, tab);
@@ -1188,7 +1204,11 @@ async function handleSaveFailure(failure: SaveFailure | string, tab: Tab): Promi
 }
 
 /** Ctrl+Shift+S — 원래 파일의 인코딩·줄바꿈을 그대로 가져가 새 파일로 저장하고, 이 탭이 그 파일을 보게 한다 */
-async function saveAs(tab: Tab | null = active): Promise<boolean> {
+function saveAs(tab: Tab | null = active): Promise<boolean> {
+  return whileBusy(() => saveAsNow(tab));
+}
+
+async function saveAsNow(tab: Tab | null): Promise<boolean> {
   if (!tab) return false;
   if (!IS_TAURI) {
     showBanner("브라우저 미리보기에서는 저장할 수 없습니다.");
@@ -1849,7 +1869,11 @@ const PRINT_WARN_SIZE = 1024 * 1024;
  * (미리보기가 멈춰 강제 종료하다 편집 중 내용을 잃는 사고를 막는다). 소스·분할에서 고친 내용은 보기 화면에 그린 뒤 찍고,
  * 다크 테마의 Mermaid 그림은 종이에 맞게 라이트로 그려 찍은 뒤 되돌린다. PDF 파일 이름이 되는 창 제목은 문서 이름으로
  */
-async function printDocument(): Promise<void> {
+function printDocument(): Promise<void> {
+  return whileBusy(printNow);
+}
+
+async function printNow(): Promise<void> {
   const tab = active;
   const size = tab ? Math.max(tab.doc.info.byte_len, workingText(tab).length) : 0;
   if (size >= PRINT_WARN_SIZE) {
@@ -1881,7 +1905,11 @@ async function printDocument(): Promise<void> {
 
 // ---- HTML 내보내기 (로드맵 4-4) ----------------------------------------------------------
 
-async function exportHtml(tab: Tab | null = active): Promise<void> {
+function exportHtml(tab: Tab | null = active): Promise<void> {
+  return whileBusy(() => exportHtmlNow(tab));
+}
+
+async function exportHtmlNow(tab: Tab | null): Promise<void> {
   if (!tab || tab !== active) return;
   if (!IS_TAURI) {
     showBanner("브라우저 미리보기에서는 내보낼 수 없습니다.");
@@ -2324,6 +2352,18 @@ async function init(): Promise<void> {
   // 관리자 권한 창에는 탐색기 더블클릭이 전달되지 않는다(UIPI) — 막을 수 없으니 상태바로 알린다 (스펙 경계 사례)
   $("#status-elevated").hidden = !(await invoke<boolean>("is_elevated").catch(() => false));
   void checkWebviewVersion();
+  startNag();
+}
+
+/** 구매 권유(store-launch A-4) — Store판 비구매자에게만 뜬다. 미리보기는 ?entitlement=free&nag=now 로 곧바로 시험 */
+function startNag(firstTryMs?: number): void {
+  startNagScheduler({
+    isTauri: IS_TAURI,
+    composing: () => editor?.view.composing === true,
+    busy: () => busyTasks > 0,
+    openAbout: () => settingsDialog.open("about"),
+    firstTryMs,
+  });
 }
 
 /** 설치기의 최소 WebView2(150)보다 낮은 런타임이면 알린다 — 한글 IME·렌더 수정이 그 버전에 기대고 있다 (스펙 경계 사례) */
@@ -2356,6 +2396,12 @@ if (IS_TAURI) {
   // ?entitlement=free 로 무료 화면(테마 잠금·정보 탭)을 본다
   const tier = params.get("entitlement");
   if (tier === "free" || tier === "supporter") setEntitlement({ tier, source: "dev" });
+  if (params.get("nag") === "now") {
+    // 유예(7일·5회)를 지난 상태로 두고 11초 뒤 시도한다 — 마지막 입력 뒤 10초 가드를 넘기게
+    const long = Date.now() - 8 * 24 * 60 * 60 * 1000;
+    writeNagState({ firstRunAt: long, launches: 5, saves: 0, lastShownAt: null, snoozes: 0, nextAt: null });
+    startNag(11_000);
+  }
   void (async () => {
     for (const sample of (params.get("sample") ?? "samples/showcase.md").split(",")) await openPath(sample);
     if (params.get("mode") === "source") setMode("source");
