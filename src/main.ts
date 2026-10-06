@@ -109,6 +109,8 @@ let renderedText: string | null = null;
 let sourceMemo: { scroll: StateEffect<unknown>; viewLine: number } | null = null;
 let tocEntries: TocEntry[] = [];
 let zoom = 1;
+/** 감시 중인 파일이 사라졌다는 배너를 띄웠다 — 다시 생기면 거둔다 */
+let fileMissing = false;
 
 // ---- 읽기 -----------------------------------------------------------------------
 
@@ -203,6 +205,7 @@ async function reload(options: { discard?: boolean; encoding?: string } = {}): P
 /** 디스크에서 읽은 문서를 화면에 올린다 — 편집 상태는 버린다 */
 function adopt(doc: DocumentPayload, nextMode: Mode): void {
   current = doc;
+  fileMissing = false;
   editorDocPath = null;
   savedDoc = null;
   renderedText = null;
@@ -474,6 +477,7 @@ async function pasteImages(files: File[]): Promise<string | null> {
     showBanner("브라우저 미리보기에서는 이미지를 저장할 수 없습니다.");
     return null;
   }
+  clearImageBanner();
   const links: string[] = [];
   for (const file of files) {
     const ext = IMAGE_TYPES[file.type];
@@ -486,7 +490,7 @@ async function pasteImages(files: File[]): Promise<string | null> {
       });
       links.push(markdownImage("", rel));
     } catch (e) {
-      showBanner(`이미지를 저장하지 못했습니다: ${e}`, [], true);
+      showBanner(`이미지를 저장하지 못했습니다: ${e}`, [], true, "image");
     }
   }
   return links.length ? links.join("\n") : null;
@@ -494,10 +498,16 @@ async function pasteImages(files: File[]): Promise<string | null> {
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
 
+/** 지난 붙여넣기·끌어다 놓기의 실패 배너는 다음 시도 때 거둔다 — 성공해도 예전 실패가 남아 보이지 않게 */
+function clearImageBanner(): void {
+  if (!banner.hidden && banner.dataset.kind === "image") hideBanner();
+}
+
 async function dropImages(paths: string[], position: { x: number; y: number }): Promise<void> {
   if (!current || !editor) return;
   const at = editor.view.posAtCoords({ x: position.x / devicePixelRatio, y: position.y / devicePixelRatio });
   if (at !== null) editor.view.dispatch({ selection: { anchor: at } });
+  clearImageBanner();
   const links: string[] = [];
   for (const source of paths) {
     try {
@@ -505,7 +515,7 @@ async function dropImages(paths: string[], position: { x: number; y: number }): 
       const alt = source.replace(/^.*[\\/]/, "").replace(IMAGE_EXT_RE, "");
       links.push(markdownImage(alt, rel));
     } catch (e) {
-      showBanner(`이미지를 복사하지 못했습니다: ${e}`, [], true);
+      showBanner(`이미지를 복사하지 못했습니다: ${e}`, [], true, "image");
     }
   }
   if (links.length) editor.insertAtCursor(links.join("\n"));
@@ -514,11 +524,12 @@ async function dropImages(paths: string[], position: { x: number; y: number }): 
 
 // ---- 저장 (2-2·2-3) -------------------------------------------------------------
 
-/** 조합 중인 한글을 확정시킨다 — 저장·닫기 직전 (G17·G18) */
-async function flushComposition(): Promise<void> {
+/** 조합 중인 한글을 확정시킨다 — 저장·닫기 직전 (G17·G18). `refocus`면 확정 뒤 편집기로 포커스를 돌려 바로 이어 쓴다 */
+async function flushComposition(refocus = false): Promise<void> {
   if (!editor?.view.composing) return;
   editor.view.contentDOM.blur();
   await new Promise((r) => setTimeout(r, 60));
+  if (refocus) editor.focus();
 }
 
 interface SaveOptions {
@@ -808,8 +819,9 @@ interface BannerAction {
   run: () => void;
 }
 
-function showBanner(message: string, actions: BannerAction[] = [], warn = false): void {
+function showBanner(message: string, actions: BannerAction[] = [], warn = false, kind = ""): void {
   $("#banner-text").textContent = message;
+  banner.dataset.kind = kind;
   $("#banner-actions").replaceChildren(
     ...actions.map((a) => {
       const b = document.createElement("button");
@@ -1169,7 +1181,21 @@ async function printDocument(): Promise<void> {
 window.addEventListener(
   "keydown",
   (event) => {
-    if (event.isComposing || event.keyCode === 229) return;
+    if (event.isComposing || event.keyCode === 229) {
+      // 조합 중 Ctrl+S·Ctrl+P — 글자를 먼저 확정하고 저장·인쇄한다. 그냥 두면 Ctrl+P는 웹뷰 기본 인쇄로 가서
+      // 큰 문서 확인(D7)을 건너뛰고, Ctrl+S는 확정만 되고 저장은 안 된다 (fidelity-report Priority fix 1·4)
+      if ((event.ctrlKey || event.metaKey) && (event.code === "KeyS" || event.code === "KeyP") && !document.querySelector("dialog[open]")) {
+        event.preventDefault();
+        event.stopPropagation();
+        const isSave = event.code === "KeyS";
+        const shift = event.shiftKey;
+        void flushComposition(isSave).then(() => {
+          if (isSave) void (shift ? saveAs() : save());
+          else void printDocument();
+        });
+      }
+      return;
+    }
     if (document.querySelector("dialog[open]")) return; // 팝업이 열려 있으면 팝업 몫
     const ctrl = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
@@ -1253,6 +1279,11 @@ async function init(): Promise<void> {
 
   await listen<{ path: string; hash: string }>("file-changed", (event) => {
     if (!current || !samePath(event.payload.path, current.path)) return;
+    if (fileMissing) {
+      // 사라졌던 파일이 다시 생겼다 — 같은 내용이면 배너만 거두고, 다르면 아래로 이어서 다시 읽기·배너
+      fileMissing = false;
+      hideBanner();
+    }
     if (event.payload.hash === current.hash) return; // 우리가 저장한 내용
     if (!dirty) {
       void reload({ discard: true });
@@ -1272,7 +1303,9 @@ async function init(): Promise<void> {
   // 웹뷰 기본 오른쪽 클릭 메뉴의 '인쇄'도 Ctrl+P와 같은 큰 문서 확인을 거친다 (print_menu.rs)
   await listen("print-requested", () => void printDocument());
 
-  await listen<string>("file-missing", () => {
+  await listen<string>("file-missing", (event) => {
+    if (!current || !samePath(event.payload, current.path)) return;
+    fileMissing = true;
     showBanner(
       dirty
         ? "파일이 삭제되거나 이동됐습니다. 저장(Ctrl+S)하면 같은 자리에 다시 만들 수 있습니다."
@@ -1309,6 +1342,20 @@ async function init(): Promise<void> {
   void refreshDefaultAppStatus();
   // 관리자 권한 창에는 탐색기 더블클릭이 전달되지 않는다(UIPI) — 막을 수 없으니 상태바로 알린다 (스펙 경계 사례)
   $("#status-elevated").hidden = !(await invoke<boolean>("is_elevated").catch(() => false));
+  void checkWebviewVersion();
+}
+
+/** 설치기의 최소 WebView2(150)보다 낮은 런타임이면 알린다 — 한글 IME·렌더 수정이 그 버전에 기대고 있다 (스펙 경계 사례) */
+const MIN_WEBVIEW2_MAJOR = 150;
+async function checkWebviewVersion(): Promise<void> {
+  const version = await invoke<string | null>("webview_version").catch(() => null);
+  const major = Number(version?.split(".")[0]);
+  if (!version || !Number.isFinite(major) || major >= MIN_WEBVIEW2_MAJOR) return;
+  showBanner(
+    `WebView2 런타임이 ${version}입니다. ${MIN_WEBVIEW2_MAJOR} 이상에서 시험했습니다 — 한글 입력·렌더가 어긋나면 Microsoft Edge WebView2 런타임을 업데이트하세요.`,
+    [],
+    true,
+  );
 }
 
 initSidebarResize();

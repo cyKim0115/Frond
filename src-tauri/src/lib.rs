@@ -110,6 +110,13 @@ fn file_exists(path: String) -> bool {
     Path::new(&path).is_file()
 }
 
+/// WebView2 런타임 버전 — 프런트가 최소 버전(150, `minimumWebview2Version`)보다 낮으면 배너로 알린다.
+/// 설치기는 설치 때만 확인하므로 런타임을 되돌리거나 고정 버전을 쓰는 PC를 여기서 잡는다
+#[tauri::command]
+fn webview_version() -> Option<String> {
+    tauri::webview_version().ok()
+}
+
 /// 두 번째 인스턴스가 넘긴 인수를 기존 창에 전달하고 창을 앞으로 가져온다.
 fn on_second_instance(app: &AppHandle, args: Vec<String>, cwd: String) {
     let paths = paths_from_args(args.into_iter().map(OsString::from), Some(Path::new(&cwd)));
@@ -156,6 +163,7 @@ pub fn run() {
             take_pending_paths,
             load_document,
             file_exists,
+            webview_version,
             watch::watch_document,
             watch::unwatch_document,
             assoc::open_default_apps_settings,
