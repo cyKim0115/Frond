@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, State, UserAttentionType, WebviewUrl, WebviewWindowBuilder};
 
 mod assets;
 mod assoc;
@@ -117,14 +117,45 @@ fn webview_version() -> Option<String> {
     tauri::webview_version().ok()
 }
 
+/// AI 훅이 넘긴 인수의 표식 (로드맵 3-6) — `--from-hook=claude` → `claude`, 값 없는 `--from-hook` → `ai`.
+/// 탐색기 더블클릭·연결 프로그램(ProgId `"mdeditor.exe" "%1"`)에는 없다. `-` 플래그라 `paths_from_args`는 이미 건너뛴다
+pub fn hook_source<S: AsRef<str>>(args: &[S]) -> Option<String> {
+    args.iter().find_map(|arg| {
+        let rest = arg.as_ref().strip_prefix("--from-hook")?;
+        match rest.strip_prefix('=') {
+            Some(value) if !value.trim().is_empty() => Some(value.trim().to_lowercase()),
+            Some(_) => Some("ai".to_owned()),
+            None if rest.is_empty() => Some("ai".to_owned()),
+            None => None,
+        }
+    })
+}
+
+/// AI 훅이 보낸 문서 — 프런트가 설정에 따라 받은 목록에 쌓거나 연다
+#[derive(Clone, Serialize)]
+struct HookFiles {
+    paths: Vec<String>,
+    source: String,
+}
+
 /// 두 번째 인스턴스가 넘긴 인수를 기존 창에 전달하고 창을 앞으로 가져온다.
+/// AI 훅이 넘긴 것(`--from-hook`)은 보던 문서·창을 건드리지 않도록 앞으로 가져오지 않고 작업 표시줄만 깜빡인다 (로드맵 3-6)
 fn on_second_instance(app: &AppHandle, args: Vec<String>, cwd: String) {
+    let source = hook_source(&args);
     let paths = paths_from_args(args.into_iter().map(OsString::from), Some(Path::new(&cwd)));
-    if let Some(window) = app.get_webview_window("main") {
+    let paths: Vec<String> = paths.iter().map(|p| strip_verbatim(p)).collect();
+    let window = app.get_webview_window("main");
+    if let Some(source) = source {
+        if let Some(window) = window {
+            let _ = window.request_user_attention(Some(UserAttentionType::Informational));
+        }
+        let _ = app.emit("hook-file", HookFiles { paths, source });
+        return;
+    }
+    if let Some(window) = window {
         let _ = window.unminimize();
         let _ = window.set_focus();
     }
-    let paths: Vec<String> = paths.iter().map(|p| strip_verbatim(p)).collect();
     let _ = app.emit("open-file", paths);
 }
 
@@ -208,6 +239,17 @@ mod tests {
     fn file_url_becomes_path() {
         let got = paths_from_args(os(&["app.exe", "file:///C:/Users/a%20b/%ED%95%9C.md"]), None);
         assert_eq!(got, vec![PathBuf::from(r"C:\Users\a b\한.md")]);
+    }
+
+    #[test]
+    fn hook_flag_is_found_and_skipped_as_path() {
+        let args = ["app.exe", "--from-hook=Claude", r"C:\a.md", r"C:\b.md"];
+        assert_eq!(hook_source(&args), Some("claude".to_owned()));
+        assert_eq!(paths_from_args(os(&args), None), vec![PathBuf::from(r"C:\a.md"), PathBuf::from(r"C:\b.md")]);
+        assert_eq!(hook_source(&["app.exe", "--from-hook", "x.md"]), Some("ai".to_owned()));
+        assert_eq!(hook_source(&["app.exe", "--from-hook=", "x.md"]), Some("ai".to_owned()));
+        assert_eq!(hook_source(&["app.exe", "--from-hookx", "x.md"]), None);
+        assert_eq!(hook_source(&["app.exe", r"C:\a.md"]), None);
     }
 
     #[test]

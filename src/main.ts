@@ -23,6 +23,7 @@ import { showContextMenu } from "./context-menu";
 import { showChoice, showDialog } from "./dialog";
 import { createSourceEditor, type SourceEditor } from "./editor";
 import { initFindBar } from "./find";
+import { initInboxPanel } from "./inbox-panel";
 import { initNav } from "./nav";
 import { docTitle, samePath } from "./recent";
 import { CHUNK_CLASS, highlightCodeBlocks, LARGE_CHUNK_BLOCKS, LARGE_SOFT_LIMIT, renderMarkdown, type TocEntry } from "./render";
@@ -212,6 +213,22 @@ function unwatchDocument(path: string): void {
 
 const nav = initNav({ open: (path) => openPath(path).then(() => undefined), exists: fileExists });
 
+/** 탐색 영역 '새 문서' — AI 훅이 만든 문서 받은 목록 (로드맵 3-6) */
+const inbox = initInboxPanel({
+  open: (path) => openPath(path).then(() => undefined),
+  exists: fileExists,
+  reveal: (path) =>
+    revealItemInDir(path).catch((e) => void showDialog({ title: "파일 위치를 열 수 없습니다", message: String(e), detail: path })),
+  async title(path) {
+    try {
+      return titleOf((await loadDocument(path)).text, null);
+    } catch {
+      return undefined;
+    }
+  },
+  show: () => nav.show("inbox"),
+});
+
 /** 편집 중인 텍스트 (소스 모드에 한 번도 안 들어갔으면 디스크 텍스트) */
 function workingText(tab: Tab | null = active): string {
   if (!tab) return "";
@@ -350,6 +367,7 @@ function activate(tab: Tab): void {
   updateCount();
   updateActiveHeading();
   nav.setCurrent(tab.doc.path);
+  inbox.markRead(tab.doc.path);
   renderTabs();
   saveSession();
   // 다른 테마일 때 그린 그림은 지금 테마로 다시 그린다
@@ -1855,6 +1873,32 @@ function onFileChanged(path: string, hash: string): void {
   );
 }
 
+/**
+ * AI 훅이 만든 문서 (로드맵 3-6, lib.rs `hook-file`) — 백엔드는 창을 앞으로 가져오지 않고 작업 표시줄만 깜빡인다.
+ * 설정 '새 문서 목록에 쌓기'면 보던 문서를 그대로 두고 목록에만, '뒤 탭'이면 뒤 탭으로도, '바로 열기'면 예전처럼 앞으로.
+ * 열린 문서가 없으면 볼 것이 없으니 바로 연다
+ */
+async function receiveHookFiles(paths: string[], source: string): Promise<void> {
+  const how = getSetting("hookDocs");
+  for (const path of paths) {
+    const shown = active !== null && samePath(active.doc.path, path);
+    if (!active || how === "open") {
+      const tab = await openPath(path);
+      inbox.add(tab?.doc.path ?? path, source, tab !== null);
+      if (how === "open" && IS_TAURI) {
+        const win = getCurrentWindow();
+        await win.unminimize().catch(() => undefined);
+        await win.setFocus().catch(() => undefined);
+      }
+    } else if (how === "background") {
+      const tab = await openPath(path, { background: true });
+      inbox.add(tab?.doc.path ?? path, source, shown);
+    } else {
+      inbox.add(findTab(path)?.doc.path ?? path, source, shown);
+    }
+  }
+}
+
 function onFileMissing(path: string): void {
   const tab = findTab(path);
   if (!tab) return;
@@ -1877,6 +1921,7 @@ async function init(): Promise<void> {
     })();
   });
 
+  await listen<{ paths: string[]; source: string }>("hook-file", (event) => void receiveHookFiles(event.payload.paths, event.payload.source));
   await listen<{ path: string; hash: string }>("file-changed", (event) => onFileChanged(event.payload.path, event.payload.hash));
   await listen<string>("file-missing", (event) => onFileMissing(event.payload));
 

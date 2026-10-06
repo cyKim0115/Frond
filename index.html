@@ -20,6 +20,10 @@
               <button id="tab-recent" class="icon-btn nav-tab" type="button" role="tab" data-tab="recent" aria-controls="panel-recent" aria-selected="true" title="최근 파일">
                 <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" /><path d="M8 4.75V8l2.25 1.5" /></svg>
               </button>
+              <button id="tab-inbox" class="icon-btn nav-tab" type="button" role="tab" data-tab="inbox" aria-controls="panel-inbox" aria-selected="false" title="AI가 만든 새 문서">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.75 9.25h3l1 1.5h2.5l1-1.5h3M2.75 9.25l1.5-5.5h7.5l1.5 5.5v3.25a.75.75 0 0 1-.75.75H3.5a.75.75 0 0 1-.75-.75z" /></svg>
+                <span id="inbox-badge" class="nav-badge" hidden></span>
+              </button>
             </div>
           </header>
           <section id="panel-recent" class="nav-panel" role="tabpanel" aria-labelledby="tab-recent">
@@ -29,8 +33,18 @@
                 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.75 4.25h10.5M6.25 4.25V2.75h3.5v1.5M4.25 4.25l.6 8.35a.75.75 0 0 0 .75.65h4.8a.75.75 0 0 0 .75-.65l.6-8.35" /></svg>
               </button>
             </div>
-            <ul id="recent-list"></ul>
+            <ul id="recent-list" class="file-list"></ul>
             <p id="recent-empty" class="panel-empty">최근에 연 파일이 없습니다.</p>
+          </section>
+          <section id="panel-inbox" class="nav-panel" role="tabpanel" aria-labelledby="tab-inbox" hidden>
+            <div class="panel-head">
+              <h2>AI가 만든 새 문서</h2>
+              <button id="inbox-clear" class="icon-btn small" type="button" title="모두 지우기" aria-label="새 문서 목록 모두 지우기">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.75 4.25h10.5M6.25 4.25V2.75h3.5v1.5M4.25 4.25l.6 8.35a.75.75 0 0 0 .75.65h4.8a.75.75 0 0 0 .75-.65l.6-8.35" /></svg>
+              </button>
+            </div>
+            <ul id="inbox-list" class="file-list"></ul>
+            <p id="inbox-empty" class="panel-empty">Claude Code·Codex 훅이 새 md를 만들면 보던 문서를 바꾸지 않고 여기에 쌓습니다.</p>
           </section>
         </div>
       </nav>
@@ -81,6 +95,7 @@
         <span id="status-path" title=""></span>
         <span class="spacer"></span>
         <span id="status-elevated" class="warn" hidden title="이 창이 관리자 권한으로 실행 중이라 탐색기에서 더블클릭한 파일이 이 창에 전달되지 않습니다(UIPI). 앱을 일반 권한으로 다시 실행하거나 Ctrl+O·끌어다 놓기로 여세요.">관리자 권한 실행 중</span>
+        <button id="status-inbox" type="button" hidden></button>
         <button id="status-count" type="button" hidden></button>
         <button id="status-mode" type="button" hidden title="보기 ↔ 소스 전환 (Ctrl+/)">보기</button>
         <button id="status-encoding" type="button" title="인코딩 — 눌러서 다른 인코딩으로 다시 열기·변환"></button>

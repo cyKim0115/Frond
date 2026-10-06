@@ -3,7 +3,9 @@
 # 입력: 훅 stdin JSON
 #   Claude Code  Write 도구 → tool_input.file_path, tool_response.type ("create" | "update")
 #   Codex        apply_patch → tool_input.command 안의 "*** Add File: <경로>" 줄 (상대 경로는 cwd 기준)
-# 동작: 열 파일이 있으면 마지막 하나를 MdEditor로 연다. 이미 떠 있으면 single-instance가 기존 창에서 연다.
+# 동작: 열 파일을 `--from-hook=<claude|codex>` 표식과 함께 MdEditor에 넘긴다. 이미 떠 있으면 single-instance가 기존 창에 넘기고,
+#       앱은 표식을 보고 보던 문서를 바꾸지 않은 채 탐색 영역 '새 문서' 목록에 쌓는다(설정 'AI 훅이 만든 문서', 로드맵 3-6).
+#       꺼져 있으면 그 문서로 바로 뜬다. 표식을 모르는 예전 설치본은 `-` 인수를 건너뛰어 예전처럼 연다.
 # AI 작업을 막지 않도록 무슨 일이 있어도 exit 0. 판단 결과는 %TEMP%\mdeditor-open-hook.log에 한 줄씩 남긴다.
 
 $ErrorActionPreference = 'Stop'
@@ -80,10 +82,11 @@ try {
         Write-HookLog "MdEditor 설치 경로를 찾지 못함: $($targets[-1])"
         exit 0
     }
-    # 창은 하나라 여러 개를 연달아 열어도 마지막만 남는다 — 마지막 하나만 연다
-    $target = $targets[-1]
-    Start-Process -FilePath $exe -ArgumentList ('"{0}"' -f $target)
-    Write-HookLog "열기 ($($payload.tool_name)): $target"
+    # 출처 표식 — 앱이 탐색기에서 연 것과 구별해 보던 문서를 밀어내지 않는다. 받은 목록이 있어 전부 넘긴다
+    $source = if ($payload.tool_name -eq 'apply_patch') { 'codex' } else { 'claude' }
+    $arguments = @("--from-hook=$source") + @($targets | ForEach-Object { '"{0}"' -f $_ })
+    Start-Process -FilePath $exe -ArgumentList $arguments
+    Write-HookLog "넘김 ($($payload.tool_name), $source): $($targets -join ', ')"
 } catch {
     Write-HookLog "오류: $($_.Exception.Message)"
 }
