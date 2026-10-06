@@ -45,6 +45,7 @@ powershell -File .cursor/system-crew/scripts/sync-to-project.ps1 -Mode OnDemand
 docs/next-session.md   지금 열려 있는 것 (결정 대기·다음 할 일)
 docs/plan.md           한 장 계획표·로드맵 (단계 1~7, 날짜는 제안)
 docs/store-launch.md   Store 출시·선택 구매 먼저 할 일 (단계 7, 사용자 몫 U·에이전트 몫 A)
+docs/gitbook-site.md   GitBook 사용 설명서 꾸밀 계획 (오늘 할 일 A-1~A-6·사용자 U-1~U-2, 꾸밈 값·목차·완료 조건)
 docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
