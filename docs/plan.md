@@ -21,7 +21,7 @@
 | V2 범위 (단계 3) | **B 쓰임새 순** 10/6 (사용자 위임) | [`decisions/ideation/20261006-v2-scope.md`](decisions/ideation/20261006-v2-scope.md) |
 | Phase 3 (단계 4) | **구현 완료 10/6** — 탭·세션 복원·분할 뷰·비교·폴더 트리·AI 훅 받은 목록 | 사용자 실기 [`next-session.md`](next-session.md) §2 G |
 | Phase 4 (단계 5) | **구현 완료 10/6** — Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄 손질, Shiki는 DEFER | 사용자 실기 [`next-session.md`](next-session.md) §2 H |
-| Phase 5 (단계 6) | 미착수 | — |
+| Phase 5 (단계 6) | **실험 구현 10/6** — `exp/live-preview`(main 미병합) | 사용자 한글 IME [`next-session.md`](next-session.md) §2 I |
 
 > **V1(MVP)은 사용자 확인 2건만 남았다.** 2026-10-06 사용자 지시로 이후 단계는 기다리지 않고 진행하고, 사용자 확인 항목은 [`next-session.md`](next-session.md) §2에 모은다.
 
@@ -95,7 +95,9 @@ V1 범위는 여기서 끝난다. 계속 갈지, 간다면 무엇부터인지 �
 | 4-5 | PDF — `window.print()` + 인쇄 CSS (`@page`, 코드 블록 배경, 긴 `pre`에 `break-inside: avoid` 금지) |
 | 4-6 | (검토) highlight.js → Shiki dual theme |
 
-### 단계 6 — Phase 5 인라인 라이브프리뷰 (12월~, 실험·선택)
+### 단계 6 — Phase 5 인라인 라이브프리뷰 (12월~, 실험·선택) — **실험 구현 2026-10-06**, IME 게이트 대기
+
+`exp/live-preview` `e678bad`: 설정 편집 탭 '소스 표시 (실험)'으로 켜면 캐럿 없는 줄의 서식 기호를 숨기고 이미지·체크박스·글머리·구분선을 위젯으로 그린다(문서 텍스트 불변). 조합 중에는 데코레이션을 다시 만들지 않는다. 표·수식·Mermaid 블록 위젯은 아직 없다. 시험용 실행 파일 `C:\Users\cykim\repo\MdEditor-v2\target\exp-live\FrondLive.exe`(식별자 `com.cykim.frond.live` — 설치본과 따로 뜬다). 판정 기록 [`decisions/ideas/20261006-live-preview.md`](decisions/ideas/20261006-live-preview.md).
 
 `exp/live-preview` 브랜치에서만. 한글 IME 시나리오 ①–⑧과 무편집 저장 바이트 불변을 못 지키면 머지하지 않고 `archived-exp`로 보낸다.
 
@@ -139,6 +141,7 @@ Phase 5                                                          [.....
 2. ~~새 아이콘 설치본으로 재설치~~ — 2026-10-06 완료
 3. ~~단계 3 — V2 방향 (A·B·C)~~ — 사용자 위임으로 B 진행. 바꾸려면 말하기
 4. (선택) 버전 태그를 `v0.1.0`부터 붙일지 — B-2·B-9 통과 뒤
-5. 단계마다 쌓이는 실기 목록 — [`next-session.md`](next-session.md) §2
+5. 단계마다 쌓이는 실기 목록 — [`next-session.md`](next-session.md) §2 G(단계 4)·H(단계 5)·I(단계 6 라이브프리뷰 IME)
+6. 라이브프리뷰(단계 6)를 main에 넣을지 — §2 I의 한글 IME 결과로 정한다
 
 하지 않는 것(크로스플랫폼·노트 앱 기능·플러그인·MSI/MSIX·임의 CSS 테마·클라우드 동기화)은 [`roadmap.md`](roadmap.md) 그대로다.

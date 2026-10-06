@@ -107,6 +107,8 @@ Mermaid는 tiny 지연 로드·strict·테마 따라 다시 그림, KaTeX는 수
 
 ## Phase 5 — 인라인 라이브프리뷰 (V3, `exp/live-preview`)
 
+**상태: 실험 구현 2026-10-06 (`exp/live-preview` `e678bad`, main 미병합)** — ViewPlugin 한 층(인라인 기호 숨김·이미지·체크박스·글머리·구분선 위젯, 캐럿 줄 원문, 조합 중 map만). StateField 블록 위젯(표·수식·Mermaid)·표 셀 편집은 아직. 사용자 한글 IME ①–⑧ 확인 대기 — [`decisions/ideas/20261006-live-preview.md`](decisions/ideas/20261006-live-preview.md).
+
 - CM6 데코레이션 2층: ViewPlugin(인라인 마크 숨김, `visibleRanges`, 캐럿 줄 원문 노출) + StateField(표·이미지·수식·Mermaid·코드펜스 block 위젯). SoloMD `cm-live-render/blocks/ime-guard`·SilverBullet 패턴 차용(MIT)
 - IME: 조합 중 데코 map만, compositionend 후 flush, 위젯 앞 조합 회피. Phase 0 시나리오 ⑧ 재검증
 - 표 셀 편집(중첩 EditorView 또는 contentEditable 셀), 체크박스 클릭 토글, 이미지 위젯 상대경로
