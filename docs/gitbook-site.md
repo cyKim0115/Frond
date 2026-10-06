@@ -1,6 +1,6 @@
 # GitBook 사용 설명서 — 꾸밀 계획 (2026-10-06 할 일)
 
-작성: 2026-10-06 · 상태: **대기 — 에이전트 몫(A)은 사용자가 "실행"이라고 하면 아래 순서대로, 사용자 몫(U)은 사용자가 직접**
+작성: 2026-10-06 · 상태: **에이전트 몫 A-1~A-4 완료·푸시(2026-10-06), A-5·A-6 일부 남음 — 남은 그림은 웹사이트 A-3 장면 스크립트와 함께, 게시·README 줄이기는 사용자 확인 뒤**
 싱크 설정: **사이트 Git Sync** — 루트 [`gitbook-docs.yaml`](../gitbook-docs.yaml)(`a6274be`)이 스페이스 **사용 설명서**(path `guide`, ko, 기본) → [`site/`](site/README.md)를 가리킨다.
 2026-10-06 첫 가져오기 success, 스페이스 편집 잠금 확인. 예전 스페이스용 [`.gitbook.yaml`](../.gitbook.yaml)(`c722719`)도 남아 있다. 개발 문서(`docs/` 나머지)는 싱크되지 않는다.
 사이트는 아직 **게시 전**(published false) — `cykim.gitbook.io/frond`는 게시해야 열린다
@@ -31,7 +31,7 @@
 | A-3 | 목차·페이지 뼈대 — `SUMMARY.md` + 빈 페이지, 페이지마다 frontmatter `icon`·`description` | 에이전트 | A-4 | ✅ 2026-10-06 (20쪽) |
 | A-4 | 페이지 쓰기 — README 사용법을 옮기고 설명서 말투로 다듬기 | 에이전트 | A-6 | ✅ 2026-10-06 (설정 AI 연동 탭 절은 §3-10 머지 전이라 비움) |
 | A-5 | 스크린샷 다시 찍기 → `docs/site/images/` | 에이전트 | A-6 | 일부 (main·dark·source만 세이지 차콜로 재촬영. recent-files·find·settings·theme·missing-file은 GitHub 색 그대로 — 상호작용 장면이라 website-launch A-3 스크립트와 함께) |
-| A-6 | 확인·마무리 (완료 조건) | 에이전트 | — | 일부 (로컬 링크 검사 0건, 게시·README 줄이기·CLAUDE.md 한 줄은 사용자 확인 뒤) |
+| A-6 | 확인·마무리 (완료 조건) | 에이전트 | — | 일부 (2026-10-06 푸시 → Git Sync success·편집 잠금·20쪽·그림 8장 가져옴 API 확인, 로컬 링크 검사 0건. 한글 묶음 제목이 `undefined` 주소가 돼 SUMMARY에 영문 슬러그 지정. 게시·README 줄이기·CLAUDE.md 한 줄은 사용자 확인 뒤) |
 
 ## 시작 전 확인 (에이전트)
 
@@ -74,6 +74,7 @@
 ## 쓰기 규칙 (A-4·A-5)
 
 - README와 같은 `~합니다` 말투, 한국어. 화면 글자(메뉴·버튼 이름)는 앱과 똑같이 **굵게**
+- `SUMMARY.md`의 묶음 제목(`## 시작하기`)에는 영문 슬러그를 단다: `## 시작하기 <a href="#getting-started" id="getting-started"></a>`. 안 달면 GitBook이 한글 제목 주소를 `undefined`·`undefined-1`로 만든다(2026-10-06 확인)
 - 링크는 상대 `.md` 경로. `docs/site/` 밖 파일(`integrations/`·`docs/themes/` 등)은 루트 밖이라 싱크되지 않으니 GitHub 주소로 건다
 - 그림은 `docs/site/images/`에 두고 상대 경로로. 지금 [`docs/screenshots/`](screenshots/)는 2026-09-30 GitHub 색이라 **기본 테마 세이지 차콜로 다시 찍는다**
   (설치본을 CDP로 띄워 캡처, 라이트 기본·다크는 테마 페이지에만). 창 크기는 한 가지로 맞춘다
