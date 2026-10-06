@@ -5,6 +5,12 @@
 
 @page {
   margin: 20mm;
+  /* 쪽 번호 — WebView2(Chromium 131+)의 페이지 여백 상자. 인쇄 대화상자의 '머리글·바닥글'을 켜면 그쪽이 덮는다 (로드맵 4-5) */
+  @bottom-center {
+    content: counter(page) " / " counter(pages);
+    font: 9pt "Malgun Gothic", sans-serif;
+    color: #59636e;
+  }
 }
 
 @media print {
@@ -36,10 +42,14 @@
   #app-dialog {
     display: none !important;
   }
-  #main {
+  #main,
+  #panes {
     display: block;
   }
-  #viewer {
+  /* 소스·분할 모드에서 인쇄해도 본문(보기 화면)을 찍는다 — 셸(main.ts printDocument)이 인쇄 전에 편집 내용으로 다시 그린다 */
+  #viewer,
+  #viewer[hidden] {
+    display: block !important;
     overflow: visible;
     outline: none;
   }
@@ -108,8 +118,20 @@
   .markdown-body img,
   .markdown-body figure,
   .markdown-body blockquote,
-  .markdown-body li {
+  .markdown-body li,
+  .markdown-body .markdown-alert,
+  .markdown-body .mermaid-diagram,
+  .markdown-body .math-display {
     break-inside: avoid;
+  }
+  /* 그림·수식: 종이 폭을 넘지 않게. 가로 스크롤 상자는 풀어 둔다 */
+  .markdown-body .mermaid-diagram,
+  .markdown-body .math-display {
+    overflow: visible;
+  }
+  .markdown-body .mermaid-diagram svg {
+    max-width: 100% !important;
+    height: auto;
   }
   .markdown-body img {
     max-width: 100%;

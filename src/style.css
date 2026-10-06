@@ -431,6 +431,7 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
 .tab.dirty .tab-close:hover svg { display: block; }
 .tab.dirty .tab-close:hover::before { display: none; }
 #open-settings { margin-right: 6px; }
+#doc-menu { margin-right: 2px; }
 #window-controls { display: flex; align-self: stretch; }
 #window-controls button {
   width: 46px;

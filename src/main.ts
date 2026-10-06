@@ -540,6 +540,7 @@ function tabMenu(tab: Tab, event: MouseEvent): void {
     ...(others.length ? [{ label: "다른 탭 모두 닫기", action: () => void closeTabs(others) }] : []),
     ...(right.length ? [{ label: "오른쪽 탭 모두 닫기", action: () => void closeTabs(right) }] : []),
     { label: "경로 복사", action: () => void navigator.clipboard.writeText(tab.doc.path).then(() => flashStatus("경로를 복사했습니다")) },
+    ...(tab === active && IS_TAURI ? [{ label: "HTML로 내보내기…", action: () => void exportHtml(tab) }] : []),
     ...(IS_TAURI
       ? [
           {
@@ -1822,7 +1823,11 @@ async function pickAndOpen(): Promise<void> {
 /** 이 크기 이상인 문서는 인쇄 전에 묻는다 (결정 D7, 기준은 사용자 지정 1 MB). 2 MB에서도 미리보기가 오래 멈췄다 */
 const PRINT_WARN_SIZE = 1024 * 1024;
 
-/** Ctrl+P — 큰 문서는 확인을 받은 뒤에만 인쇄한다. 미리보기가 멈춰 강제 종료하다 편집 중 내용을 잃는 사고를 막는다 */
+/**
+ * Ctrl+P·문서 메뉴·오른쪽 클릭 '인쇄' — PDF는 인쇄 대화상자의 'PDF로 저장'(로드맵 4-5). 큰 문서는 확인을 받은 뒤에만 인쇄한다
+ * (미리보기가 멈춰 강제 종료하다 편집 중 내용을 잃는 사고를 막는다). 소스·분할에서 고친 내용은 보기 화면에 그린 뒤 찍고,
+ * 다크 테마의 Mermaid 그림은 종이에 맞게 라이트로 그려 찍은 뒤 되돌린다. PDF 파일 이름이 되는 창 제목은 문서 이름으로
+ */
 async function printDocument(): Promise<void> {
   const tab = active;
   const size = tab ? Math.max(tab.doc.info.byte_len, workingText(tab).length) : 0;
@@ -1838,8 +1843,100 @@ async function printDocument(): Promise<void> {
     });
     if (choice !== "print") return;
   }
+  if (!tab) {
+    window.print();
+    return;
+  }
+  const text = workingText(tab);
+  if (tab.needsRender || text !== tab.renderedText) renderView(tab, text);
+  const dark = isDarkTheme();
+  if (dark) await renderDiagrams(tab.article, false);
+  const title = document.title;
+  document.title = tab.doc.name.replace(/\.(md|markdown|mdown|mkd|mkdn|mdwn|txt)$/i, "");
   window.print();
+  document.title = title;
+  if (dark) void renderDiagrams(tab.article, isDarkTheme());
 }
+
+// ---- HTML 내보내기 (로드맵 4-4) ----------------------------------------------------------
+
+async function exportHtml(tab: Tab | null = active): Promise<void> {
+  if (!tab || tab !== active) return;
+  if (!IS_TAURI) {
+    showBanner("브라우저 미리보기에서는 내보낼 수 없습니다.");
+    return;
+  }
+  const choice = await showChoice({
+    title: "HTML로 내보내기",
+    message: "지금 테마의 색·본문 폭으로 보이는 그대로(코드 강조·Mermaid 그림·수식 포함) HTML 파일 하나로 내보냅니다. 이미지는 어떻게 할까요?",
+    choices: [
+      { value: "embed", label: "이미지를 파일 안에 넣기 — 한 파일로 주고받기 좋음", kind: "primary" },
+      { value: "link", label: "이미지는 경로로 두기 — 가볍지만 이미지 파일이 함께 있어야 함" },
+    ],
+    cancelLabel: "취소",
+    vertical: true,
+  });
+  if (choice !== "embed" && choice !== "link") return;
+  const base = tab.doc.path.replace(/\.(md|markdown|mdown|mkd|mkdn|mdwn|txt)$/i, "");
+  const target = await saveDialog({ defaultPath: `${base}.html`, filters: [{ name: "HTML", extensions: ["html", "htm"] }] });
+  if (!target || !tabs.includes(tab)) return;
+  const text = workingText(tab);
+  if (tab.needsRender || text !== tab.renderedText) renderView(tab, text);
+  flashStatus("HTML로 내보내는 중…");
+  try {
+    const dark = isDarkTheme();
+    await renderDiagrams(tab.article, dark);
+    await renderMath(tab.article);
+    const { buildExportHtml } = await import("./export-html");
+    const slash = Math.max(target.lastIndexOf("\\"), target.lastIndexOf("/"));
+    const html = await buildExportHtml({
+      article: tab.article,
+      title: tabTitle(tab) ?? tab.doc.name,
+      themeCss: document.getElementById("theme-vars")?.textContent ?? "",
+      dark,
+      bodyMaxWidth: getSetting("bodyMaxWidth"),
+      images: choice,
+      outDir: slash < 0 ? "" : target.slice(0, slash),
+      readImage: (path) => invoke<ArrayBuffer>("read_image_bytes", { path }),
+    });
+    await invoke("write_export", { path: target, text: html });
+    showBanner(`HTML로 내보냈습니다: ${target}`, [
+      { label: "파일 위치 열기", run: () => void revealItemInDir(target).catch(() => undefined) },
+      { label: "닫기", run: () => hideBanner() },
+    ]);
+  } catch (e) {
+    await showDialog({ title: "내보내지 못했습니다", message: String(e), detail: target });
+  }
+}
+
+// ---- 문서 메뉴 (제목 표시줄 ⋯) -------------------------------------------------------------
+
+$("#doc-menu").addEventListener("click", (event) => {
+  const button = event.currentTarget as HTMLElement;
+  const box = button.getBoundingClientRect();
+  const at = new MouseEvent("contextmenu", { clientX: box.left, clientY: box.bottom + 2 });
+  showContextMenu(at, [
+    { label: "파일 열기… (Ctrl+O)", action: () => void pickAndOpen() },
+    ...(IS_TAURI
+      ? [
+          {
+            label: "폴더 열기…",
+            action: () => {
+              nav.show("tree");
+              $<HTMLButtonElement>("#tree-pick").click();
+            },
+          },
+        ]
+      : []),
+    ...(active
+      ? [
+          { label: "HTML로 내보내기…", action: () => void exportHtml() },
+          { label: "인쇄 · PDF로 저장… (Ctrl+P)", action: () => void printDocument() },
+        ]
+      : []),
+    { label: "설정 (Ctrl+,)", action: () => settingsDialog.open() },
+  ]);
+});
 
 // ---- 세션 복원 (로드맵 3-5) -------------------------------------------------------------
 
