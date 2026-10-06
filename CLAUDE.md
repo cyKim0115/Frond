@@ -47,6 +47,7 @@ docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 �
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
 docs/qa/               실기 증거 — <날짜>-<범위>/ 캡처·바이트 로그 (판정 표는 next-session.md)
+docs/research/         조사 보고서 — reports/<제목>.md + research_notes/<제목>/ 근거 노트 (배포 채널 조사 2026-10-06)
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
 Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
 crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
