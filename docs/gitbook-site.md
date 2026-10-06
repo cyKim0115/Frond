@@ -30,7 +30,7 @@
 | A-2 | 꾸밈 설정 (아래 값) | 에이전트 | — | ✅ 2026-10-06 (API로 주 색·토글·GitHub 헤더 링크. 언어 ko는 API가 거절해 en 유지, 아이콘·파비콘 생략) |
 | A-3 | 목차·페이지 뼈대 — `SUMMARY.md` + 빈 페이지, 페이지마다 frontmatter `icon`·`description` | 에이전트 | A-4 | ✅ 2026-10-06 (20쪽) |
 | A-4 | 페이지 쓰기 — README 사용법을 옮기고 설명서 말투로 다듬기 | 에이전트 | A-6 | ✅ 2026-10-06 (설정 AI 연동 탭 절은 §3-10 머지 전이라 비움) |
-| A-5 | 스크린샷 다시 찍기 → `docs/site/images/` | 에이전트 | A-6 | 일부 (main·dark·source만 세이지 차콜로 재촬영. recent-files·find·settings·theme·missing-file은 GitHub 색 그대로 — 상호작용 장면이라 website-launch A-3 스크립트와 함께) |
+| A-5 | 스크린샷 다시 찍기 → `docs/site/images/` | 에이전트 | A-6 | 거의 (main·dark·source 세이지 차콜 재촬영, 2026-10-06 웹사이트 장면 스크립트 `website/scripts/capture-scenes.mjs`로 recent-files·find·settings·theme도 — 데모 문서. missing-file만 GitHub 색 그대로: 파일 감시가 실제 앱에만 있어 website-launch A-6 몫) |
 | A-6 | 확인·마무리 (완료 조건) | 에이전트 | — | 일부 (2026-10-06 푸시 → Git Sync success·편집 잠금·20쪽·그림 8장 가져옴 API 확인, 로컬 링크 검사 0건. 한글 묶음 제목이 `undefined` 주소가 돼 SUMMARY에 영문 슬러그 지정. 게시·README 줄이기·CLAUDE.md 한 줄은 사용자 확인 뒤) |
 
 ## 시작 전 확인 (에이전트)
