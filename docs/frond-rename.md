@@ -83,7 +83,7 @@
 - `cargo test` · `npm test` · `npx tsc --noEmit`
 - `cd crates/frond-core; cargo run --example roundtrip -- ../../samples/raw` → `git status` 깨끗
 - `npm run app:build` → 설치기 안 exe가 `mdeditor.exe`인지 확인
-- 설치본 재설치(MSIX 컨테이너 밖에서 — `Invoke-CimMethod Win32_Process Create`, `/S /NS`) → 설정·최근 파일·세션이 남아 있는지(localStorage 옮기기),
+- 설치본 재설치(MSIX 컨테이너 밖에서 — `Invoke-CimMethod Win32_Process Create`, `/S` 뒤 바탕 화면 바로가기 삭제 — `/NS`는 시작 메뉴도 빠진다) → 설정·최근 파일·세션이 남아 있는지(localStorage 옮기기),
   탐색기 `.md` 더블클릭이 Frond로 열리는지(ProgId 유지). 사용자 문서가 열려 있으면 재설치는 사용자에게 묻는다
 - `git grep -i mdeditor`로 남은 곳을 보고, 위 "하지 않는 것"과 기록물 말고는 없는지 확인
 
@@ -105,3 +105,7 @@
 - localStorage 옮기기는 `prefs.ts` 모듈 첫 평가 때 한 번(`migrateLegacyPrefs`) — 저장값은 전부 이 모듈을 거친다. 테스트 `src/prefs.test.ts`
 - "시작 전 확인" 2·3번(v2 워크트리·`exp/live-preview`)은 이 PC에 없었다 — 다른 PC의 미병합 브랜치는 합칠 때 충돌을 맞춘다([`next-session.md`](next-session.md) §2 I·K)
 - 이 PC에는 옛 설치본이 없어 제거할 것이 없었다. 새 설치기로 처음 설치
+- 검증: `cargo test`·`npm test`(148)·`tsc` 통과, roundtrip 뒤 `samples/raw` 깨끗, `app:build` 결과 exe `mdeditor.exe`·설치기 `Frond_0.1.0_x64-setup.exe`.
+  설치(WMI) 뒤 `%LOCALAPPDATA%\Frond\mdeditor.exe`, ProgId `MdEditor.Markdown` 명령·`Applications\mdeditor.exe`·`RegisteredApplications\Frond` 확인.
+  설치본을 띄우자 WebView2 저장소에 옛 `mdeditor.*` 키는 그대로, `frond.navOpen`·`navTab`·`recent`·`settings`가 복사돼 생겼다
+- 주의: 설치기 `/NS`는 바탕 화면뿐 아니라 **시작 메뉴 바로가기도** 만들지 않는다 → `/S`로 설치하고 바탕 화면 `Frond.lnk`만 지운다
