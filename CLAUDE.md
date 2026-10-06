@@ -47,11 +47,12 @@ docs/next-session.md   지금 열려 있는 것 (결정 대기·다음 할 일)
 docs/plan.md           한 장 계획표·로드맵 (단계 1~7, 날짜는 제안)
 docs/store-launch.md   Store 출시·선택 구매 먼저 할 일 (단계 7, 사용자 몫 U·에이전트 몫 A)
 docs/gitbook-site.md   GitBook 사용 설명서 꾸밀 계획 (오늘 할 일 A-1~A-6·사용자 U-1~U-2, 꾸밈 값·목차·완료 조건)
+docs/website-launch.md 제품 웹사이트(fork.dev식, website/ Astro → Cloudflare) 오늘 할 일·Cursor 핸드오프 (도메인 전엔 로컬, 원고·장면 목록)
 docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
 docs/qa/               실기 증거 — <날짜>-<범위>/ 캡처·바이트 로그 (판정 표는 next-session.md)
-docs/research/         조사 보고서 — reports/<제목>.md + research_notes/<제목>/ 근거 노트 (배포 채널 조사 2026-10-06)
+docs/research/         조사 보고서 — reports/<제목>.md + research_notes/<제목>/ 근거 노트 (배포 채널·유료 해금·웹사이트 조사 2026-10-06)
 docs/site/             GitBook 사용 설명서 — 사이트 Git Sync(루트 gitbook-docs.yaml, 스페이스 '사용 설명서'), README.md 첫 페이지 + SUMMARY.md 목차. 개발 문서는 여기 두지 않는다
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
 Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
