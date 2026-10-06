@@ -174,6 +174,15 @@ describe("samples/paths/paths.md", () => {
     expect(images.map((i) => i.getAttribute("alt"))).toEqual(["한글", "공백", "대괄호", "해시", "한글", "공백", "대괄호", "해시", "대괄호 raw", "해시 raw"]);
   });
 
+  it("문서 폴더(하위 포함) 안 이미지는 title이 없고, 밖(../·다른 드라이브)이면 이유를 title로 단다 — 원래 title은 그대로", () => {
+    const { root: r } = render("![a](images/x.png) ![b](../up.png) ![c](D:\\other\\x.png) ![d](../t.png \"원래 제목\")");
+    const titles = Array.from(r.querySelectorAll("img")).map((i) => i.getAttribute("title"));
+    expect(titles[0]).toBeNull();
+    expect(titles[1]).toContain("문서 폴더 밖");
+    expect(titles[2]).toContain("문서 폴더 밖");
+    expect(titles[3]).toBe("원래 제목");
+  });
+
   it("인코딩 없는 공백 경로는 CommonMark대로 이미지가 아니다 (Open decision 1: GitHub과 동일)", () => {
     expect(root.textContent).toContain("![한글 raw](한글 폴더/한글 그림.png)");
   });

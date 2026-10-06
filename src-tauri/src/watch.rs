@@ -84,6 +84,8 @@ pub fn watch_document(
                     }
                 }
                 Err(_) => {
+                    // 같은 내용으로 다시 생겨도 `file-changed`가 가도록 마지막 해시를 비운다 — 프런트가 사라짐 배너를 거둔다
+                    last.lock().expect("watch hash lock").clear();
                     #[cfg(debug_assertions)]
                     eprintln!("[watch] file-missing {path_str}");
                     let _ = handle.emit("file-missing", path_str);

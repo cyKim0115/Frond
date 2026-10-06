@@ -106,7 +106,20 @@ function rewriteImage(token: Token, ctx: LinkContext): void {
     removeAttr(token, "src");
     return;
   }
-  token.attrSet("src", ctx.toAssetUrl(resolvePath(ctx.baseDir, src)));
+  const abs = resolvePath(ctx.baseDir, src);
+  token.attrSet("src", ctx.toAssetUrl(abs));
+  // asset 프로토콜은 문서 폴더(하위 포함)만 연다 — 밖(`../`·다른 드라이브)이면 깨진 이미지가 왜 깨졌는지 알린다 (스펙 경계 사례)
+  if (ctx.baseDir !== "" && !isInside(ctx.baseDir, abs) && token.attrGet("title") === null) {
+    token.attrSet("title", OUTSIDE_TITLE);
+  }
+}
+
+export const OUTSIDE_TITLE = "문서 폴더 밖의 이미지 — 보안상 문서 폴더(하위 폴더 포함) 안의 이미지만 보입니다";
+
+/** `abs`가 `dir` 안(하위 포함)인지. Windows 경로라 대소문자를 가리지 않는다 */
+function isInside(dir: string, abs: string): boolean {
+  const base = dir.replace(/\//g, "\\").replace(/\\+$/, "").toLowerCase();
+  return abs.toLowerCase().startsWith(`${base}\\`);
 }
 
 function stringAttr(token: Token, name: string): string {
