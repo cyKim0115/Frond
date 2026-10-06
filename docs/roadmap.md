@@ -14,7 +14,8 @@
 | MVP 범위 | **V1 리더 퍼스트** (Phase 0–2) | `decisions/ideation/20260929-mvp-scope.md` |
 | 유사도 | `inspired` | `references/assets/…/ASSET.md` |
 | Phase 0 추가 | WPF + WebView2 hello 앱으로 Windows 시작 시간·메모리 비교 측정 | 사용자 선택 |
-| RAG 캡처 | MVP(Phase 2) 완료 후 `capture-to-rag` — 2026-10-01 위임으로 MVP 닫을 때 묻지 않고 실행 | 사용자 결정 · `decisions/ideas/20261001-v1-open-decisions.md` D6 |
+| RAG 캡처 | MVP(Phase 2) 완료 후 `capture-to-rag` — 2026-10-01 위임으로 MVP 닫을 때 묻지 않고 실행. **2026-10-06 실행**(rag `docs/assets/2026-10-06-mdeditor-v1-mvp-lessons.md`) | 사용자 결정 · `decisions/ideas/20261001-v1-open-decisions.md` D6 |
+| V2 범위·순서 | **B 쓰임새 순** — 탭 → Mermaid·Alerts → 분할·트리 → 내보내기·KaTeX (2026-10-06 사용자 위임) | `decisions/ideation/20261006-v2-scope.md` |
 
 ## Phase 0 — 스파이크와 코어 (구현 전 검증)
 
@@ -46,7 +47,7 @@
 
 ## Phase 2 — 편집·저장 (V1 완성)
 
-**상태: 구현 완료 2026-09-30(야간), 에이전트 실기 끝 2026-10-01 — 남은 것은 사용자 B-2 한글 IME·B-9 탐색기 드래그([`next-session.md`](next-session.md) §2 B).** 뺀 것: 2-3 [비교] → 백로그(결정 D5: 비교는 Phase 3 분할 뷰와). 2-2 줄바꿈 클릭 변환은 2026-10-06 V1.1에서 구현.
+**상태: 구현 완료 2026-09-30(야간), 에이전트 실기 끝 2026-10-01 — 남은 것은 사용자 B-2 한글 IME·B-9 탐색기 드래그([`next-session.md`](next-session.md) §2 B). V1 검수 2026-10-06 [`fidelity-report.md`](references/assets/20260929-typora-md-editors/fidelity-report.md) SHIPPABLE 조건부(조건 = B-2·B-9).** 뺀 것: 2-3 [비교] → 백로그(결정 D5: 비교는 Phase 3 분할 뷰와). 2-2 줄바꿈 클릭 변환은 2026-10-06 V1.1에서 구현.
 
 | 작업 | 내용 | 완료 조건 |
 |------|------|-----------|

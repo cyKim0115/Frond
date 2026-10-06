@@ -4,7 +4,7 @@
 - Spec version: 1.0 (2026-09-29)
 - Based on brief: [reference-brief.md](reference-brief.md) (Ev# 인용은 이 원장 기준) · [ASSET.md](ASSET.md) · [roadmap.md](../../../roadmap.md) Phase 1 · 스택 판정 [20260929-stack.md](../../../decisions/ideas/20260929-stack.md) Modified approach 2–7(구현 규칙) · MVP 선택 [20260929-mvp-scope.md](../../../decisions/ideation/20260929-mvp-scope.md) V1 · 코어 [crates/mdeditor-core](../../../../crates/mdeditor-core/README.md)
 - Similarity: inspired
-- Status: draft
+- Status: implemented — Phase 1 구현·실기 완료(1-7 8번 보류), 2026-10-06 구현 반영 절 추가. Phase 2·셸 트랙은 별도 스펙 없이 로드맵 EARS가 스펙이다
 
 ## Player-facing summary
 
@@ -173,6 +173,24 @@ render/: markdown-it(plugins, data-line) → 이미지 src: dir 기준 절대경
 
 ## Approval
 
-- Approved by user: no
-- Date: —
-- Batch comments applied: — (Open decisions 3건과 함께 1회 승인 게이트)
+- Approved by user: yes — 2026-09-29 로드맵 게이트 0 배치 승인(스택·엔진·MVP V1·유사도와 함께). 이 파일의 Open decisions는 아래 "구현 반영"으로 닫는다
+- Date: 2026-09-29
+- Batch comments applied: 2026-10-06 구현 반영 (fidelity-report Priority fix 3)
+
+## 구현 반영 (2026-10-06, fidelity-report `NEEDS_SPEC` 정리)
+
+[`fidelity-report.md`](fidelity-report.md) Converge check에서 스펙과 다르게 구현된 것을 결정으로 닫는다. 코드가 기준이다.
+
+| 항목 | 스펙(위 본문) | 구현 = 확정 | 이유 |
+|---|---|---|---|
+| asset scope | 문서 폴더 비재귀 | **문서 폴더 재귀**, 세션 동안 연 폴더 누적 (`lib.rs load_document`) | `./images/x.png`처럼 하위 폴더 이미지가 흔하다. 상위(`../`)·다른 드라이브는 열지 않고, 그런 이미지는 2026-10-06부터 `title`로 이유를 보인다(`links.ts`). 누적은 탭(3-1)에서 여러 문서를 함께 보기 때문에 유지 |
+| CSP `img-src` | `'self' asset: http://asset.localhost` | **+ `data: https:`** | README 배지 등 원격 이미지는 GitHub·Typora 모두 보인다. 원격 이미지는 열 때 요청(추적 픽셀)이 될 수 있다 — 개인용 앱이라 허용하고, 끄는 설정은 백로그 |
+| 원문 HTML | `html: false` | **허용 목록**(`html.ts`) | 결정 D1 |
+| `on_navigation` | 가로채 앱 안에서 열기 | 앱 origin 밖 이동은 막고, 로컬 `.md` 링크는 렌더 때 `data-local-path`로 표시해 클릭으로 연다 | 결과가 같고 DOMPurify가 `file:` href를 지우는 경우에도 열린다 |
+| Open decision 1 (공백 경로 이미지) | 제안: CommonMark | **CommonMark** (GitHub 동일) | `paths.md` 기록 |
+| Open decision 2 (TOC 기본) | 제안: 접힘 + 기억 | **제목이 있으면 보임**, `Ctrl+\`로 숨김(기억 안 함) | 목차가 읽기의 주 탐색 수단이라 처음부터 보인다. 키는 Typora `Ctrl+Shift+L` 대신 VS Code식 |
+| Open decision 3 (줌) | 50–200 %, 기억 | **50–300 %**, 세션마다 100 % | 큰 모니터에서 200 %가 모자랐다. 기억은 백로그 |
+| Lossy 표시 | 상단 배너 + 상태바 ⚠ | 상태바 인코딩 빨강 + 툴팁, 편집 잠금, 저장 시 팝업 | 표현 차이 (inspired) |
+| `lineSeparator` | 파일 지배 EOL | LF 고정 + 코어 줄별 EOL 맵 | 바이트 결과가 같고 혼합 EOL도 지킨다 |
+| CI 왕복 테스트 | CI | **로컬 `cargo test` 필수** (`.github` 없음) | 개인 저장소. 커밋 전 `cargo test`·`roundtrip` 예제로 확인 |
+| WebView2 < 150 | 시작 배너 | 2026-10-06 구현 (`webview_version` → 배너) | Priority fix 4 |
