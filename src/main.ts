@@ -1,6 +1,6 @@
 /**
  * 앱 셸 — 파일 열기 경로(argv·두 번째 인스턴스·드롭·Ctrl+O·최근 파일), 탭, 보기(렌더)·소스(CM6) 모드, 저장·초안,
- * 목차·상태바·줌·테마, 외부 변경, 세션 복원. 파일 읽기·쓰기는 전부 Rust 커맨드(mdeditor-core)로 간다 — fs 플러그인 금지.
+ * 목차·상태바·줌·테마, 외부 변경, 세션 복원. 파일 읽기·쓰기는 전부 Rust 커맨드(frond-core)로 간다 — fs 플러그인 금지.
  * 제목 표시줄은 titlebar.ts, 탭 띠는 tabs.ts, 탐색 영역은 nav.ts, 목차 폭은 resize.ts, 설정은 settings.ts(+ settings-dialog.ts),
  * 소스 편집기는 editor.ts, 보기 모드 찾기는 find.ts, 테마는 theme/themes.ts, 세션 저장은 session.ts.
  *

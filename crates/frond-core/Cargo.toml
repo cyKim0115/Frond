@@ -1,8 +1,8 @@
 [package]
-name = "mdeditor-core"
+name = "frond-core"
 version = "0.1.0"
 edition = "2021"
-description = "MdEditor 바이트 보존 파일 코어 — 인코딩·BOM·줄바꿈을 원본 그대로 지키는 읽기/쓰기"
+description = "Frond 바이트 보존 파일 코어 — 인코딩·BOM·줄바꿈을 원본 그대로 지키는 읽기/쓰기"
 license = "MIT"
 publish = false
 

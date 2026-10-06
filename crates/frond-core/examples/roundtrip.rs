@@ -5,7 +5,7 @@
 //! git status --short samples/raw   # 아무것도 안 나와야 한다
 //! ```
 
-use mdeditor_core::FileDocument;
+use frond_core::FileDocument;
 use std::{env, fs, process};
 
 fn main() {

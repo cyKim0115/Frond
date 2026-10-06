@@ -9,7 +9,7 @@ const IMAGE_EXTS: [&str; 8] = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"
 
 #[tauri::command]
 pub fn write_export(path: String, text: String) -> Result<(), String> {
-    mdeditor_core::write_atomic(Path::new(&path), text.as_bytes())
+    frond_core::write_atomic(Path::new(&path), text.as_bytes())
         .map(|_| ())
         .map_err(|e| format!("{path}: {e}"))
 }

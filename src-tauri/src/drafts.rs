@@ -41,7 +41,7 @@ pub fn write_draft(app: AppHandle, path: String, text: String, base_hash: String
     std::fs::create_dir_all(file.parent().expect("drafts dir")).map_err(|e| e.to_string())?;
     let saved_at = now_ms();
     let json = serde_json::to_vec(&Draft { path, text, base_hash, saved_at }).map_err(|e| e.to_string())?;
-    mdeditor_core::write_atomic(&file, &json).map_err(|e| e.to_string())?;
+    frond_core::write_atomic(&file, &json).map_err(|e| e.to_string())?;
     Ok(saved_at)
 }
 
