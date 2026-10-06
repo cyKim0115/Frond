@@ -24,6 +24,8 @@
 | Direction fit | Pass | 보간·목록 미리보기(색 칩)·"빠진 토큰은 base로 채움"이 모두 토큰 단위라 자연스럽다 |
 | Efficiency | Pass | 파서·검증·JSON 직렬화 100줄 안팎. 임의 CSS 테마는 샌드박스·보간 불가 문제를 새로 떠안는다 |
 
+> 2026-10-06 보충: 내장 라이트·다크가 미니멀 화이트 세이지 차콜로 바뀌었다. 빠진 토큰을 채우는 값은 예전 내장 그대로(GitHub 라이트·다크 = `GITHUB_LIGHT`·`GITHUB_DARK` 기본 팔레트)로 두어, 이미 만든 사용자 테마의 빈 토큰 색이 바뀌지 않는다.
+
 ## Alternatives considered
 
 | Alternative | Pros | Cons | Better when |

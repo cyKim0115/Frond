@@ -62,8 +62,9 @@ src/                   프런트(vanilla TS). main.ts 셸(탭별 문서 상태·
                        chunks.ts 큰 문서 블록 묶음, alerts.ts GitHub Alerts, mermaid.ts 다이어그램 지연 로드, math.ts·math-render.ts KaTeX 수식,
                        morph.ts 미리보기 부분 갱신),
                        wordcount.ts(상태바 글자 수),
-                       theme/(문서 CSS·폰트, themes.ts 테마 모델·토큰·테마 파일 검증), theme-panel.ts(설정 테마 목록),
-                       theme/recommended.ts·recommended-dialog.ts(추천 테마 — 세피아·웨딩 팔레트, 팔레트→토큰 파생),
+                       theme/(문서 CSS·폰트, themes.ts 테마 모델·토큰·테마 파일 검증 — 내장 라이트·다크 = 세이지 차콜, 빈 토큰은 GitHub 기본 팔레트),
+                       theme/palette.ts(팔레트→토큰 파생·대비), theme-panel.ts(설정 테마 목록),
+                       theme/recommended.ts·recommended-dialog.ts(추천 테마 — 세피아·GitHub·웨딩 팔레트),
                        style.css(셸 CSS·대체 색 토큰)
                        titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), nav.ts(왼쪽 탐색 영역 탭·최근 파일),
                        recent.ts(최근 목록 순수 함수·문서 제목 추출),
