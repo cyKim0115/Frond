@@ -15,7 +15,7 @@ Store 문구 규칙(Partner Center): 짧은 설명 1,000자 안(Xbox용 — 데�
 | 분류 | 생산성(Productivity) · 하위 없음 |
 | 가격 | 무료 |
 | 추가 기능(add-on) | Durable 하나 — 아래 |
-| 시스템 요구 | Windows 10 버전 22H2(19045) 이상, x64. Microsoft Edge WebView2 런타임(Windows 11은 기본 포함) |
+| 시스템 요구 | Windows 10 버전 2004(빌드 19041) 이상 또는 Windows 11, x64. Microsoft Edge WebView2 런타임(Windows 11은 기본 포함). MSIX 매니페스트 `MinVersion 10.0.19041.0`(`uap10` 속성의 최소)과 같게 — 웹사이트 받기 쪽도 같은 문구. 개발·실기는 22H2(19045) |
 | 개인정보처리방침 URL | 도메인 전: GitBook 설명서의 '개인정보처리방침' 쪽(사이트 게시 뒤 주소 확정) · 도메인 뒤: `https://<도메인>/privacy/` |
 | 지원 연락처 | GitHub Issues (`https://github.com/cyKim0115/Frond/issues`) — 이메일은 웹사이트 U-3 뒤 |
 | 저작권 | © 2026 cyKim |

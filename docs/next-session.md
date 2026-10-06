@@ -1,6 +1,6 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store 출시 결정·오늘 할 일 §3-9·§5. **AI 훅 설정 탭 `feat/ai-hook-settings` 실기·머지 = 오늘 할 일 §2 K·§3-10**. **GitBook 사용 설명서 꾸미기 = 오늘 할 일 §3-11**)
+작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 확인 §2 M. **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 origin보다 앞서 있음 — 푸시는 사용자 결정)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
 이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
@@ -270,10 +270,10 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 
 0. **재설치(에이전트, Frond를 닫았을 때)** — 2026-10-06 이름 정리 때 설치본이 문서를 연 채 떠 있어 건너뛰었다. Frond를 모두 닫은 뒤 `target\release\bundle\nsis\Frond_0.1.0_x64-setup.exe /S /NS`를 WMI로 실행 →
    설정·최근 파일·지난 탭이 그대로인지(localStorage `mdeditor.` → `frond.` 복사), 탐색기 `.md` 더블클릭이 Frond로 열리는지(ProgId 유지)
-1. 설정 → 테마 → **폴더 열기**가 `문서\Frond\themes`를 여는지, 예전 `%APPDATA%\Frond\themes`의 테마 파일이 옮겨져 목록에 그대로 있는지
+1. 설정 → 테마 → **폴더 열기**가 `문서\Frond\themes`를 여는지, 예전 `%APPDATA%\Frond\themes`의 테마 파일이 옮겨져 목록에 그대로 있는지(옛 폴더 안 하위 폴더도 같이 옮겨짐 — 2026-10-06 검토 뒤 고침)
 2. **추천 테마…** 팝업: '추가' 없이 **적용**만, 맨 아래 **구매자 전용** 4종(설치기판은 적용됨). 예전에 추가해 둔 추천 테마가 목록에 두 번 보이지 않는지
 3. 설정 **정보** 탭: 버전 0.1.0 · 설치 방식 '설치기' · 상태 '모든 기능 열림 — Store 밖 설치본'
-4. (선택) 무료 화면 — `$env:FROND_ENTITLEMENT='free'; npm run app:dev`: 사용자 테마를 고르면 같은 쪽 내장 테마로 보이고 '구매자 기능' 표시, 가져오기·복제는 구매 안내, 권유 배너는 유예(7일·5회) 뒤에만. 브라우저 미리보기는 `?entitlement=free&nag=now`
+4. (선택) 무료 화면 — `$env:FROND_ENTITLEMENT='free'; npm run app:dev`: 사용자 테마를 고르면 같은 쪽 내장 테마로 보이고 '구매자 기능' 표시, 가져오기·복제는 구매 안내, 권유 배너는 유예(7일·5회) 뒤에만. 브라우저 미리보기는 `?entitlement=free&nag=now`. 이때 `app:dev`가 exe 이름 고정(`mainBinaryName` mdeditor) 뒤에도 뜨는지, 권유 배너가 저장 충돌·다른 팝업과 겹치지 않는지(A-4 완료 조건 — 미리보기에서는 못 봄)도 같이 본다
 5. 에이전트가 확인한 것: vitest·cargo test·tsc, 미리보기에서 잠금 표시·구매 안내·정보 탭·추천 팝업 잠금 배지, 헤드리스 Chrome으로 권유 배너. 실제 Store 구매(R-3)는 Private audience 게시 뒤
 
 ### M. 제품 웹사이트 (2026-10-06) — 모양·문구 확인
