@@ -4,6 +4,7 @@ Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 
 
 **현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이다. 에이전트 §3 2~4(인쇄 확인·원문 HTML 허용 목록·`www.` 자동 링크)는 2026-10-02 완료, 남은 §3-5는 B-2·B-9 통과 뒤. 통과하면 MVP(V1) 완료.
 [docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기)는 2026-10-06 구현·재설치 완료. 단계 1 에이전트 몫(V1 검수 [fidelity-report](docs/references/assets/20260929-typora-md-editors/fidelity-report.md) SHIPPABLE 조건부·스펙 동기화·RAG 캡처)도 2026-10-06 완료 — V1은 B-2·B-9만 남았다. 단계 3은 B(쓰임새 순)로 진행, 이후 단계는 사용자 확인을 기다리지 않고 진행하며 실기 목록은 next-session §2에 모은다(사용자 지시 2026-10-06). **단계 4(Phase 3 탭·세션·분할 뷰·비교·폴더 트리·AI 훅 받은 목록)·단계 5(Phase 4 Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄, Shiki DEFER) 2026-10-06 구현 완료** — V2 작업은 `v2` 브랜치(워크트리 `../MdEditor-v2`)에서 하고 단계가 끝날 때 main에 합친다. 단계 6 라이브프리뷰는 `exp/live-preview`에만(2026-10-06 실험 구현, 사용자 IME 확인 전에는 main에 합치지 않는다).**
+**배포(단계 7)는 2026-10-06 Microsoft Store MSIX + Durable add-on 선택 구매로 결정, 라이선스 MIT 확정(LICENSE·TRADEMARKS.md)** — 먼저 할 일은 [docs/store-launch.md](docs/store-launch.md).
 할 일·열린 결정은 [docs/next-session.md](docs/next-session.md) §2·§3, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
@@ -42,7 +43,8 @@ powershell -File .cursor/system-crew/scripts/sync-to-project.ps1 -Mode OnDemand
 .cursor/system-crew/   system-crew 서브모듈 (직접 고치지 않는다)
 .cursor/rules|skills/  sync 산출물 (Cursor용). 로컬 오버라이드는 .cursor/rules/local/
 docs/next-session.md   지금 열려 있는 것 (결정 대기·다음 할 일)
-docs/plan.md           한 장 계획표·로드맵 (단계 1~6, 날짜는 제안)
+docs/plan.md           한 장 계획표·로드맵 (단계 1~7, 날짜는 제안)
+docs/store-launch.md   Store 출시·선택 구매 먼저 할 일 (단계 7, 사용자 몫 U·에이전트 몫 A)
 docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)

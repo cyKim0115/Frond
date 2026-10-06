@@ -17,6 +17,8 @@
 | `20261001-ai-app-open` A1·A2 | AI 앱 오른쪽 창에 MdEditor 넣기 / 화면 오른쪽 사이드 모드 — 폐기 | `REJECT` | 2026-10-01 | `20261001-ai-app-open.md` |
 | `20261001-ai-app-open` A3·A4 | Claude Code·Codex PostToolUse 훅으로 **새로 만든 md만** MdEditor로 열기 (`integrations/`) | `ADOPT` | 2026-10-01 | `20261001-ai-app-open.md` |
 | `20261006-shiki` | 코드 강조 highlight.js → Shiki 교체 — 300줄 강조 81.7 ms vs 3.2 ms, 번들 886 KB vs 67 KB, 테마 토큰과 분리 → 유지 | `DEFER` | 2026-10-06 | `20261006-shiki.md` |
+| `20261006-license` | 소스 라이선스 — MIT를 LICENSE 파일로 확정, "Frond" 이름·앱 아이콘은 별도 보유(`TRADEMARKS.md`), 구매자 전용 테마도 공개 | `ADOPT` | 2026-10-06 | `20261006-license.md` |
+| `20261006-store-monetization` | Microsoft Store(MSIX) 배포 + Durable add-on 선택 구매 — 사용자 테마 만들기·전용 테마 해금, 드문 구매 권유. 문서 기능·다크·추천 테마는 무료. 계정 유형·가격은 사용자 결정 | `ADOPT_WITH_CHANGES` | 2026-10-06 | `20261006-store-monetization.md` |
 | `20261006-live-preview` | 인라인 라이브프리뷰 실험 — CM6 데코레이션만(텍스트 불변), 캐럿 줄 원문, 조합 중 재빌드 안 함. `exp/live-preview`에만, IME ①–⑧ 사용자 확인 대기 | `(pending)` | 2026-10-06 | `20261006-live-preview.md` |
 
 ## How to add

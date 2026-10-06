@@ -22,6 +22,7 @@
 | Phase 3 (단계 4) | **구현 완료 10/6** — 탭·세션 복원·분할 뷰·비교·폴더 트리·AI 훅 받은 목록 | 사용자 실기 [`next-session.md`](next-session.md) §2 G |
 | Phase 4 (단계 5) | **구현 완료 10/6** — Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄 손질, Shiki는 DEFER | 사용자 실기 [`next-session.md`](next-session.md) §2 H |
 | Phase 5 (단계 6) | **실험 구현 10/6** — `exp/live-preview`(main 미병합) | 사용자 한글 IME [`next-session.md`](next-session.md) §2 I |
+| 배포·수익화 (단계 7) | **결정 10/6** — Store MSIX + Durable add-on 선택 구매, 라이선스 MIT 확정. R-0 완료 | 오늘 할 일 [`store-launch.md`](store-launch.md) — 사용자 U-1 계정 유형·U-2 세무사, 에이전트 A-1~A-5 |
 
 > **V1(MVP)은 사용자 확인 2건만 남았다.** 2026-10-06 사용자 지시로 이후 단계는 기다리지 않고 진행하고, 사용자 확인 항목은 [`next-session.md`](next-session.md) §2에 모은다.
 
@@ -101,6 +102,21 @@ V1 범위는 여기서 끝난다. 계속 갈지, 간다면 무엇부터인지 �
 
 `exp/live-preview` 브랜치에서만. 한글 IME 시나리오 ①–⑧과 무편집 저장 바이트 불변을 못 지키면 머지하지 않고 `archived-exp`로 보낸다.
 
+### 단계 7 — 배포·수익화 (Store MSIX + 선택 구매) — **계획 2026-10-06**, 오늘 할 일 [`store-launch.md`](store-launch.md)
+
+결정: [`decisions/ideas/20261006-store-monetization.md`](decisions/ideas/20261006-store-monetization.md) · [`decisions/ideas/20261006-license.md`](decisions/ideas/20261006-license.md). 트랙 정의는 [`roadmap.md`](roadmap.md) "배포 트랙".
+무료로 다 쓰고, Store add-on 하나로 사용자 테마 만들기·구매자 전용 테마를 해금한다. 비구매자에게는 드물게 구매 권유. 초기 비용 0원(판매 때 Store 15%).
+
+| # | 할 일 | 담당 | 선행 | 완료 조건 |
+|---|---|---|---|---|
+| R-0 | ~~LICENSE(MIT)·`TRADEMARKS.md`·결정 기록·이 계획~~ — 10/6 완료 | 에이전트 | — | — |
+| U-1 | 계정 유형(개인 / 사업자등록 + 회사 계정) — 개인 → 회사 전환 불가 | **사용자** | — | 첫 공개 제출 전 |
+| U-2 | 세무사 상담(한국분 부가세·사업 개시일·원천징수·겸업) | **사용자** | — | 첫 유료 판매 전 |
+| R-1 | A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문 | 에이전트 | [`frond-rename.md`](frond-rename.md) 먼저 | 개발용 공급자로 무료 ↔ 구매자 전환 확인 |
+| R-2 | MSIX 로컬 패키지 + MSIX 분기 | 에이전트 | A-1 | 로컬 MSIX 설치본 실기 |
+| R-3 | Store Private 제출·add-on·Store 공급자 | 에이전트 + 사용자(가입) | R-2, U-1 | 프로모션 코드로 해금·복원 |
+| R-4 | 가격·공개 | **사용자** | V1 닫기, U-2 | Store Public |
+
 ### 상시 — 환경이 생기면
 
 - Win11·이전 IME(`ConfigureImeVersion=1`) 실측 — 1-7 8번, IME 시나리오 ①–⑧
@@ -130,6 +146,7 @@ Phase 5                                                          [.....
 | M4 탭·분할 뷰 | 11/13 | Phase 3 | v0.3.0 |
 | M5 다이어그램·내보내기 | 12/4 | Phase 4 | v0.4.0 |
 | M6 라이브프리뷰 | 미정 | Phase 5 실험 | — |
+| M7 Store 출시 | 미정 (U-1·U-2·V1 닫기 뒤) | 배포 트랙 R-1~R-4 — MSIX + 선택 구매 | 공개 시점 버전 |
 
 날짜는 지금까지 속도(Phase 0~2·셸 트랙 구현이 9/29~10/2 나흘)에 사용자 실기 대기 시간을 더해 잡은 제안이다. 단계 3에서 B안을 고르면 M4·M5 내용이 섞인다.
 
@@ -143,5 +160,6 @@ Phase 5                                                          [.....
 4. (선택) 버전 태그를 `v0.1.0`부터 붙일지 — B-2·B-9 통과 뒤
 5. 단계마다 쌓이는 실기 목록 — [`next-session.md`](next-session.md) §2 G(단계 4)·H(단계 5)·I(단계 6 라이브프리뷰 IME)
 6. 라이브프리뷰(단계 6)를 main에 넣을지 — §2 I의 한글 IME 결과로 정한다
+7. **단계 7 Store 출시** — U-1 계정 유형(개인 / 사업자등록 + 회사), U-2 세무사 상담, U-3 테마 폴더 위치(말이 없으면 `Documents\Frond\themes`), 나중에 가격. 상세 [`store-launch.md`](store-launch.md)
 
-하지 않는 것(크로스플랫폼·노트 앱 기능·플러그인·MSI/MSIX·임의 CSS 테마·클라우드 동기화)은 [`roadmap.md`](roadmap.md) 그대로다.
+하지 않는 것(크로스플랫폼·노트 앱 기능·플러그인·MSI·Store EXE 제출·사이드로드 MSIX·임의 CSS 테마·클라우드 동기화)은 [`roadmap.md`](roadmap.md) 그대로다. MSIX는 2026-10-06 Store 배포용으로만 하기로 바꿨다.
