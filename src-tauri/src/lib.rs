@@ -16,6 +16,7 @@ mod drafts;
 mod elevation;
 mod export;
 mod install;
+mod license;
 mod print_menu;
 mod save;
 mod themes;
@@ -174,6 +175,7 @@ pub fn run() {
         .manage(Pending(Mutex::new(initial)))
         .manage(watch::WatchState(Mutex::new(Default::default())))
         .manage(tree::TreeWatch(Mutex::new(None)))
+        .manage(license::LicenseState(Mutex::new(None)))
         .setup(|app| {
             // 창은 코드로 만든다 — on_navigation 훅은 빌더에만 있다.
             // 웹뷰 안에서의 이동은 앱 자체 URL만 허용. 외부 링크는 프런트가 opener로 연다 (스택 판정 조건 5)
@@ -212,6 +214,8 @@ pub fn run() {
             assoc::is_registered,
             elevation::is_elevated,
             install::get_install_info,
+            license::get_entitlement,
+            license::refresh_entitlement,
             save::save_document,
             save::save_document_as,
             drafts::write_draft,

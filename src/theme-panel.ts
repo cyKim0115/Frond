@@ -5,11 +5,15 @@
  * 추천 테마는 앱에 들어 있어(catalog.ts) 폴더에 복사하지 않는다 — '추천 테마…' 팝업에서 골라 적용하면 이 목록에도 보인다.
  * 가져오기는 파일을 검증(`parseThemeFile`: 토큰 이름·색 값, url()·@import 거부)한 뒤에만 폴더에 복사한다.
  * 파일 읽기·쓰기는 백엔드 커맨드(themes.rs) — fs 플러그인 금지.
+ *
+ * 권리(store-launch A-3): 가져오기·복제(사용자 테마 만들기)와 사용자·구매자 전용 테마 적용은 구매자 기능이다.
+ * 버튼은 늘 보이고, 권리가 없으면 누를 때 구매 안내를 띄운다. 막힌 테마도 목록에 남기고 "구매자 기능"으로 표시한다.
  */
 
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { showChoice, showDialog } from "./dialog";
+import { canImport, canUseTheme } from "./license";
 import { initRecommendedDialog } from "./recommended-dialog";
 import { getSetting, onSettingChange, setSetting, SETTINGS } from "./settings";
 import { catalogEntries, listThemes, type ThemeOrigin, themeOrigin } from "./theme/catalog";
@@ -26,6 +30,8 @@ export interface ThemePanelHooks {
   currentThemeId(): string;
   /** 목록이 바뀌었을 때 — 설정 선택지를 다시 채우고 적용 테마를 다시 고른다 */
   onListChanged(): void;
+  /** 구매자 기능을 눌렀을 때 — 무엇이 열리는지 안내한다 */
+  showPurchaseInfo(): void;
 }
 
 const CHIP_TOKENS: [group: "shell" | "doc", key: string, label: string][] = [
@@ -65,13 +71,13 @@ function themeChips(theme: ThemeDef): HTMLElement {
   return chips;
 }
 
-export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement; reload(): Promise<void> } {
+export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement; reload(): Promise<void>; refresh(): void } {
   const root = el("div", "theme-panel");
   const head = el("div", "theme-panel-head");
   head.append(el("h3", undefined, "테마 목록"));
   const headActions = el("div", "theme-panel-actions");
   const recommendedButton = button("추천 테마…", () => recommended.open(), "앱에 들어 있는 테마(세피아·GitHub·웨딩 팔레트 20종)를 둘러보고 적용합니다");
-  const importButton = button("가져오기…", () => void importTheme(), "테마 파일(.json)을 골라 테마 폴더에 복사합니다");
+  const importButton = button("가져오기…", () => (canImport() ? void importTheme() : hooks.showPurchaseInfo()), "테마 파일(.json)을 골라 테마 폴더에 복사합니다");
   const folderButton = button("폴더 열기", () => void invoke("open_themes_folder").catch((e) => alertError(e)), "테마 폴더를 탐색기로 엽니다 — 직접 넣은 파일은 '다시 읽기'로 목록에 올립니다");
   const reloadButton = button("다시 읽기", () => void reload(), "테마 폴더를 다시 읽습니다");
   headActions.append(recommendedButton, importButton, folderButton, reloadButton);
@@ -94,18 +100,24 @@ export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement
     await showDialog({ title: "테마 작업을 하지 못했습니다", message: String(error) });
   }
 
-  /** 설정(테마·라이트 쌍·다크 쌍)이 가리키는 id — 추천 테마는 이것만 목록에 보인다 */
+  /** 설정(테마·라이트 쌍·다크 쌍)이 가리키는 id — 추천·구매자 전용 테마는 이것만 목록에 보인다(전체는 '추천 테마…' 팝업) */
   function inUse(): Set<string> {
     return new Set([getSetting("theme"), getSetting("themeLight"), getSetting("themeDark"), hooks.currentThemeId()]);
   }
 
-  const KIND_LABEL: Record<ThemeOrigin, string> = { builtin: "내장", recommended: "추천", user: "파일" };
+  const KIND_LABEL: Record<ThemeOrigin, string> = { builtin: "내장", recommended: "추천", supporter: "구매자 전용", user: "파일" };
+  const ORIGIN_TITLE: Record<ThemeOrigin, string> = {
+    builtin: "내장 테마",
+    recommended: "추천 테마 (앱에 들어 있음)",
+    supporter: "구매자 전용 테마 (앱에 들어 있음)",
+    user: "",
+  };
 
   function render(): void {
     const current = hooks.currentThemeId();
     const selected = getSetting("theme");
     const used = inUse();
-    const shown = catalogEntries().filter((e) => e.origin !== "recommended" || used.has(e.theme.id));
+    const shown = catalogEntries().filter((e) => e.origin === "builtin" || e.origin === "user" || used.has(e.theme.id));
     list.replaceChildren(
       ...shown.map(({ theme, origin }) => {
         const li = el("li", "theme-item");
@@ -114,17 +126,27 @@ export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement
         const chips = themeChips(theme);
 
         const info = el("span", "theme-info");
-        info.title = origin === "user" ? `테마 폴더의 ${theme.id}.json` : origin === "recommended" ? "추천 테마 (앱에 들어 있음)" : "내장 테마";
+        const usable = canUseTheme(origin);
+        info.title = origin === "user" ? `테마 폴더의 ${theme.id}.json` : ORIGIN_TITLE[origin];
         info.append(el("span", "theme-name", theme.name));
         // 사용 중인 테마는 항목 테두리(aria-current)로 보인다
-        info.append(el("span", "theme-meta", `${theme.base === "dark" ? "다크" : "라이트"} · ${KIND_LABEL[origin]}`));
+        const meta = `${theme.base === "dark" ? "다크" : "라이트"} · ${KIND_LABEL[origin]}`;
+        info.append(el("span", "theme-meta", usable ? meta : `${meta} · 구매자 기능`));
+        if (!usable && used.has(theme.id)) {
+          // 고른 테마인데 권리가 없어 내장 테마로 대신 보이는 중 — 설정값은 그대로다
+          info.append(el("span", "theme-locked", "구매자 기능 — 지금은 내장 테마로 보입니다"));
+        }
 
         const actions = el("span", "theme-item-actions");
-        const apply = button("적용", () => setSetting("theme", theme.id), "이 테마로 고정합니다 (설정 '테마')");
-        apply.disabled = selected === theme.id;
+        const apply = usable
+          ? button("적용", () => setSetting("theme", theme.id), "이 테마로 고정합니다 (설정 '테마')")
+          : button("적용", () => hooks.showPurchaseInfo(), "구매자 기능입니다 — 눌러서 안내를 봅니다");
+        apply.disabled = usable && selected === theme.id;
         actions.append(apply);
         if (hooks.isTauri) {
-          actions.append(button("복제", () => void duplicate(theme), "모든 토큰을 채운 사본 파일을 테마 폴더에 만듭니다"));
+          actions.append(
+            button("복제", () => (canImport() ? void duplicate(theme) : hooks.showPurchaseInfo()), "모든 토큰을 채운 사본 파일을 테마 폴더에 만듭니다"),
+          );
           actions.append(button("내보내기", () => void exportTheme(theme), "JSON 파일로 저장합니다"));
           if (origin === "user") actions.append(button("삭제", () => void remove(theme), "테마 폴더에서 지웁니다"));
         }
@@ -165,6 +187,8 @@ export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement
     apply: (id) => setSetting("theme", id),
     currentThemeId: hooks.currentThemeId,
     chips: themeChips,
+    canUse: (origin) => canUseTheme(origin),
+    showPurchaseInfo: hooks.showPurchaseInfo,
   });
 
   async function importTheme(): Promise<void> {
@@ -264,5 +288,5 @@ export function createThemePanel(hooks: ThemePanelHooks): { element: HTMLElement
     if (key === "theme" || key === "themeLight" || key === "themeDark") render();
   });
   render();
-  return { element: root, reload };
+  return { element: root, reload, refresh: render };
 }

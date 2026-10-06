@@ -1,0 +1,40 @@
+{
+  "id": "frond-fern-dawn",
+  "name": "고사리 새벽",
+  "base": "light",
+  "shell": {
+    "bg": "#f6f8f1",
+    "sidebar-bg": "#e9efdf",
+    "fg": "#23301f",
+    "muted": "#6c7469",
+    "line": "#d0d4cb",
+    "accent": "#4f7a3a",
+    "on-accent": "#ffffff"
+  },
+  "doc": {
+    "bgColor-default": "#f6f8f1",
+    "bgColor-muted": "#e9efdf",
+    "bgColor-neutral-muted": "rgba(35, 48, 31, 0.08)",
+    "fgColor-default": "#23301f",
+    "fgColor-muted": "#6c7469",
+    "fgColor-accent": "#4f7a3a",
+    "borderColor-default": "#d0d4cb",
+    "borderColor-muted": "#d0d4cbb3",
+    "borderColor-accent-emphasis": "#4f7a3a",
+    "selection-bg": "rgba(79, 122, 58, 0.24)",
+    "selection-bg-inactive": "rgba(79, 122, 58, 0.14)",
+    "color-prettylights-syntax-keyword": "#4f7a3a",
+    "color-prettylights-syntax-entity-tag": "#4f7a3a",
+    "color-prettylights-syntax-markup-heading": "#4f7a3a",
+    "color-prettylights-syntax-string": "#8d6b28",
+    "color-prettylights-syntax-variable": "#8d6b28",
+    "color-prettylights-syntax-markup-list": "#8d6b28",
+    "color-prettylights-syntax-constant": "#6e7331",
+    "color-prettylights-syntax-entity": "#685625",
+    "color-prettylights-syntax-comment": "#6c7469",
+    "color-prettylights-syntax-brackethighlighter-angle": "#6c7469",
+    "color-prettylights-syntax-markup-bold": "#23301f",
+    "color-prettylights-syntax-markup-italic": "#23301f",
+    "color-prettylights-syntax-storage-modifier-import": "#23301f"
+  }
+}

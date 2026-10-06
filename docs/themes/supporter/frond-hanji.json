@@ -1,0 +1,40 @@
+{
+  "id": "frond-hanji",
+  "name": "한지",
+  "base": "light",
+  "shell": {
+    "bg": "#f7f3ea",
+    "sidebar-bg": "#ece4d3",
+    "fg": "#2b2622",
+    "muted": "#736e69",
+    "line": "#d2cec6",
+    "accent": "#8c3b2e",
+    "on-accent": "#ffffff"
+  },
+  "doc": {
+    "bgColor-default": "#f7f3ea",
+    "bgColor-muted": "#ece4d3",
+    "bgColor-neutral-muted": "rgba(43, 38, 34, 0.08)",
+    "fgColor-default": "#2b2622",
+    "fgColor-muted": "#736e69",
+    "fgColor-accent": "#8c3b2e",
+    "borderColor-default": "#d2cec6",
+    "borderColor-muted": "#d2cec6b3",
+    "borderColor-accent-emphasis": "#8c3b2e",
+    "selection-bg": "rgba(140, 59, 46, 0.24)",
+    "selection-bg-inactive": "rgba(140, 59, 46, 0.14)",
+    "color-prettylights-syntax-keyword": "#8c3b2e",
+    "color-prettylights-syntax-entity-tag": "#8c3b2e",
+    "color-prettylights-syntax-markup-heading": "#8c3b2e",
+    "color-prettylights-syntax-string": "#3d5a73",
+    "color-prettylights-syntax-variable": "#3d5a73",
+    "color-prettylights-syntax-markup-list": "#3d5a73",
+    "color-prettylights-syntax-constant": "#654b51",
+    "color-prettylights-syntax-entity": "#374857",
+    "color-prettylights-syntax-comment": "#736e69",
+    "color-prettylights-syntax-brackethighlighter-angle": "#736e69",
+    "color-prettylights-syntax-markup-bold": "#2b2622",
+    "color-prettylights-syntax-markup-italic": "#2b2622",
+    "color-prettylights-syntax-storage-modifier-import": "#2b2622"
+  }
+}

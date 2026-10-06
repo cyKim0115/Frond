@@ -1,0 +1,40 @@
+{
+  "id": "frond-meok",
+  "name": "먹",
+  "base": "dark",
+  "shell": {
+    "bg": "#18181a",
+    "sidebar-bg": "#232326",
+    "fg": "#ece8e1",
+    "muted": "#979591",
+    "line": "#474646",
+    "accent": "#c9a86a",
+    "on-accent": "#18181a"
+  },
+  "doc": {
+    "bgColor-default": "#18181a",
+    "bgColor-muted": "#232326",
+    "bgColor-neutral-muted": "rgba(236, 232, 225, 0.16)",
+    "fgColor-default": "#ece8e1",
+    "fgColor-muted": "#979591",
+    "fgColor-accent": "#c9a86a",
+    "borderColor-default": "#474646",
+    "borderColor-muted": "#474646b3",
+    "borderColor-accent-emphasis": "#c9a86a",
+    "selection-bg": "rgba(201, 168, 106, 0.36)",
+    "selection-bg-inactive": "rgba(201, 168, 106, 0.2)",
+    "color-prettylights-syntax-keyword": "#c9a86a",
+    "color-prettylights-syntax-entity-tag": "#c9a86a",
+    "color-prettylights-syntax-markup-heading": "#c9a86a",
+    "color-prettylights-syntax-string": "#8fa3b8",
+    "color-prettylights-syntax-variable": "#8fa3b8",
+    "color-prettylights-syntax-markup-list": "#8fa3b8",
+    "color-prettylights-syntax-constant": "#aca691",
+    "color-prettylights-syntax-entity": "#b0bbc6",
+    "color-prettylights-syntax-comment": "#979591",
+    "color-prettylights-syntax-brackethighlighter-angle": "#979591",
+    "color-prettylights-syntax-markup-bold": "#ece8e1",
+    "color-prettylights-syntax-markup-italic": "#ece8e1",
+    "color-prettylights-syntax-storage-modifier-import": "#ece8e1"
+  }
+}

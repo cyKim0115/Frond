@@ -4,6 +4,7 @@ import { normalizeSetting, SETTINGS } from "../settings";
 import { findTheme, listThemes } from "./catalog";
 import { contrast } from "./palette";
 import { RECOMMENDED_THEMES } from "./recommended";
+import { SUPPORTER_THEMES } from "./supporter";
 import {
   BUILTIN_THEMES,
   DOC_TOKENS,
@@ -96,12 +97,12 @@ describe("themeCss", () => {
 });
 
 describe("사용자 테마 목록", () => {
-  it("내장·추천 뒤에 붙고, 내장 id와 겹치면 버린다", () => {
+  it("내장·추천·구매자 전용 뒤에 붙고, 내장 id와 겹치면 버린다", () => {
     setUserThemes([
       { id: "dark", name: "가짜 다크", base: "dark" },
       { id: "mine", name: "내 테마", base: "dark" },
     ]);
-    expect(listThemes().map((t) => t.id)).toEqual(["light", "dark", ...RECOMMENDED_THEMES.map((e) => e.theme.id), "mine"]);
+    expect(listThemes().map((t) => t.id)).toEqual(["light", "dark", ...RECOMMENDED_THEMES.map((e) => e.theme.id), ...SUPPORTER_THEMES.map((e) => e.theme.id), "mine"]);
     expect(findTheme("dark")!.name).toBe("다크");
   });
 
