@@ -30,6 +30,31 @@ describe("추천 테마", () => {
       expect(contrast(t.doc["color-prettylights-syntax-string"], t.doc["bgColor-muted"]), `${id} code string`).toBeGreaterThanOrEqual(3);
     }
   });
+
+  it("화이트 세이지 차콜은 사이드바·본문·글자 모두 초록빛이 돌고, 사이드바 위 흐린 글자도 읽힌다", () => {
+    const t = resolveTheme(RECOMMENDED_THEMES.find((x) => x.theme.id === "wedding-minimal-white-sage-charcoal")!.theme);
+    const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    for (const key of ["sidebar-bg", "bg", "fg", "line"] as const) {
+      const [r, g, b] = channels(t.shell[key]);
+      expect(g, key).toBeGreaterThan(r);
+      expect(g, key).toBeGreaterThanOrEqual(b);
+    }
+    expect(contrast(t.shell.muted, t.shell["sidebar-bg"])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("세이지 차콜 다크는 어두운 초록 차콜이고, 사이드바 위 흐린 글자도 읽힌다", () => {
+    const entry = RECOMMENDED_THEMES.find((x) => x.theme.id === "minimal-sage-charcoal-dark")!;
+    expect(entry.theme.base).toBe("dark");
+    const t = resolveTheme(entry.theme);
+    const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    for (const key of ["sidebar-bg", "bg"] as const) {
+      const [r, g, b] = channels(t.shell[key]);
+      expect(g, key).toBeGreaterThan(r);
+      expect(g, key).toBeGreaterThanOrEqual(b);
+      expect(r + g + b, key).toBeLessThan(255 * 3 * 0.25);
+    }
+    expect(contrast(t.shell.muted, t.shell["sidebar-bg"])).toBeGreaterThanOrEqual(4.5);
+  });
 });
 
 describe("readable", () => {
