@@ -17,7 +17,7 @@ Store 문구 규칙(Partner Center): 짧은 설명 1,000자 안(Xbox용 — 데�
 | 추가 기능(add-on) | Durable 하나 — 아래 |
 | 시스템 요구 | Windows 10 버전 22H2(19045) 이상, x64. Microsoft Edge WebView2 런타임(Windows 11은 기본 포함) |
 | 개인정보처리방침 URL | 도메인 전: GitBook 설명서의 '개인정보처리방침' 쪽(사이트 게시 뒤 주소 확정) · 도메인 뒤: `https://<도메인>/privacy/` |
-| 지원 연락처 | GitHub Issues (`https://github.com/cyKim0115/MdEditor/issues`, 저장소 이름이 Frond로 바뀌면 그 주소) — 이메일은 웹사이트 U-3 뒤 |
+| 지원 연락처 | GitHub Issues (`https://github.com/cyKim0115/Frond/issues`) — 이메일은 웹사이트 U-3 뒤 |
 | 저작권 | © 2026 cyKim |
 | 웹사이트 | 도메인 뒤 `https://<도메인>/` (그 전에는 비움) |
 

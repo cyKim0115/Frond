@@ -12,7 +12,7 @@
 ## 0. 한눈에
 
 ```
-저장소 (cyKim0115/MdEditor → frond-rename 뒤 cyKim0115/Frond)
+저장소 (cyKim0115/Frond — 2026-10-06 MdEditor에서 이름 변경, 옛 주소는 GitHub가 넘겨 준다)
 ├─ website/           제품 페이지, Astro 정적 ──(U-2)──▶ Cloudflare Workers 정적 자산 → https://<도메인>/
 │                      /docs → 302 → GitBook        (도메인 전에 공개가 필요하면 frond-site.<계정>.workers.dev)
 ├─ docs/site/         사용 설명서 (gitbook-site.md) ──▶ GitBook Git Sync → https://cykim.gitbook.io/frond/
@@ -98,7 +98,7 @@
 export const SITE = {
   name: "Frond",
   url: import.meta.env.SITE_URL ?? "http://localhost:4321", // U-2 뒤 https://<도메인>
-  repo: "https://github.com/cyKim0115/Frond",               // frond-rename 전이면 MdEditor(GitHub가 넘겨 준다)
+  repo: "https://github.com/cyKim0115/Frond",               // 2026-10-06 이름 변경 완료
   docs: "https://cykim.gitbook.io/frond/",                 // gitbook-site U-1 전에는 "준비 중" 표시
   storeUrl: null as string | null,                          // R-4 공개 뒤 https://apps.microsoft.com/detail/<StoreId>
   wingetId: null as string | null,                          // R-5 뒤 "cyKim.Frond"

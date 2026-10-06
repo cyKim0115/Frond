@@ -34,7 +34,7 @@
 | 1-6 `fileAssociations`, NSIS 훅(OpenWithProgids 6종, Applications, Capabilities, RegisteredApplications, SHChangeNotify, 제거 때 자기 값만 삭제) | 예 | `tauri.conf.json`, `src-tauri/nsis/hooks.nsh` |
 | `largeSoftLimit` 2 MB 큰 문서 모드, V1.1 블록 묶음 | 예 | `render/index.ts`의 `LARGE_SOFT_LIMIT`·`LARGE_CHUNK_BLOCKS`, `render/chunks.ts`, `style.css #app.large-doc`. `largeHardLimit`은 스펙에 기록된 대로 백로그다 |
 | 2-1 CM6 plain, `Ctrl+/`, `lineSeparator` = 파일의 지배 EOL | 예 (방식 다름) | `src/editor.ts`는 `lineSeparator`를 `\n`로 고정하고 EOL 복원은 코어의 줄별 맵이 맡는다. 바이트 결과는 같다 |
-| 2-2 코어 연결, `isComposing` 가드, 손실 시 UTF-8 제안, Encode in / Convert to 분리 | 예 | `main.ts:1172`, `src-tauri/src/save.rs`, `crates/mdeditor-core/src/{document,encoding,eol,atomic}.rs`(`ReplaceFileW`) |
+| 2-2 코어 연결, `isComposing` 가드, 손실 시 UTF-8 제안, Encode in / Convert to 분리 | 예 | `main.ts:1172`, `src-tauri/src/save.rs`, `crates/frond-core/src/{document,encoding,eol,atomic}.rs`(`ReplaceFileW`) |
 | 2-3 배너 [다시 읽기/유지], 충돌 [덮어쓰기/다른 이름], etag = 내용 해시 | 예 | `main.ts`의 `file-changed`, `save.rs`의 `expected_hash`. [비교]는 D5에 따라 백로그 |
 | 2-4 초안을 `%APPDATA%\MdEditor\drafts`에 30 s~2 min 주기로, compositionend flush | 예 | `src-tauri/src/drafts.rs`, `settings.ts draftIntervalSec`(기본 60 s), `main.ts flushComposition`(저장·다른 이름·닫기 전) |
 | 2-5 찾기·바꾸기, 이미지 붙여넣기·드롭 → `./assets` | 예 | `src/find.ts`, `src-tauri/src/assets.rs`, `main.ts dropImages` |
@@ -43,7 +43,7 @@
 | S-3 `@property` 보간, reduced-motion, 큰 문서는 View Transition | 예 | `themes.ts:324`, `main.ts:1038-1060` |
 | S-4 검증(`CSS.supports`, `url(`·`@import`·`expression` 거부), 백엔드 저장 | 예 | `themes.ts:351-356`, `src-tauri/src/themes.rs` |
 | V1.1: `convert_eol`, 메뉴 인쇄, 글자 수, 슬러그, 각주 `data-line` | 예 | `document.rs:168`, `src-tauri/src/print_menu.rs`, `src/wordcount.ts`, `render/index.ts slugify` |
-| `samples/raw` 왕복 테스트를 CI에서 | 부분 | `crates/mdeditor-core/tests/fixtures.rs`(15건)는 있지만 CI 러너가 없다(`.github` 없음). 로컬에서 돌린다 |
+| `samples/raw` 왕복 테스트를 CI에서 | 부분 | `crates/frond-core/tests/fixtures.rs`(15건)는 있지만 CI 러너가 없다(`.github` 없음). 로컬에서 돌린다 |
 
 - Spec drift: **spec needs update (→ `NEEDS_SPEC`, 차단하지 않음)**. 해당 항목은 asset scope 재귀·누적, CSP `img-src data: https:`, 줌 범위·기억, TOC 기본값·키, Lossy 표현, `lineSeparator` 방식, CI가 실제로는 로컬이라는 점이다. 스펙의 Approval·Status 미갱신과 Phase 2·셸 트랙 스펙 부재도 함께 손봐야 한다. **missing work(작은 갭)**는 `../` title, WebView2 < 150 배너, 같은 내용으로 다시 생긴 파일의 복귀다.
 
@@ -115,7 +115,7 @@
 | E2 | telemetry (바이트 로그) | `docs/qa/20261001-phase2-b/bytes.txt` | B-3·B-4·B-5·B-6·B-9·B-10 바이트 판정 |
 | E3 | runtime (사용자 실기 기록) | `docs/next-session.md` §1·§2 C/D. 1-7 1차·2차 결과는 git `5efcc50`·`5469432`의 `docs/next-session.md` | 1-7, 셸 트랙, AI 연동 종결. 기록은 텍스트뿐이고 캡처는 없다 |
 | E4 | runtime (재설치) | `docs/next-session.md` §2 머리말(2026-10-06 `620ab78` 재설치) | 같은 버전에서 연결이 유지됨 |
-| E5 | test (정적 집계, 재실행 안 함) | `crates/mdeditor-core/tests/fixtures.rs`, `src/render/index.test.ts`, `src/settings.test.ts`, `src/theme/themes.test.ts`, `src/wordcount.test.ts` | vitest 104건, cargo 52건이 기록과 일치. `samples/raw`가 깨끗함 |
+| E5 | test (정적 집계, 재실행 안 함) | `crates/frond-core/tests/fixtures.rs`, `src/render/index.test.ts`, `src/settings.test.ts`, `src/theme/themes.test.ts`, `src/wordcount.test.ts` | vitest 104건, cargo 52건이 기록과 일치. `samples/raw`가 깨끗함 |
 | E6 | telemetry (Phase 0) | `docs/decisions/ideas/20260929-stack.md`의 "Phase 0 결과 기록란", `ASSET.md`의 Rules & numbers | IME ①–⑧ 통과(Win10 새 IME), hello 시작 시간 |
 | E7 | code inspection | `src-tauri/src/{lib,watch,save,assoc,elevation,print_menu}.rs`, `src-tauri/tauri.conf.json`, `src-tauri/nsis/hooks.nsh`, `src/render/*.ts`, `src/main.ts`, `src/theme/themes.ts`, `Cargo.lock` | Converge check 근거 |
 | E8 | runtime (CDP·헤드리스 Edge) | `docs/next-session.md` §1 "2026-10-06 작업"·"2026-10-01 작업" | V1.1 수치, 메뉴 인쇄, S-3 보간. 저장된 파일 증거가 없는 텍스트 기록이라 상대적으로 약하다 |
