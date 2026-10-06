@@ -37,7 +37,7 @@ fn read_text(path: &Path) -> Result<String, String> {
     if size > MAX_THEME_BYTES {
         return Err(format!("테마 파일이 너무 큽니다 ({size} B > {MAX_THEME_BYTES} B)"));
     }
-    let doc = mdeditor_core::FileDocument::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let doc = frond_core::FileDocument::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
     Ok(doc.text().to_owned())
 }
 
@@ -84,7 +84,7 @@ pub fn read_theme_file(path: String) -> Result<ThemeFileText, String> {
 fn save_in(dir: &Path, id: &str, json: &str) -> Result<(), String> {
     let path = theme_path(dir, id)?;
     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    mdeditor_core::write_atomic(&path, json.as_bytes()).map_err(|e| format!("{}: {e}", path.display()))?;
+    frond_core::write_atomic(&path, json.as_bytes()).map_err(|e| format!("{}: {e}", path.display()))?;
     Ok(())
 }
 
@@ -110,7 +110,7 @@ pub fn delete_user_theme(app: AppHandle, id: String) -> Result<(), String> {
 #[tauri::command]
 pub fn export_theme(path: String, json: String) -> Result<(), String> {
     let path = PathBuf::from(path);
-    mdeditor_core::write_atomic(&path, json.as_bytes()).map_err(|e| format!("{}: {e}", path.display()))?;
+    frond_core::write_atomic(&path, json.as_bytes()).map_err(|e| format!("{}: {e}", path.display()))?;
     Ok(())
 }
 

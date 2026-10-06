@@ -9,7 +9,7 @@
 
 use std::path::{Path, PathBuf};
 
-use mdeditor_core::{DocumentInfo, Eol, FileDocument, SaveError};
+use frond_core::{DocumentInfo, Eol, FileDocument, SaveError};
 use serde::Serialize;
 
 use crate::hash_hex;

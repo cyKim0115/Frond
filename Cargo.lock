@@ -1116,6 +1116,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "frond"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "encoding_rs",
+ "frond-core",
+ "notify-debouncer-full",
+ "percent-encoding",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-single-instance",
+ "tempfile",
+ "webview2-com",
+ "windows 0.62.2",
+ "winreg",
+]
+
+[[package]]
+name = "frond-core"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "chardetng",
+ "encoding_rs",
+ "serde",
+ "similar",
+ "tempfile",
+ "thiserror 2.0.21",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "fsevent-sys"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2128,42 +2164,6 @@ dependencies = [
  "log",
  "tendril",
  "web_atoms",
-]
-
-[[package]]
-name = "mdeditor"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "encoding_rs",
- "mdeditor-core",
- "notify-debouncer-full",
- "percent-encoding",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-single-instance",
- "tempfile",
- "webview2-com",
- "windows 0.62.2",
- "winreg",
-]
-
-[[package]]
-name = "mdeditor-core"
-version = "0.1.0"
-dependencies = [
- "blake3",
- "chardetng",
- "encoding_rs",
- "serde",
- "similar",
- "tempfile",
- "thiserror 2.0.21",
- "windows-sys 0.61.2",
 ]
 
 [[package]]
