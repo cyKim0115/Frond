@@ -40,7 +40,9 @@ describe("normalizeSetting", () => {
 
   it("선택지는 목록에 있는 값만 받는다", () => {
     expect(normalizeSetting(SETTINGS.theme, "dark")).toBe("dark");
-    expect(normalizeSetting(SETTINGS.theme, "sepia")).toBeUndefined();
+    expect(normalizeSetting(SETTINGS.theme, "no-such-theme")).toBeUndefined();
+    // 추천 테마는 앱에 들어 있어 폴더 없이도 받는다 (store-launch A-2)
+    expect(normalizeSetting(SETTINGS.theme, "sepia")).toBe("sepia");
   });
 });
 
@@ -51,7 +53,7 @@ describe("저장·알림", () => {
   });
 
   it("저장된 값이 깨졌으면 그 항목만 기본값으로 읽는다", () => {
-    localStorage.setItem("mdeditor.settings", JSON.stringify({ headingScrollOffset: 48, theme: "sepia" }));
+    localStorage.setItem("mdeditor.settings", JSON.stringify({ headingScrollOffset: 48, theme: "no-such-theme" }));
     reloadSettings();
     expect(getSetting("headingScrollOffset")).toBe(48);
     expect(getSetting("theme")).toBe(SETTINGS.theme.default);

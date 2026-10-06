@@ -1,17 +1,14 @@
 /**
  * '추천 테마' 팝업 — 설정 '테마' 탭 목록 머리의 '추천 테마…' 버튼이 연다 (src/theme-panel.ts가 만든다).
- * 항목을 '추가'하면 사용자 테마로 테마 폴더에 저장되고(가져오기와 같은 길) 테마 목록·선택지에 나타난다.
- * '적용'은 아직 없으면 추가한 뒤 바로 고른다 — 팝업은 열어 둔 채 여러 테마를 차례로 입혀 볼 수 있다.
+ * 추천 테마는 앱에 들어 있어(theme/catalog.ts) 설정 선택지에 늘 있다. 이 팝업은 팔레트·설명을 보며 고르는 곳이고,
+ * '적용'은 설정 '테마'로 고른다 — 팝업은 열어 둔 채 여러 테마를 차례로 입혀 볼 수 있다.
+ * 2026-10-06 전에는 '추가'하면 테마 폴더에 복사했다(store-launch A-2에서 바꿈 — 그 사본은 catalog.ts가 한 번만 보이게 한다).
  */
 
 import { RECOMMENDED_GROUPS, RECOMMENDED_THEMES, type RecommendedTheme } from "./theme/recommended";
 import type { ThemeDef } from "./theme/themes";
 
 export interface RecommendedDialogHooks {
-  /** 이미 테마 목록에 있는 id인지 */
-  has(id: string): boolean;
-  /** 테마 목록에 더한다. 하나라도 실패하면 false (이유는 hooks 쪽이 알린다) */
-  add(themes: readonly ThemeDef[]): Promise<boolean>;
   /** 설정 '테마'로 고른다 */
   apply(id: string): void;
   /** 지금 화면에 적용된 테마 id */
@@ -30,27 +27,12 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
 export function initRecommendedDialog(hooks: RecommendedDialogHooks): { open(): void; refresh(): void } {
   const dialog = document.querySelector<HTMLDialogElement>("#recommended-dialog")!;
   const body = dialog.querySelector<HTMLElement>("#recommended-body")!;
-  const addAll = dialog.querySelector<HTMLButtonElement>("#recommended-add-all")!;
-  /** 저장 중에는 버튼을 막는다 (테마 폴더 쓰기가 끝나기 전에 또 누르지 않게) */
-  let busy = false;
-
-  async function run(task: () => Promise<void>): Promise<void> {
-    if (busy) return;
-    busy = true;
-    render();
-    try {
-      await task();
-    } finally {
-      busy = false;
-      render();
-    }
-  }
 
   function item(entry: RecommendedTheme): HTMLElement {
     const { theme } = entry;
-    const added = hooks.has(theme.id);
+    const current = theme.id === hooks.currentThemeId();
     const li = el("li", "theme-item");
-    if (added && theme.id === hooks.currentThemeId()) li.setAttribute("aria-current", "true");
+    if (current) li.setAttribute("aria-current", "true");
 
     const info = el("span", "theme-info");
     info.append(el("span", "theme-name", theme.name));
@@ -69,21 +51,12 @@ export function initRecommendedDialog(hooks: RecommendedDialogHooks): { open(): 
     info.append(meta);
 
     const actions = el("span", "theme-item-actions");
-    const add = el("button", "theme-btn", added ? "추가됨" : "추가");
-    add.type = "button";
-    add.disabled = added || busy;
-    add.title = added ? "이미 테마 목록에 있습니다" : "테마 목록에 더합니다 (테마 폴더에 저장)";
-    add.addEventListener("click", () => void run(async () => void (await hooks.add([theme]))));
-    const apply = el("button", "theme-btn", "적용");
+    const apply = el("button", "theme-btn", current ? "사용 중" : "적용");
     apply.type = "button";
-    apply.disabled = busy;
-    apply.title = added ? "이 테마로 바꿉니다" : "테마 목록에 더하고 바로 적용합니다";
-    apply.addEventListener("click", () =>
-      void run(async () => {
-        if (hooks.has(theme.id) || (await hooks.add([theme]))) hooks.apply(theme.id);
-      }),
-    );
-    actions.append(add, apply);
+    apply.disabled = current;
+    apply.title = "이 테마로 바꿉니다 (설정 '테마')";
+    apply.addEventListener("click", () => hooks.apply(theme.id));
+    actions.append(apply);
 
     li.append(hooks.chips(theme), info, actions);
     return li;
@@ -104,14 +77,8 @@ export function initRecommendedDialog(hooks: RecommendedDialogHooks): { open(): 
       }),
     );
     body.scrollTop = keep;
-    const missing = RECOMMENDED_THEMES.filter((e) => !hooks.has(e.theme.id)).length;
-    addAll.textContent = missing ? `모두 추가 (${missing})` : "모두 추가됨";
-    addAll.disabled = missing === 0 || busy;
   }
 
-  addAll.addEventListener("click", () =>
-    void run(async () => void (await hooks.add(RECOMMENDED_THEMES.map((e) => e.theme).filter((t) => !hooks.has(t.id))))),
-  );
   // 바깥(backdrop)을 누르면 닫는다
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog) dialog.close();

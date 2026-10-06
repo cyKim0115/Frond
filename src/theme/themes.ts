@@ -249,7 +249,7 @@ export function isBuiltinTheme(id: string): boolean {
 }
 
 /**
- * 사용자 테마 — 진짜 원본은 테마 폴더(`%APPDATA%\Frond\themes`, 백엔드 themes.rs)다.
+ * 사용자 테마 — 진짜 원본은 테마 폴더(`문서\Frond\themes`, 백엔드 themes.rs)다.
  * 폴더는 비동기로 읽히므로 마지막 목록을 localStorage에 캐시해 두고 시작할 때 동기로 쓴다 — 설정 모듈이
  * 저장된 `theme: "내-테마"`를 읽는 순간 목록에 없으면 기본값으로 되돌려 버리기 때문이다
  */
@@ -257,7 +257,8 @@ const CACHE_KEY = "userThemes";
 const isArray = (v: unknown): v is unknown[] => Array.isArray(v);
 /** 처음 쓸 때 캐시에서 읽는다 — 모듈 초기화 중에 아래의 검증 상수를 쓰지 않게 */
 let userThemes: readonly ThemeDef[] | null = null;
-function users(): readonly ThemeDef[] {
+/** 테마 폴더의 사용자 테마(캐시). 내장·추천과 합친 목록은 catalog.ts `listThemes` — 같은 배열이면 목록도 그대로다 */
+export function listUserThemes(): readonly ThemeDef[] {
   userThemes ??= readPref(CACHE_KEY, [], isArray).flatMap((raw) => {
     const parsed = validateTheme(raw, "");
     return parsed.ok ? [parsed.theme] : [];
@@ -269,15 +270,6 @@ function users(): readonly ThemeDef[] {
 export function setUserThemes(list: readonly ThemeDef[]): void {
   userThemes = list.filter((t) => !isBuiltinTheme(t.id));
   writePref(CACHE_KEY, userThemes);
-}
-
-/** 내장 → 사용자 순서 */
-export function listThemes(): readonly ThemeDef[] {
-  return [...BUILTIN_THEMES, ...users()];
-}
-
-export function findTheme(id: string): ThemeDef | undefined {
-  return listThemes().find((t) => t.id === id);
 }
 
 /** 빠진 토큰을 `base` 기본 팔레트로 채운다 */
