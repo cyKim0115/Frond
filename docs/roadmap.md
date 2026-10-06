@@ -16,6 +16,8 @@
 | Phase 0 추가 | WPF + WebView2 hello 앱으로 Windows 시작 시간·메모리 비교 측정 | 사용자 선택 |
 | RAG 캡처 | MVP(Phase 2) 완료 후 `capture-to-rag` — 2026-10-01 위임으로 MVP 닫을 때 묻지 않고 실행. **2026-10-06 실행**(rag `docs/assets/2026-10-06-mdeditor-v1-mvp-lessons.md`) | 사용자 결정 · `decisions/ideas/20261001-v1-open-decisions.md` D6 |
 | V2 범위·순서 | **B 쓰임새 순** — 탭 → Mermaid·Alerts → 분할·트리 → 내보내기·KaTeX (2026-10-06 사용자 위임) | `decisions/ideation/20261006-v2-scope.md` |
+| 소스 라이선스 | **MIT 확정**(LICENSE), "Frond" 이름·앱 아이콘은 별도 보유(`TRADEMARKS.md`) (2026-10-06 사용자) | `decisions/ideas/20261006-license.md` |
+| 배포·수익화 | **Microsoft Store MSIX(무료 앱) + Durable add-on 선택 구매** — 사용자 테마 만들기·전용 테마 해금, 드문 구매 권유 (2026-10-06 사용자) | `decisions/ideas/20261006-store-monetization.md` |
 
 ## Phase 0 — 스파이크와 코어 (구현 전 검증)
 
@@ -114,6 +116,20 @@ Mermaid는 tiny 지연 로드·strict·테마 따라 다시 그림, KaTeX는 수
 - 표 셀 편집(중첩 EditorView 또는 contentEditable 셀), 체크박스 클릭 토글, 이미지 위젯 상대경로
 - 완료 조건: V1 체크 전부 + 한글 IME 시나리오 ①–⑧ 통과 + 무편집 저장 바이트 불변 유지. 실패하면 제품 브랜치에 머지하지 않고 `archived-exp`
 
+## 배포 트랙 — Store·선택 구매 (2026-10-06 결정)
+
+Phase와 따로 가는 배포 작업이다. 결정은 [`decisions/ideas/20261006-store-monetization.md`](decisions/ideas/20261006-store-monetization.md), 먼저 할 일과 순서는 [`store-launch.md`](store-launch.md).
+**상태: 계획 2026-10-06 — R-0 완료, R-1은 "실행" 지시 대기.** 근거 조사: [`research/reports/`](research/reports/)(배포 방법·유료 해금 방식).
+
+| 작업 | 내용 | 완료 조건 |
+|------|------|-----------|
+| R-0 기반 | LICENSE(MIT)·`TRADEMARKS.md`, 결정 기록, 이 트랙 | ✅ 2026-10-06 |
+| R-1 구조 정리 (Store 없이) | 설치 방식 판정(`install_kind`), 추천 테마 카탈로그 분리(+ 테마 폴더 위치), 권리 판정 뼈대(개발용 공급자)·`effectiveTheme()` 테마 게이트·설정 '정보' 탭, 구매 권유 스케줄러, 개인정보처리방침·Store 설명문 | 개발용 공급자로 무료 ↔ 구매자 전환 시 사용자 테마 대체·복귀(설정값 보존), 권유 가드 테스트 통과 |
+| R-2 MSIX 로컬 패키지 | `tauri-windows-bundle`/winapp CLI, 매니페스트(파일 연결 + `MigrationProgId MdEditor.Markdown`, 실행 별칭), `assoc.rs` 3곳·데이터 폴더·WebView2 검사·AI 훅 별칭 경로 분기. Store판에는 updater를 넣지 않는다 | 로컬 MSIX 설치본에서 `.md` 연결·기본 앱 판정·테마 폴더 열기·AI 훅 열기·single-instance 동작 |
+| R-3 Store 제출·결제 실기 | Partner Center(계정 유형은 사용자 결정), Private audience 첫 제출, 숨긴 Durable add-on, Store 공급자(`StoreContext`) | Store 설치본에서 프로모션 코드로 해금·복원, 오프라인 재실행 시 유지 |
+| R-4 공개 | 가격·add-on 공개·앱 Public | V1 닫기(B-2·B-9), 세무 확인 |
+| R-5 Store 밖 (뒤쪽) | GitHub Releases + `tauri-action` + Tauri updater(NSIS판) → winget `cyKim.Frond` → 코드 서명(SignPath 등). NSIS판은 해금을 모두 연다 | — |
+
 ## 가로지르는 규칙
 
 - **테스트 매트릭스**: Windows 10 19045(개발 PC) + Windows 11 24H2/25H2, 한국어 MS IME 새/이전(`ConfigureImeVersion`), WebView2 Evergreen 최신. WebView2 2주 릴리스(G5)마다 IME 스모크 테스트
@@ -124,7 +140,7 @@ Mermaid는 tiny 지연 로드·strict·테마 따라 다시 그림, KaTeX는 수
 
 ## 하지 않는 것
 
-- 크로스플랫폼 빌드 · 노트 앱 기능(볼트·백링크·동기화) · 플러그인 시스템 · MSI/MSIX 패키징 · Typora 테마 100% 호환(변수명 `--bg-color` 등은 따르되 보장 안 함. 사용자 테마는 S-4의 자체 토큰 형식) · 임의 CSS 테마 가져오기(S-4는 색 토큰만) · 클라우드 동기화 충돌 병합
+- 크로스플랫폼 빌드 · 노트 앱 기능(볼트·백링크·동기화) · 플러그인 시스템 · MSI 패키징(MSIX는 2026-10-06 Store 배포로 하기로 — 배포 트랙) · Store EXE 제출 · 사이드로드 MSIX · Typora 테마 100% 호환(변수명 `--bg-color` 등은 따르되 보장 안 함. 사용자 테마는 S-4의 자체 토큰 형식) · 임의 CSS 테마 가져오기(S-4는 색 토큰만) · 클라우드 동기화 충돌 병합
 
 ## 백로그
 

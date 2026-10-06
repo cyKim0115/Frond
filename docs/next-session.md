@@ -1,6 +1,6 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J)
+작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store 출시 결정·오늘 할 일 §3-9·§5)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
 이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
@@ -255,6 +255,9 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 7. ~~AI 훅 컨테이너 실행~~ — 2026-10-06 `open-new-md.ps1`이 WMI(`Win32_Process.Create`)로 밖에서 띄우게 고침(실패하면 `Start-Process`). 시험 앱으로 확인: WMI로 띄우면 실제 `%LOCALAPPDATA%`에, 예전 방식은 Claude 패키지 LocalCache에 썼다. 원래 메모: AI 훅이 Claude 데스크톱 세션에서 앱을 **새로** 띄우면 그 앱도 MSIX 컨테이너 안에서 돈다 → 테마·초안 쓰기가 Claude 패키지 LocalCache로 가서 사용자가 직접 띄운 앱에는 안 보인다(이미 떠 있는 앱으로 넘길 때는 상관없음). `integrations/open-new-md.ps1`이 `Win32_Process.Create`(WMI)나 탐색기 경유로 밖에서 띄우게 고친다. Codex 등 컨테이너 밖 도구는 지금 그대로. 2026-10-06 Frond 이전 설치 중 발견
 8. **남은 MdEditor 이름 → Frond 정리 (2026-10-06 할 일, 사용자가 실행 지시하면)** — 저장소 이름·크레이트·localStorage 접두사는 바꾸고
    ProgId·identifier·exe 이름은 남긴다. 범위·순서·검증: [`frond-rename.md`](frond-rename.md)
+9. **Store 출시·선택 구매 먼저 할 일 (2026-10-06 할 일, 사용자가 실행 지시하면)** — 결정: Store MSIX + Durable add-on, 라이선스 MIT 확정(LICENSE·`TRADEMARKS.md` 추가 완료).
+   에이전트 A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문.
+   **8번 이름 정리를 먼저** 하고 새 워크트리 `feat/store`에서. 순서·완료 조건: [`store-launch.md`](store-launch.md)
 
 ## 4. 보강할 실측
 
@@ -263,7 +266,9 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 
 ## 5. 보류 중인 사용자 결정
 
-없음. 2026-10-01 사용자 위임으로 6건을 정리했다 — [`decisions/ideas/20261001-v1-open-decisions.md`](decisions/ideas/20261001-v1-open-decisions.md) (원문 HTML 허용 목록, `www.` 자동 링크, 대용량 샘플 미커밋, EOL 재대응 유지, 줄바꿈 변환·비교 백로그 순서, RAG 캡처 시점). 남은 확인은 §2 D뿐이다.
+**Store 출시 (2026-10-06, [`store-launch.md`](store-launch.md) 사용자 몫)**: U-1 계정 유형(개인 / 사업자등록 + 회사 계정 — 개인 → 회사 전환 불가, 첫 공개 제출 전), U-2 세무사 상담(첫 유료 판매 전), U-3 테마 폴더 위치(말이 없으면 `Documents\Frond\themes`), 가격(add-on 만들 때).
+
+그 밖에는 없음. 2026-10-01 사용자 위임으로 6건을 정리했다 — [`decisions/ideas/20261001-v1-open-decisions.md`](decisions/ideas/20261001-v1-open-decisions.md) (원문 HTML 허용 목록, `www.` 자동 링크, 대용량 샘플 미커밋, EOL 재대응 유지, 줄바꿈 변환·비교 백로그 순서, RAG 캡처 시점). 남은 확인은 §2 D뿐이다.
 
 ## 6. 열린 질문
 
