@@ -74,6 +74,10 @@ export interface SourceEditor {
   topLine(): number;
   /** `line`(0 기준)을 화면 맨 위로. `moveCursor`면 커서도 그 줄 첫머리로 */
   scrollToLine(line: number, moveCursor?: boolean): void;
+  /** 화면 맨 위 위치를 소수 줄로 (분할 뷰 스크롤 동기, 로드맵 3-3) — 3.5면 4번째 줄의 절반이 위로 지나갔다 */
+  topLineFraction(): number;
+  /** 소수 줄 위치를 화면 맨 위로 (스크롤만, 커서는 그대로) */
+  scrollToLineFraction(line: number): void;
   insertAtCursor(text: string): void;
   focus(): void;
   openSearch(): void;
@@ -165,6 +169,19 @@ export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): Sou
         ...(moveCursor ? { selection: { anchor: pos } } : {}),
         effects: EditorView.scrollIntoView(pos, { y: "start" }),
       });
+    },
+    topLineFraction() {
+      const top = Math.max(0, view.scrollDOM.scrollTop - view.documentPadding.top);
+      const block = view.lineBlockAtHeight(top);
+      const line = view.state.doc.lineAt(block.from).number - 1;
+      return line + (block.height > 0 ? Math.min(1, Math.max(0, (top - block.top) / block.height)) : 0);
+    },
+    scrollToLineFraction(line) {
+      const doc = view.state.doc;
+      const index = Math.min(doc.lines - 1, Math.max(0, Math.floor(line)));
+      const frac = Math.min(1, Math.max(0, line - index));
+      const block = view.lineBlockAt(doc.line(index + 1).from);
+      view.scrollDOM.scrollTop = block.top + frac * block.height + view.documentPadding.top;
     },
     insertAtCursor: (text) => insert(view, text),
     focus: () => view.focus(),
