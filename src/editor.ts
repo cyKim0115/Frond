@@ -8,6 +8,7 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { getChunks, unifiedMergeView, updateOriginalDoc } from "@codemirror/merge";
 import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from "@codemirror/search";
 import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
@@ -18,6 +19,8 @@ export interface EditorHooks {
   onChange(): void;
   /** 붙여넣은 이미지 파일 — 처리했으면 삽입할 마크다운 텍스트를 돌려준다 */
   onPasteImages(files: File[]): Promise<string | null>;
+  /** 비교 중 원본이 바뀌었다 ('내 것 유지'로 고름 — 문서는 그대로라 onChange가 오지 않는다) */
+  onCompareChange?(): void;
 }
 
 const v = (name: string) => `var(--${name})`;
@@ -56,6 +59,11 @@ const PHRASES = EditorState.phrases.of({
   "Go to line": "줄로 이동",
   go: "이동",
   "Control character": "제어 문자",
+  // 비교(로드맵 3-4, @codemirror/merge) — 원본(A)은 디스크, 편집기(B)는 편집 중인 내용
+  Accept: "내 것 유지",
+  Reject: "디스크 것으로",
+  "Revert this chunk": "이 부분 되돌리기",
+  "$ unchanged lines": "바뀌지 않은 $줄",
 });
 
 export interface SourceEditor {
@@ -81,11 +89,23 @@ export interface SourceEditor {
   insertAtCursor(text: string): void;
   focus(): void;
   openSearch(): void;
+  /**
+   * 비교 (로드맵 3-4) — `original`(디스크 내용)과 지금 편집기 내용의 차이를 편집기 안에 보인다. 지운 줄은 빨강, 더한 줄은 초록,
+   * 부분마다 '내 것 유지'·'디스크 것으로'. null이면 끈다. 탭마다 편집기 상태에 들어 있어 탭을 오가도 남는다
+   */
+  setCompare(original: string | null): void;
+  /** 비교 중이면 남은 차이 수, 아니면 null */
+  compareChunks(): number | null;
+  /** 다크 테마면 true — 비교 색 등 CM6 기본 테마의 라이트·다크 변형을 고른다 */
+  setDark(dark: boolean): void;
 }
 
 export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): SourceEditor {
   const readOnly = new Compartment();
   const wrapping = new Compartment();
+  const compare = new Compartment();
+  const darkness = new Compartment();
+  let darkOn = false;
   // setText가 상태를 새로 만들어도 유지할 값
   let readOnlyOn = false;
   let wrapOn = true;
@@ -103,9 +123,12 @@ export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): Sou
     EditorState.lineSeparator.of("\n"),
     readOnly.of(EditorState.readOnly.of(readOnlyOn)),
     wrapping.of(wrapOn ? EditorView.lineWrapping : []),
+    compare.of([]),
+    darkness.of(EditorView.darkTheme.of(darkOn)),
     keymap.of([{ key: "Mod-h", run: openSearchPanel }, ...searchKeymap, ...historyKeymap, ...defaultKeymap, indentWithTab]),
     EditorView.updateListener.of((update) => {
       if (update.docChanged) hooks.onChange();
+      if (update.transactions.some((tr) => tr.effects.some((e) => e.is(updateOriginalDoc)))) hooks.onCompareChange?.();
     }),
     EditorView.domEventHandlers({
       paste(event, view) {
@@ -142,7 +165,33 @@ export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): Sou
     },
     setState(state) {
       view.setState(state);
-      view.dispatch({ effects: wrapping.reconfigure(wrapOn ? EditorView.lineWrapping : []) });
+      view.dispatch({
+        effects: [wrapping.reconfigure(wrapOn ? EditorView.lineWrapping : []), darkness.reconfigure(EditorView.darkTheme.of(darkOn))],
+      });
+    },
+    setCompare(original) {
+      view.dispatch({
+        effects: compare.reconfigure(
+          original === null
+            ? []
+            : unifiedMergeView({
+                original,
+                mergeControls: true,
+                gutter: true,
+                highlightChanges: true,
+                syntaxHighlightDeletions: true,
+                collapseUnchanged: { margin: 3, minSize: 8 },
+              }),
+        ),
+      });
+    },
+    compareChunks() {
+      const result = getChunks(view.state);
+      return result ? result.chunks.length : null;
+    },
+    setDark(dark) {
+      darkOn = dark;
+      view.dispatch({ effects: darkness.reconfigure(EditorView.darkTheme.of(dark)) });
     },
     setReadOnly(value) {
       readOnlyOn = value;
