@@ -1,6 +1,6 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 2 V1.1 다듬기 구현 — MVP 닫기보다 먼저)
+작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 1 에이전트 몫 완료 — V1 검수 SHIPPABLE 조건부, 단계 3 B 진행)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
 이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
@@ -21,6 +21,17 @@
 | 셸 트랙 S-1~S-4 | 구현 완료 2026-09-30 야간 + 2026-10-01 추천 테마 추가 → **실기 닫음 2026-10-01** (사용자: 잘 동작하거나 충분함). 테마 파일 형식 2026-10-01 확정 |
 | 보류 결정 6건 + 큰 문서 인쇄 | **2026-10-01 정리 완료** (사용자 위임) — [`decisions/ideas/20261001-v1-open-decisions.md`](decisions/ideas/20261001-v1-open-decisions.md). 구현할 것(D1·D2·D7)은 **2026-10-02 구현 완료** |
 | [`plan.md`](plan.md) 단계 2 V1.1 다듬기 | **구현 완료 2026-10-06** (사용자: 단계 1 MVP 닫기보다 먼저) — 줄바꿈 변환·큰 문서 블록 묶음·오른쪽 클릭 인쇄 확인·상태바 글자 수·슬러그/각주. 설치본 재설치 2026-10-06 완료 |
+| [`plan.md`](plan.md) 단계 1 MVP 닫기 | **에이전트 몫 완료 2026-10-06** — V1 검수 [`fidelity-report.md`](references/assets/20260929-typora-md-editors/fidelity-report.md) **SHIPPABLE 조건부**(조건: 사용자 B-2·B-9), 지적된 작은 빈틈 처리, 스펙 동기화, RAG 캡처(D6). **V1은 B-2·B-9만 통과하면 완료** |
+| 단계 3 V2 범위 | **B 쓰임새 순으로 진행 2026-10-06** (사용자: "나머지 단계도 그냥 작업해보면서 검증해야할것들에 리스트업만") — [`decisions/ideation/20261006-v2-scope.md`](decisions/ideation/20261006-v2-scope.md) |
+
+### 2026-10-06 작업 — 단계 1 MVP 닫기 (에이전트 몫)
+
+- **V1 검수**: readonly 서브에이전트(Fidelity QA)가 [`fidelity-report.md`](references/assets/20260929-typora-md-editors/fidelity-report.md)를 썼다 — **SHIPPABLE 조건부**, 조건은 B-2 한글 IME·B-9 탐색기 드래그 통과. 하나라도 실패하면 그 항목이 `NEEDS_FIX`(할 일은 보고서 Priority fixes 1·2)
+- **작은 빈틈 처리**(보고서 Priority fix 4): 조합 중 `Ctrl+S`·`Ctrl+P`를 앱이 받아 글자 확정 뒤 저장·인쇄(전에는 `Ctrl+S`는 확정만, `Ctrl+P`는 큰 문서 확인을 건너뛴 기본 인쇄), WebView2 150 미만이면 시작 배너, 문서 폴더 밖(`../`·다른 드라이브) 이미지에 이유 `title`, 사라졌다가 같은 내용으로 다시 생긴 파일의 사라짐 배너 거두기, 지난 이미지 실패 배너는 다음 시도 때 거두기
+- **스펙 동기화**(Priority fix 3): [`system-spec.md`](references/assets/20260929-typora-md-editors/system-spec.md) "구현 반영" 절 — asset scope 재귀·누적, CSP 원격 이미지 허용, Open decisions 1~3(TOC 기본 보임·`Ctrl+\`, 줌 50–300 %·기억 안 함), Lossy 표현, LF 고정, 로컬 테스트 필수를 확정으로 적고 Approval 갱신
+- **RAG 캡처**(D6): rag `docs/assets/2026-10-06-mdeditor-v1-mvp-lessons.md`(rag `b47f31e`), Discord RAG ok
+- `v0.1.0` 태그는 B-2·B-9 통과 뒤로(plan.md §4)
+- 확인: vitest 105건, cargo 52건, 타입 검사
 
 ### 2026-10-06 작업 — V1.1 다듬기 (plan.md 단계 2)
 
@@ -73,7 +84,7 @@
 ### B. Phase 2 편집·저장
 
 **나눠 맡기 (2026-10-01)**: B-2(한글 IME)만 사용자가 직접 한다 — 자동 입력(CDP `insertText`·컴퓨터 제어 `type`)은 완성 글자를 넣어 IME 조합 단계를 건너뛰므로 근거가 안 된다. 나머지 B는 에이전트가 실제 앱에서 확인한다: 웹뷰 안 조작은 CDP(메모리 `app-e2e-cdp`), OS가 처리하는 것(`Alt+F4`, 탐색기에서 파일 끌어다 놓기, 다른 이름으로 저장 네이티브 대화상자, 설치기)은 데스크톱 앱 Computer use.
-B-2 조합 중 `Ctrl+S`: 단축키 처리기가 조합 중 keydown을 건너뛴다([`main.ts`](../src/main.ts) `isComposing || keyCode 229`). 첫 `Ctrl+S`가 글자만 확정하고 저장은 안 할 수 있다 — 유실이 아니면 통과지만, **화면엔 글자가 있는데 저장 표시가 사라지고 파일엔 없으면 실패**다.
+B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 **글자를 확정한 뒤 저장**하고 편집기로 포커스를 돌린다(전에는 첫 `Ctrl+S`가 확정만 했다). **화면엔 글자가 있는데 저장 표시가 사라지고 파일엔 없으면 실패**다. 조합 중 `Ctrl+P`도 큰 문서 확인을 거친다.
 
 1. `Ctrl+/` 보기 ↔ 소스: 보던 위치가 이어지는지. 상태바 '보기/소스' 클릭으로도. 소스 → 보기 → 소스로 바로 돌아오면 **커서·선택이 그대로**인지, 보기에서 조금 내렸다 와도 커서가 남는지, 멀리 이동했다 오면 보던 줄로 가는지
 2. **한글 IME**: 소스 모드에서 한글 입력, 조합 중 `Ctrl+S`·버튼 클릭·Alt+Tab, 자동 줄바꿈 경계 입력, 선택 후 Backspace → 글자 유실·중복 없음 (Phase 0 시나리오 ①–⑦)
@@ -154,7 +165,8 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 2. ~~큰 문서 인쇄 가드~~(D7) — 2026-10-02 완료(`7c0b4f4`), 기준은 사용자 지정 1 MB 이상
 3. ~~원문 HTML 허용 목록~~(D1) — 2026-10-02 완료(`4bc62c3`)
 4. ~~`www.` 자동 링크~~(D2) — 2026-10-02 완료(`8ec7d4a`)
-5. B·C 결과 → `fidelity-report.md` → MVP 닫기 → `capture-to-rag`(D6) → 로드맵 백로그 정리(D5: 줄바꿈 변환 먼저)
+5. ~~B·C 결과 → `fidelity-report.md` → MVP 닫기 → `capture-to-rag`(D6)~~ — 2026-10-06 에이전트 몫 완료(SHIPPABLE 조건부). B-2·B-9 통과하면 `ASSET.md` 상태 `verified`·`v0.1.0` 태그(사용자 결정)
+6. 단계 4~6 — [`plan.md`](plan.md) 단계 3 실행 순서대로. 단계마다 사용자 실기 목록을 §2에 더한다
 
 ## 4. 보강할 실측
 

@@ -3,7 +3,7 @@
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
 **현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이다. 에이전트 §3 2~4(인쇄 확인·원문 HTML 허용 목록·`www.` 자동 링크)는 2026-10-02 완료, 남은 §3-5는 B-2·B-9 통과 뒤. 통과하면 MVP(V1) 완료.
-[docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기: 줄바꿈 변환·큰 문서 블록 묶음·오른쪽 클릭 인쇄 확인·상태바 글자 수·슬러그/각주)는 사용자 요청으로 MVP 닫기보다 먼저 2026-10-06 구현·재설치 완료.**
+[docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기)는 2026-10-06 구현·재설치 완료. 단계 1 에이전트 몫(V1 검수 [fidelity-report](docs/references/assets/20260929-typora-md-editors/fidelity-report.md) SHIPPABLE 조건부·스펙 동기화·RAG 캡처)도 2026-10-06 완료 — V1은 B-2·B-9만 남았다. 단계 3은 B(쓰임새 순)로 진행, 이후 단계는 사용자 확인을 기다리지 않고 진행하며 실기 목록은 next-session §2에 모은다(사용자 지시 2026-10-06).**
 할 일·열린 결정은 [docs/next-session.md](docs/next-session.md) §2·§3, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙

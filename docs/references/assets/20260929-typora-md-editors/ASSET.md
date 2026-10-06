@@ -140,7 +140,7 @@
 
 - `reference-brief.md`: [reference-brief.md](reference-brief.md) — Evidence ledger T·W·F·R·O·S·E·A·G·V (약 170행), 규칙·수치, 파일 수명주기 엣지 케이스
 - `system-spec.md`: [system-spec.md](system-spec.md) — Phase 1 뷰어 MVP 스펙 (EARS 12건, 파일 열기 경로·렌더·UI·외부 변경·NSIS 훅, 상태표·엣지 케이스, 열린 결정 3건)
-- `fidelity-report.md`: 없음
+- `fidelity-report.md`: [fidelity-report.md](fidelity-report.md) — V1 MVP 검수 2026-10-06 (readonly 서브에이전트), **SHIPPABLE 조건부**(B-2 한글 IME·B-9 탐색기 드래그 사용자 확인). 통과하면 이 자산을 `verified`로
 - Implementation / PR / scene notes: [`docs/roadmap.md`](../../../roadmap.md)
 
 ## Reuse hints
