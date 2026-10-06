@@ -49,6 +49,8 @@ docs/store-launch.md   Store 출시·선택 구매 먼저 할 일 (단계 7, 사
 docs/store-listing.md  Store 제출 문구 초안 (한·영 설명·기능 목록·add-on·스크린샷·IARC 메모)
 docs/gitbook-site.md   GitBook 사용 설명서 꾸밀 계획 (오늘 할 일 A-1~A-6·사용자 U-1~U-2, 꾸밈 값·목차·완료 조건)
 docs/website-launch.md 제품 웹사이트(fork.dev식, website/ Astro → Cloudflare) 오늘 할 일·Cursor 핸드오프 (도메인 전엔 로컬, 원고·장면 목록)
+website/               제품 웹사이트 — Astro 정적(src/config.ts 공개 상태 한 곳), wrangler.jsonc(배포는 사용자 몫), scenes/·scripts/capture-scenes.mjs(사용 장면 캡처, 설명서 그림과 공용)
+CHANGELOG.md           릴리스 노트 원본 — 사이트 /releases/·GitHub 릴리스가 같이 쓴다
 docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
@@ -94,6 +96,7 @@ npm install                       # 처음 한 번 (Rust는 cargo가 알아서)
 npm run app:dev -- -- 파일.md      # Tauri dev (Vite 1422 + cargo run). 인수는 argv 열기 경로 테스트
 npm run app:build                 # 릴리스 + NSIS 설치기 → target/release/bundle/nsis/
 npm test                          # vitest (src/**/*.test.ts, 렌더 파이프라인)
+cd website; npm ci; npm run build  # 제품 웹사이트 (cf:dev = wrangler dev, cf:check = 배포 모의, scenes = 장면 캡처)
 npx tsc --noEmit                  # 타입 검사
 cargo test                        # 코어 + 백엔드 단위 테스트
 cd crates/frond-core; cargo run --example roundtrip -- ../../samples/raw   # 제자리 무편집 저장 → git status 깨끗

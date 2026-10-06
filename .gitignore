@@ -19,6 +19,11 @@ desktop.ini
 # Node / Vite
 node_modules/
 dist/
+
+# 제품 웹사이트 (website/, Astro·wrangler)
+website/.astro/
+.wrangler/
+website/public/_redirects
 *.local
 npm-debug.log*
 
