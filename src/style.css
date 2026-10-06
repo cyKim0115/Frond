@@ -15,6 +15,9 @@
   --sidebar-bg: #f0f3f0;
   --hover: color-mix(in srgb, var(--fg) 7%, transparent);
   --pressed: color-mix(in srgb, var(--fg) 12%, transparent);
+  /* 안 고른 탭 면 — 뒤에 꽂힌 갈피처럼 본문보다 어둡게. 라이트는 테마 선 색을 깔아 색조를 따르고, 다크는 아래에서 그림자 쪽으로 */
+  --tab-bg: color-mix(in srgb, var(--line), var(--sidebar-bg) 35%);
+  --tab-line: color-mix(in srgb, var(--line), var(--fg) 18%);
   --titlebar-h: 36px;
   --toggle-w: 44px;
   --statusbar-h: 24px;
@@ -35,6 +38,7 @@
     --on-accent: #1b2221;
     --danger: #f85149;
     --sidebar-bg: #262e2c;
+    --tab-bg: color-mix(in srgb, var(--bg), #000 32%);
     color-scheme: dark;
   }
 }
@@ -47,6 +51,7 @@
   --on-accent: #1b2221;
   --danger: #f85149;
   --sidebar-bg: #262e2c;
+  --tab-bg: color-mix(in srgb, var(--bg), #000 32%);
   color-scheme: dark;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -368,7 +373,9 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
 #titlebar { transition: padding-left var(--panel-dur) var(--panel-ease); }
 /* 탐색 영역이 닫혀 있고 목차도 없으면 토글이 이 띠 위에 얹힌다 */
 #app[data-nav="closed"] #sidebar[hidden] ~ #main #titlebar { padding-left: var(--toggle-w); }
-/* ---- 탭 띠 (src/tabs.ts, 로드맵 3-1) — 제목 표시줄 가운데. 탭 사이·뒤 빈 곳은 창 이동 영역 ---- */
+/* ---- 탭 띠 (src/tabs.ts, 로드맵 3-1) — 제목 표시줄 가운데. 탭 사이·뒤 빈 곳은 창 이동 영역.
+   안 고른 탭은 어두운 면(뒤에 꽂힌 갈피), 고른 탭은 본문 색 + 테두리로 아래 문서와 이어진다.
+   띠 아래 1px 선을 고른 탭만 끊는다 ---- */
 #tabs {
   flex: 1;
   min-width: 0;
@@ -382,6 +389,7 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
   scrollbar-width: none;
 }
 #tabs::-webkit-scrollbar { display: none; }
+#tabs:not(.empty) { box-shadow: inset 0 -1px var(--tab-line); }
 /* 열린 문서가 없으면 앱 이름 */
 #tabs.empty::before {
   content: "Frond";
@@ -401,15 +409,18 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
   border: 1px solid transparent;
   border-bottom: 0;
   border-radius: 7px 7px 0 0;
+  background: var(--tab-bg);
+  box-shadow: inset 0 -1px var(--tab-line);
   color: var(--muted);
   font-size: 12px;
   cursor: default;
   user-select: none;
 }
-.tab:hover { background: var(--hover); color: var(--fg); }
+.tab:hover { background: color-mix(in srgb, var(--tab-bg), var(--bg) 45%); color: var(--fg); }
 .tab[aria-selected="true"] {
-  background: var(--sidebar-bg);
-  border-color: var(--line);
+  background: var(--bg);
+  border-color: var(--tab-line);
+  box-shadow: none;
   color: var(--fg);
 }
 .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
