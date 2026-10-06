@@ -1,4 +1,4 @@
-//! MdEditor 백엔드 — 파일 열기 경로(argv·두 번째 인스턴스·드롭)와 문서 로드.
+//! Frond 백엔드 — 파일 열기 경로(argv·두 번째 인스턴스·드롭)와 문서 로드.
 //!
 //! 파일 I/O는 fs 플러그인을 쓰지 않고 [`mdeditor_core`]만 거친다 (스택 판정 조건 3).
 
@@ -9,6 +9,7 @@ use std::sync::Mutex;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
+mod appdata;
 mod assets;
 mod assoc;
 mod drafts;
@@ -143,7 +144,7 @@ pub fn run() {
             // 웹뷰 안에서의 이동은 앱 자체 URL만 허용. 외부 링크는 프런트가 opener로 연다 (스택 판정 조건 5)
             // 제목 표시줄은 프런트가 그린다(src/titlebar.ts) — 테두리 없는 창도 가장자리 리사이즈·그림자는 런타임이 준다
             let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
-                .title("MdEditor")
+                .title("Frond")
                 .decorations(false)
                 .inner_size(1100.0, 800.0)
                 .min_inner_size(400.0, 300.0)
@@ -186,7 +187,7 @@ pub fn run() {
             themes::open_themes_folder,
         ])
         .run(tauri::generate_context!())
-        .expect("MdEditor 실행 실패");
+        .expect("Frond 실행 실패");
 }
 
 #[cfg(test)]

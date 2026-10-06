@@ -743,7 +743,7 @@ async function offerDraft(doc: DocumentPayload): Promise<void> {
 
 function updateTitle(): void {
   if (!current) return;
-  const title = `${dirty ? "● " : ""}${current.name} — MdEditor`;
+  const title = `${dirty ? "● " : ""}${current.name} — Frond`;
   document.title = title;
   setTitleText(current.name, dirty);
   if (IS_TAURI) void getCurrentWindow().setTitle(title);
