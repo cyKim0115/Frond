@@ -176,6 +176,13 @@ let editor: SourceEditor | null = null;
 let editorTab: Tab | null = null;
 /** 닫은 탭 경로 — Ctrl+Shift+T로 다시 연다 */
 const closedPaths: string[] = [];
+/** 최근에 앞으로 온 순서 (맨 앞이 활성) — 큰 문서 보기 화면을 몇 개까지 남길지 고를 때 */
+let recentTabs: Tab[] = [];
+/**
+ * 보기 화면을 그린 채로 둘 큰 문서(2 MB 초과) 탭 수 — 활성 탭 포함. 넘으면 오래 안 본 큰 문서부터 보기 화면을 비우고
+ * 앞으로 올 때 다시 그린다. 실측(2026-10-06, 디버그 빌드): 보통 문서 탭 20개 +116 MB, 10 MB 문서 탭 하나 +550 MB
+ */
+const MAX_LARGE_RENDERED = 2;
 let zoom = 1;
 
 // ---- 읽기 -----------------------------------------------------------------------
@@ -357,6 +364,7 @@ function activate(tab: Tab): void {
   if (active) stash(active);
   findBar.close();
   active = tab;
+  recentTabs = [tab, ...recentTabs.filter((t) => t !== tab)];
   for (const t of tabs) t.article.hidden = t !== tab;
   welcome.hidden = true;
   toc.replaceChildren(tab.tocList);
@@ -398,6 +406,23 @@ function activate(tab: Tab): void {
   if (!tab.draftChecked) {
     tab.draftChecked = true;
     void offerDraft(tab);
+  }
+  trimLargeTabs();
+}
+
+/** 오래 안 본 큰 문서 탭의 보기 화면을 비운다 (`MAX_LARGE_RENDERED`) — 보던 줄은 남겨 다시 그릴 때 돌아간다 */
+function trimLargeTabs(): void {
+  const rendered = recentTabs.filter((t) => t.large && !t.needsRender);
+  for (const tab of rendered.slice(MAX_LARGE_RENDERED)) {
+    if (tab === active) continue;
+    tab.restoreLine = tab.mode === "view" ? tab.viewLine : tab.editorLine;
+    tab.article.replaceChildren();
+    tab.headings = [];
+    tab.chunks = [];
+    tab.chunkHeadingStart = [];
+    tab.renderedText = null;
+    tab.needsRender = true;
+    if (syncCache?.tab === tab) syncCache = null;
   }
 }
 
@@ -481,6 +506,7 @@ async function closeTab(tab: Tab): Promise<boolean> {
   if (i < 0) return true;
   if (active === tab) stash(tab);
   tabs.splice(i, 1);
+  recentTabs = recentTabs.filter((t) => t !== tab);
   articleResize.unobserve(tab.article);
   tab.article.remove();
   if (editorTab === tab) editorTab = null;
