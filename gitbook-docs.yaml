@@ -1,0 +1,14 @@
+# GitBook 사이트 Git Sync 구조. 사람용 사용 설명서(docs/site)만 스페이스로 싱크한다.
+# 개발 문서(docs/ 나머지)와 에이전트 룰(.claude·.cursor)은 넣지 않는다.
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+site:
+  title: Frond
+  structure:
+    - type: space
+      key: space-guide
+      title: 사용 설명서
+      path: guide
+      default: true
+      content:
+        directory: ./docs/site
+        language: ko
