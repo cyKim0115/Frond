@@ -58,7 +58,7 @@ fn temp_path(path: &Path) -> io::Result<PathBuf> {
         .file_name()
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "파일 이름이 없음"))?
         .to_string_lossy();
-    Ok(parent.join(format!(".{name}.mdeditor-{}.tmp", std::process::id())))
+    Ok(parent.join(format!(".{name}.frond-{}.tmp", std::process::id())))
 }
 
 #[cfg(windows)]

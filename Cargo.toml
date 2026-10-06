@@ -1,12 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["crates/mdeditor-core", "src-tauri"]
+members = ["crates/frond-core", "src-tauri"]
 
 [workspace.package]
 edition = "2021"
 authors = ["cyKim"]
 license = "MIT"
-repository = "https://github.com/cyKim0115/MdEditor"
+repository = "https://github.com/cyKim0115/Frond"
 
 [profile.release]
 codegen-units = 1

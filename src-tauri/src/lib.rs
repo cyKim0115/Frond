@@ -1,6 +1,6 @@
 //! Frond 백엔드 — 파일 열기 경로(argv·두 번째 인스턴스·드롭)와 문서 로드.
 //!
-//! 파일 I/O는 fs 플러그인을 쓰지 않고 [`mdeditor_core`]만 거친다 (스택 판정 조건 3).
+//! 파일 I/O는 fs 플러그인을 쓰지 않고 [`frond_core`]만 거친다 (스택 판정 조건 3).
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -36,7 +36,7 @@ pub struct DocumentPayload {
     pub name: String,
     /// LF 정규화 텍스트
     pub text: String,
-    pub info: mdeditor_core::DocumentInfo,
+    pub info: frond_core::DocumentInfo,
     /// 원본 바이트 blake3 (외부 변경 감지용)
     pub hash: String,
 }
@@ -88,7 +88,7 @@ fn take_pending_paths(pending: State<'_, Pending>) -> Vec<String> {
 fn load_document(app: AppHandle, path: String, encoding: Option<String>) -> Result<DocumentPayload, String> {
     let path = PathBuf::from(&path);
     let path = path.canonicalize().map_err(|e| format!("{}: {e}", path.display()))?;
-    let mut doc = mdeditor_core::FileDocument::open(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let mut doc = frond_core::FileDocument::open(&path).map_err(|e| format!("{}: {e}", path.display()))?;
     if let Some(label) = encoding {
         doc.reinterpret(save::encoding_for(&label)?);
     }
