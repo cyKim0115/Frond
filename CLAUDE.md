@@ -3,7 +3,7 @@
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
 
 **현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이다. 에이전트 §3 2~4(인쇄 확인·원문 HTML 허용 목록·`www.` 자동 링크)는 2026-10-02 완료, 남은 §3-5는 B-2·B-9 통과 뒤. 통과하면 MVP(V1) 완료.
-[docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기: 줄바꿈 변환·큰 문서 블록 묶음·오른쪽 클릭 인쇄 확인·상태바 글자 수·슬러그/각주)는 사용자 요청으로 MVP 닫기보다 먼저 2026-10-06 구현 완료 — 설치본 재설치는 사용자 확인 대기.**
+[docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기: 줄바꿈 변환·큰 문서 블록 묶음·오른쪽 클릭 인쇄 확인·상태바 글자 수·슬러그/각주)는 사용자 요청으로 MVP 닫기보다 먼저 2026-10-06 구현·재설치 완료.**
 할 일·열린 결정은 [docs/next-session.md](docs/next-session.md) §2·§3, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
