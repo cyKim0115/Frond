@@ -1,6 +1,6 @@
 # 남은 MdEditor 이름 → Frond 정리 (2026-10-06 할 일)
 
-작성: 2026-10-06 · 상태: **대기 — 사용자가 "실행"이라고 하면 이 문서 순서대로 한다**
+작성: 2026-10-06 · 상태: **완료 2026-10-06** (범위 A + B, 저장소 이름 변경·재설치 포함 — 결과는 맨 아래 "결과")
 배경: 앱 표시 이름은 2026-10-06 Frond로 바꿨다([`decisions/ideation/20261006-app-name.md`](decisions/ideation/20261006-app-name.md)).
 남은 `MdEditor`는 저장소·크레이트·내부 식별자다. 판단은 2026-10-06 세션에서 했고 이 문서가 그 결과다.
 
@@ -94,3 +94,11 @@
 - v2 워크트리에서 `git merge main`(빨리 감기) — v2 담당 세션이 작업 중이면 사용자에게 먼저 묻는다
 - [`next-session.md`](next-session.md) §3 8번을 닫고, `exp/live-preview`를 합칠 때 크레이트 경로 충돌을 풀어야 한다고 §2 I에 한 줄
 - 이 문서는 끝나면 상태를 **완료**로 바꾸고 남겨 둔다
+
+## 결과 (2026-10-06)
+
+- 저장소: `gh repo rename` → `cyKim0115/Frond`, `origin`을 `git@github.com:cyKim0115/Frond.git`로. 옛 주소(`MdEditor`)는 GitHub가 넘겨 준다(`git ls-remote` 확인)
+- GitBook Git Sync: 이름 변경 직후 API `repoName`은 아직 `cyKim0115/MdEditor`, 설치 상태 active. 이번 작업은 푸시하지 않아 import로 확인하지 못했다 → [`gitbook-site.md`](gitbook-site.md) 시작 전 확인 3에 다음 푸시 때 볼 것을 적었다
+- 코드: 크레이트 `frond-core`·`frond`(lib `frond_lib`), `mainBinaryName: "mdeditor"`, `package.json` `frond`, localStorage `frond.`(옛 `mdeditor.` 키 복사·보존, `src/prefs.test.ts`), 렌더 규칙 `frond_*`, 임시 파일 `.frond-…tmp`, 추천 테마 묶음 id `frond`. Store 작업(같은 날 먼저 합침)의 새 키(`nag`·`entitlement`)도 접두사를 따라 바뀌었다
+- 남긴 것: ProgId·identifier·exe 이름·`hooks.nsh` 매크로 이름(선택 항목이라 그대로), `integrations/open-new-md.ps1`(로그 이름 `mdeditor-open-hook.log`·함수 이름 — 사용자 훅이 쓰는 스크립트라 손대지 않음), 기록물 본문
+- v2 워크트리: 없음(2026-10-06 정리됨) → 건너뜀. `exp/live-preview`·`feat/ai-hook-settings`는 합칠 때 크레이트 경로(`crates/mdeditor-core` → `crates/frond-core`)·`mdeditor_core` 이름 충돌을 풀어야 한다 — [`next-session.md`](next-session.md) §2 I·K에 적음

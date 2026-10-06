@@ -39,6 +39,8 @@
    다 쓴 뒤 main에 합쳐 **한 번에 푸시**한다. GitBook은 `main`을 싱크하므로 반쯤 쓴 페이지를 main에 푸시하면 그대로 공개된다
 2. 설정 페이지는 **AI 연동 탭**(`feat/ai-hook-settings`, [next-session](next-session.md) §3-10)이 main에 들어온 뒤의 모습으로 쓴다. 아직이면 그 탭 절만 비워 두고 나머지를 먼저 쓴다
 3. [`frond-rename.md`](frond-rename.md) 1번(저장소 이름 `MdEditor` → `Frond`)을 하면 Git Sync가 새 이름을 따라가는지 GitBook에서 확인한다
+   — 2026-10-06 이름 변경 직후 API의 `repoName`은 아직 `cyKim0115/MdEditor`(설치 상태 active). 푸시하지 않아 import로는 못 봤다 → **다음 main 푸시 뒤 Git Sync 상태가 success이고 `repoName`이 Frond인지 본다**.
+   실패하면 GitBook 앱 → 사이트 Frond → Git Sync 설정에서 저장소를 `cyKim0115/Frond`로 다시 고른다(UI 전용, 사용자 몫)
 
 ## 결정 (U-2) — GitBook 전용 블록을 얼마나 쓸지
 

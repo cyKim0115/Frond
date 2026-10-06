@@ -1,6 +1,6 @@
-# Frond (저장소 이름 MdEditor)
+# Frond
 
-Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 2026-10-06 앱 이름을 MdEditor → Frond로 바꿨다.
+Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 2026-10-06 앱 이름을 MdEditor → Frond로 바꿨고, 같은 날 저장소(`cyKim0115/Frond`)·크레이트·localStorage 접두사도 정리했다([docs/frond-rename.md](docs/frond-rename.md)).
 
 **현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이다. 에이전트 §3 2~4(인쇄 확인·원문 HTML 허용 목록·`www.` 자동 링크)는 2026-10-02 완료, 남은 §3-5는 B-2·B-9 통과 뒤. 통과하면 MVP(V1) 완료.
 [docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기)는 2026-10-06 구현·재설치 완료. 단계 1 에이전트 몫(V1 검수 [fidelity-report](docs/references/assets/20260929-typora-md-editors/fidelity-report.md) SHIPPABLE 조건부·스펙 동기화·RAG 캡처)도 2026-10-06 완료 — V1은 B-2·B-9만 남았다. 단계 3은 B(쓰임새 순)로 진행, 이후 단계는 사용자 확인을 기다리지 않고 진행하며 실기 목록은 next-session §2에 모은다(사용자 지시 2026-10-06). **단계 4(Phase 3 탭·세션·분할 뷰·비교·폴더 트리·AI 훅 받은 목록)·단계 5(Phase 4 Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄, Shiki DEFER) 2026-10-06 구현 완료** — 기능 작업은 기능 브랜치 + 임시 워크트리(`../MdEditor-<이름>`)에서 하고 머지 뒤 워크트리를 지운다(main 폴더는 다른 세션과 같이 쓰므로 전환하지 않는다, 상시 `v2` 워크트리는 2026-10-06 정리). 단계 6 라이브프리뷰는 `exp/live-preview`에만(2026-10-06 실험 구현, 사용자 IME 확인 전에는 main에 합치지 않는다).**
@@ -56,8 +56,8 @@ docs/qa/               실기 증거 — <날짜>-<범위>/ 캡처·바이트 �
 docs/research/         조사 보고서 — reports/<제목>.md + research_notes/<제목>/ 근거 노트 (배포 채널·유료 해금·웹사이트 조사 2026-10-06)
 docs/site/             GitBook 사용 설명서 — 사이트 Git Sync(루트 gitbook-docs.yaml, 스페이스 '사용 설명서'), README.md 첫 페이지 + SUMMARY.md 목차. 개발 문서는 여기 두지 않는다
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
-Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
-crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
+Cargo.toml             루트 워크스페이스 (crates/frond-core + src-tauri). release 프로필 lto·opt-level s
+crates/frond-core      바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
 src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·AI 훅 표식 --from-hook·load_document), watch.rs(외부 변경, 문서마다),
                        tree.rs(폴더 트리 목록·재귀 감시), export.rs(HTML 내보내기 쓰기·이미지 바이트),
                        assoc.rs(파일 연결·기본 앱), elevation.rs(관리자 권한 감지), save.rs(저장·etag 충돌·인코딩·줄바꿈 변환),
@@ -96,13 +96,14 @@ npm run app:build                 # 릴리스 + NSIS 설치기 → target/releas
 npm test                          # vitest (src/**/*.test.ts, 렌더 파이프라인)
 npx tsc --noEmit                  # 타입 검사
 cargo test                        # 코어 + 백엔드 단위 테스트
-cd crates/mdeditor-core; cargo run --example roundtrip -- ../../samples/raw   # 제자리 무편집 저장 → git status 깨끗
+cd crates/frond-core; cargo run --example roundtrip -- ../../samples/raw   # 제자리 무편집 저장 → git status 깨끗
 ```
 
 - Vite `server.watch.ignored`에 `src-tauri`·`target`이 빠지면 cargo가 쓰는 exe 때문에 dev 서버가 EBUSY로 죽는다
 - 앱 이름은 `productName` "Frond"(창 제목·설치 폴더·시작 메뉴·기본 앱 목록 `RegisteredApplications\Frond`). 내부 식별자는
   MdEditor 그대로 둔다 — ProgId `MdEditor.Markdown`(사용자 `UserChoice`가 가리킴), identifier `com.cykim.mdeditor`(WebView2 데이터·설정),
-  localStorage `mdeditor.*`, exe `mdeditor.exe`, 크레이트 이름. 바꾸면 기본 앱 지정·설정이 끊긴다
+  exe `mdeditor.exe`(`tauri.conf.json` `mainBinaryName`으로 고정 — `cargo build`의 `target\debug` exe는 `frond.exe`). 바꾸면 기본 앱 지정·설정이 끊긴다.
+  크레이트(`frond-core`·`frond`, lib `frond_lib`)와 localStorage 접두사(`frond.` — 첫 실행 때 옛 `mdeditor.` 키를 복사, `prefs.ts`)는 2026-10-06 바꿨다
 - Claude 데스크톱 세션의 셸은 MSIX 컨테이너다 — 설치기·설치본 앱은 `Invoke-CimMethod Win32_Process Create`로 밖에서 돌린다.
   안에서 돌리면 AppData 새 파일(설치 폴더·시작 메뉴·`%APPDATA%\Frond`)이 Claude 패키지 LocalCache에만 생겨 사용자 쪽에 안 보인다
 - 창은 `lib.rs`에서 코드로 만든다 (`on_navigation` 훅 때문). `tauri.conf.json`의 `app.windows`는 비워 둔다

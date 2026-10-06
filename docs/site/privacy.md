@@ -43,7 +43,7 @@ Microsoft Store판의 구매는 Microsoft Store가 처리합니다. Frond는 결
 
 ## 문의
 
-[GitHub Issues](https://github.com/cyKim0115/MdEditor/issues)에 남겨 주세요.
+[GitHub Issues](https://github.com/cyKim0115/Frond/issues)에 남겨 주세요.
 
 ## 바뀔 때
 
@@ -51,4 +51,4 @@ Microsoft Store판의 구매는 Microsoft Store가 처리합니다. Frond는 결
 
 ## English summary
 
-Frond does not collect personal data. There are no accounts, analytics, crash reports or ads, and nothing is sent to the developer. Your documents, settings, drafts and themes stay on your PC. Frond connects to the internet only to show remote images that a document links to, and opens clicked links in your browser. Purchases in the Microsoft Store edition are handled by the Microsoft Store; Frond never receives payment details. Questions: [GitHub Issues](https://github.com/cyKim0115/MdEditor/issues).
+Frond does not collect personal data. There are no accounts, analytics, crash reports or ads, and nothing is sent to the developer. Your documents, settings, drafts and themes stay on your PC. Frond connects to the internet only to show remote images that a document links to, and opens clicked links in your browser. Purchases in the Microsoft Store edition are handled by the Microsoft Store; Frond never receives payment details. Questions: [GitHub Issues](https://github.com/cyKim0115/Frond/issues).

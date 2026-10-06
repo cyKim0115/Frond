@@ -188,7 +188,7 @@ UI 게이트를 걸 곳은 theme-panel.ts의 버튼 핸들러 4~5곳과 recommen
 지금은 둘을 나누는 장치가 하나도 없다. 패키지 identity 조회 코드, cargo feature, `option_env!`/Vite define, 별도 tauri conf 모두 없다. 번들 대상은 NSIS 하나다. 계획 문서는 MSI/MSIX 패키징을 "하지 않는 것"으로 적어 두었다. Store 판을 하려면 이 결정부터 고쳐야 한다.
 
 ### Cited Findings (현재 구조)
-- grep(`GetCurrentPackage|PackageFamily|msix|appx|cfg(feature|option_env!|import.meta.env|VITE_`) 결과가 src·src-tauri/src·crates에서 0건이다. `env!("CARGO_MANIFEST_DIR")` 1건은 코어 테스트 픽스처 경로다 — [crates/mdeditor-core/tests/fixtures.rs:13](../../../../crates/mdeditor-core/tests/fixtures.rs)
+- grep(`GetCurrentPackage|PackageFamily|msix|appx|cfg(feature|option_env!|import.meta.env|VITE_`) 결과가 src·src-tauri/src·crates에서 0건이다. `env!("CARGO_MANIFEST_DIR")` 1건은 코어 테스트 픽스처 경로다 — [crates/mdeditor-core/tests/fixtures.rs:13](../../../../crates/frond-core/tests/fixtures.rs)
 - `src-tauri/Cargo.toml`에 `[features]` 절이 없다. `windows` 0.62 features는 `Win32_Foundation, Win32_Security, Win32_System_Com, Win32_System_Threading, Win32_UI_Shell, Win32_UI_WindowsAndMessaging`뿐이다(WinRT `Services_Store`·`Win32_Storage_Packaging_Appx` 없음) — [src-tauri/Cargo.toml:18-37](../../../../src-tauri/Cargo.toml#L18-L37)
 - tauri 설정 파일은 `src-tauri/tauri.conf.json` 하나다(`tauri.windows.conf.json` 등 overlay 없음). `bundle.targets: ["nsis"]`, NSIS `installMode: currentUser`, 훅 `nsis/hooks.nsh` — [src-tauri/tauri.conf.json:30-58](../../../../src-tauri/tauri.conf.json#L30-L58). 빌드 스크립트는 `app:build = tauri build` 하나다 — [package.json:7-14](../../../../package.json#L7-L14)
 - Vite 설정에 `define`·env 사용이 없다 — [vite.config.ts:1-22](../../../../vite.config.ts#L1-L22). 프런트 런타임 구분은 `IS_TAURI = "__TAURI_INTERNALS__" in window`뿐이다 — [src/main.ts:166](../../../../src/main.ts#L166)

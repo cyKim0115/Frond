@@ -1,4 +1,4 @@
-# MdEditor 개발 로드맵
+# Frond 개발 로드맵
 
 작성: 2026-09-29 · 근거: [참고 자산](references/assets/20260929-typora-md-editors/ASSET.md) · [스택 판정](decisions/ideas/20260929-stack.md) · [엔진 판정](decisions/ideas/20260929-editor-engine.md) · [MVP 3안](decisions/ideation/20260929-mvp-scope.md)
 
@@ -29,7 +29,7 @@
 |------|--------|------------------|
 | 0-1 IME 스파이크 (`exp/ime-spike`) | Tauri 2 최소 앱: `<textarea>` / CM6 plain / CM6 + replace 데코 세 편집면 | When 한국어 MS IME(새·이전 각각)로 아래 시나리오를 Win10 19045·Win11에서 수행하면, the 세 편집면 중 최소 CM6 plain shall 글자 유실·중복·자소 분리 없이 입력을 받는다 |
 | | 시나리오: ① 기존 텍스트가 있는 편집면 첫 클릭 후 즉시 한글 입력(tauri #15436) ② 조합 중 버튼 클릭·Alt+Tab(#5475, G16) ③ 조합 중 Enter·Ctrl+S(G18) ④ 자동 줄바꿈 경계에서 입력(G17) ⑤ 선택+Backspace 후 입력(T20) ⑥ YAML front matter 직후 문단(T20) ⑦ 백틱·`**` 뒤 한글(#4251) ⑧ 데코 위젯 바로 앞에서 조합 | 결과표를 `docs/decisions/ideas/20260929-stack.md` Follow-up에 기록. 실패 시 플래그(G6) → textarea/EditContext(G7) → Electron 순으로 재판정 |
-| 0-2 파일 충실도 코어 (Rust crate `mdeditor-core`) | `FileDocument` 읽기/쓰기: BOM 스니핑 → UTF-8 검증 → chardetng(EUC-KR 후보) → 디코드, 줄별 EOL 맵·끝 개행 플래그, 무편집 저장 = 원본 바이트, 편집 저장 = 재결합·재인코딩(`*_without_replacement` 손실 검사) → 임시파일 + `ReplaceFileW`(실패 시 in-place) | When `samples/raw/*.md`를 열고 편집 없이 저장하면, the 코어 shall 바이트를 1도 바꾸지 않는다 (`git status` 깨끗, CI 테스트). When 한 줄만 편집해 저장하면, shall 그 줄 외의 바이트·EOL·BOM·끝 개행을 보존한다. When CP949로 표현 불가한 문자를 넣고 저장하면, shall 조용히 손상하지 않고 UTF-8 변환 여부를 묻는 오류를 돌려준다 |
+| 0-2 파일 충실도 코어 (Rust crate `frond-core`(2026-10-06 전 `mdeditor-core`)) | `FileDocument` 읽기/쓰기: BOM 스니핑 → UTF-8 검증 → chardetng(EUC-KR 후보) → 디코드, 줄별 EOL 맵·끝 개행 플래그, 무편집 저장 = 원본 바이트, 편집 저장 = 재결합·재인코딩(`*_without_replacement` 손실 검사) → 임시파일 + `ReplaceFileW`(실패 시 in-place) | When `samples/raw/*.md`를 열고 편집 없이 저장하면, the 코어 shall 바이트를 1도 바꾸지 않는다 (`git status` 깨끗, CI 테스트). When 한 줄만 편집해 저장하면, shall 그 줄 외의 바이트·EOL·BOM·끝 개행을 보존한다. When CP949로 표현 불가한 문자를 넣고 저장하면, shall 조용히 손상하지 않고 UTF-8 변환 여부를 묻는 오류를 돌려준다 |
 | 0-3 Windows 실측 | Tauri hello vs **WPF + .NET 10 + WebView2 hello** 같은 PC에서 콜드/웜 시작 시간·프로세스 트리 RSS(WebView2 프로세스 포함) 각 10회 중앙값 | 콜드 시작 < 1 s 목표치 확인. 수치는 ASSET "Rules & numbers"와 스택 판정 Follow-up에 기록. WPF 코드는 측정 후 폐기(`exp/wpf-hello`) |
 | 0-4 픽스처 보강 | 한글·공백·`[`·`#` 경로 이미지 픽스처(`samples/paths/`), 2 MB·10 MB 대용량 샘플(`samples/gen-large.ps1` 생성, 미커밋) | (바이트 픽스처 `samples/raw/`는 `-text` 규칙 유지) |
 

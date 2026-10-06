@@ -26,4 +26,4 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File samples/gen-large.ps1
 ```
 
-`crates/mdeditor-core`의 `roundtrip` 예제나 렌더러 성능 측정에 쓴다. 12 MB를 커밋하지 않으려고 생성식으로 뒀다.
+`crates/frond-core`의 `roundtrip` 예제나 렌더러 성능 측정에 쓴다. 12 MB를 커밋하지 않으려고 생성식으로 뒀다.
