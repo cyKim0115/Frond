@@ -98,7 +98,8 @@ Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이
 
 ## Phase 4 — 확장 렌더·내보내기 (V2 요소)
 
-**상태: Mermaid(tiny 지연 로드·strict·테마 따라 다시 그림)·GitHub Alerts 2026-10-06 완료(`38704e5`).** 나머지는 단계 5.
+**상태: 구현 완료 2026-10-06** (4-1·4-2 `38704e5` · 4-3 `0332fea` · 4-4·4-5 `fda852c` · 4-6 `0d1307d`(판정 DEFER)) — 사용자 실기는 [`next-session.md`](next-session.md) §2 H.
+Mermaid는 tiny 지연 로드·strict·테마 따라 다시 그림, KaTeX는 수식이 있을 때만 지연 로드(글꼴 번들), HTML 내보내기는 보이는 그대로 + 테마 CSS 인라인(이미지 base64/상대 경로), 인쇄는 소스·분할에서도 본문·다크 그림은 라이트로·쪽 번호. Shiki는 `DEFER`(느림·무거움·테마 토큰과 분리).
 
 - KaTeX(펜스·`$` 감지 시 지연 로드, 폰트 번들), Mermaid 12 tiny(`securityLevel strict`, 지연 로드), highlight.js → Shiki(JS 엔진, fine-grained 5~10개 언어, dual theme) 교체 검토, GitHub Alerts
 - HTML 내보내기(테마 CSS 인라인, 이미지 상대/base64 옵션 — Typora Export 사양 T·G21), `window.print()`로 PDF(인쇄 CSS: `@page`, 코드 블록 배경, 긴 `pre`에는 `break-inside: avoid` 금지)
@@ -129,7 +130,7 @@ Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이
 - `.txt` `OpenWithProgids` 등록
 - 무음 PDF(webview2-com), 헤더/푸터·북마크(CDP)
 - Focus/Typewriter 모드 (워드카운트는 2026-10-06 상태바 글자 수로 구현 — 한글·영문은 띄어쓰기 단위, 한자·가나는 1자=1단어)
-- Shiki dual theme, Mermaid ELK
+- ~~Shiki dual theme~~ — 2026-10-06 검토 `DEFER`(`decisions/ideas/20261006-shiki.md`), Mermaid ELK
 - fixedRuntime 비상 절차 문서화(G4)
 - Typora `github.user.css` 호환 레이어
 - 10 MB 초과 텍스트 뷰(스펙 `largeHardLimit`) — 2026-09-30 백로그. 큰 문서 모드로 10 MB도 렌더되므로 더 큰 파일을 실측한 뒤 상한을 정한다

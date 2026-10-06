@@ -20,7 +20,7 @@
 | 앱 이름 Frond (옛 MdEditor) | 10/6 결정·커밋·설치기 빌드 | 설치 이전(MdEditor 제거 → Frond 설치) — 사용자 확인 대기 |
 | V2 범위 (단계 3) | **B 쓰임새 순** 10/6 (사용자 위임) | [`decisions/ideation/20261006-v2-scope.md`](decisions/ideation/20261006-v2-scope.md) |
 | Phase 3 (단계 4) | **구현 완료 10/6** — 탭·세션 복원·분할 뷰·비교·폴더 트리·AI 훅 받은 목록 | 사용자 실기 [`next-session.md`](next-session.md) §2 G |
-| Phase 4 (단계 5) | 4-1 Mermaid·4-2 Alerts 완료 10/6, 나머지 진행 | — |
+| Phase 4 (단계 5) | **구현 완료 10/6** — Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄 손질, Shiki는 DEFER | 사용자 실기 [`next-session.md`](next-session.md) §2 H |
 | Phase 5 (단계 6) | 미착수 | — |
 
 > **V1(MVP)은 사용자 확인 2건만 남았다.** 2026-10-06 사용자 지시로 이후 단계는 기다리지 않고 진행하고, 사용자 확인 항목은 [`next-session.md`](next-session.md) §2에 모은다.
@@ -82,7 +82,9 @@ V1 범위는 여기서 끝난다. 계속 갈지, 간다면 무엇부터인지 �
 | 3-4 | 외부 변경 배너 [비교] — 분할 뷰 위의 diff (D5) | 디스크 ↔ 편집 중 차이 표시 |
 | 3-5 | 세션 복원 (열린 탭·스크롤 위치) | 재시작 후 같은 탭·위치 |
 
-### 단계 5 — Phase 4 확장 렌더·내보내기 (11/16~12/4, V2) — 4-1·4-2는 2026-10-06 단계 4와 함께 완료
+### 단계 5 — Phase 4 확장 렌더·내보내기 (11/16~12/4, V2) — **구현 완료 2026-10-06**, 사용자 실기 대기
+
+결과: 4-1·4-2 `38704e5` · 4-3 `0332fea` · 4-4·4-5 `fda852c` · 4-6 `0d1307d`(판정 DEFER). 지연 로드 청크: Mermaid tiny 2.8 MB·KaTeX 262 KB·내보내기 79 KB(시작 번들 밖). Shiki 실측(10개 언어): 번들 886 KB vs highlight.js 67 KB, TS 300줄 강조 81.7 ms vs 3.2 ms → 유지([`decisions/ideas/20261006-shiki.md`](decisions/ideas/20261006-shiki.md)). 사용자 확인 목록은 [`next-session.md`](next-session.md) §2 H.
 
 | # | 할 일 |
 |---|---|
