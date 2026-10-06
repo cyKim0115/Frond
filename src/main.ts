@@ -24,6 +24,7 @@ import { showChoice, showDialog } from "./dialog";
 import { createSourceEditor, type SourceEditor } from "./editor";
 import { initFindBar } from "./find";
 import { initInboxPanel } from "./inbox-panel";
+import { initTreePanel } from "./tree-panel";
 import { initNav } from "./nav";
 import { docTitle, samePath } from "./recent";
 import { CHUNK_CLASS, highlightCodeBlocks, LARGE_CHUNK_BLOCKS, LARGE_SOFT_LIMIT, renderMarkdown, type TocEntry } from "./render";
@@ -234,6 +235,15 @@ const inbox = initInboxPanel({
   show: () => nav.show("inbox"),
 });
 
+/** 탐색 영역 '폴더' — 폴더 트리 (로드맵 3-2) */
+const tree = initTreePanel({
+  isTauri: IS_TAURI,
+  open: (path) => openPath(path).then(() => undefined),
+  reveal: (path) =>
+    revealItemInDir(path).catch((e) => void showDialog({ title: "위치를 열 수 없습니다", message: String(e), detail: path })),
+  copy: (text) => void navigator.clipboard.writeText(text).then(() => flashStatus("경로를 복사했습니다")),
+});
+
 /** 편집 중인 텍스트 (소스 모드에 한 번도 안 들어갔으면 디스크 텍스트) */
 function workingText(tab: Tab | null = active): string {
   if (!tab) return "";
@@ -379,6 +389,7 @@ function activate(tab: Tab): void {
   updateCount();
   updateActiveHeading();
   nav.setCurrent(tab.doc.path);
+  tree.setCurrent(tab.doc.path);
   inbox.markRead(tab.doc.path);
   renderTabs();
   saveSession();
@@ -406,6 +417,7 @@ function showWelcome(): void {
   updateDocChrome();
   updateCount();
   nav.setCurrent(null);
+  tree.setCurrent(null);
   renderTabs();
   saveSession();
 }
@@ -1180,7 +1192,10 @@ async function saveAs(tab: Tab | null = active): Promise<boolean> {
   adopt(tab, doc, tab.mode);
   watchDocument(tab);
   nav.remember(doc.path, tabTitle(tab));
-  if (tab === active) nav.setCurrent(doc.path);
+  if (tab === active) {
+    nav.setCurrent(doc.path);
+    tree.setCurrent(doc.path);
+  }
   renderTabs();
   saveSession();
   return true;

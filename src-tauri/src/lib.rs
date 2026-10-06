@@ -16,6 +16,7 @@ mod elevation;
 mod print_menu;
 mod save;
 mod themes;
+mod tree;
 mod watch;
 
 /// 앱이 뜨기 전에 argv로 받은 파일들. 프런트가 준비되면 `take_pending_paths`로 가져간다.
@@ -169,6 +170,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(Pending(Mutex::new(initial)))
         .manage(watch::WatchState(Mutex::new(Default::default())))
+        .manage(tree::TreeWatch(Mutex::new(None)))
         .setup(|app| {
             // 창은 코드로 만든다 — on_navigation 훅은 빌더에만 있다.
             // 웹뷰 안에서의 이동은 앱 자체 URL만 허용. 외부 링크는 프런트가 opener로 연다 (스택 판정 조건 5)
@@ -197,6 +199,9 @@ pub fn run() {
             webview_version,
             watch::watch_document,
             watch::unwatch_document,
+            tree::list_dir,
+            tree::watch_tree,
+            tree::unwatch_tree,
             assoc::open_default_apps_settings,
             assoc::query_default_app,
             assoc::is_registered,
