@@ -53,7 +53,7 @@ describe("저장·알림", () => {
   });
 
   it("저장된 값이 깨졌으면 그 항목만 기본값으로 읽는다", () => {
-    localStorage.setItem("mdeditor.settings", JSON.stringify({ headingScrollOffset: 48, theme: "no-such-theme" }));
+    localStorage.setItem("frond.settings", JSON.stringify({ headingScrollOffset: 48, theme: "no-such-theme" }));
     reloadSettings();
     expect(getSetting("headingScrollOffset")).toBe(48);
     expect(getSetting("theme")).toBe(SETTINGS.theme.default);
@@ -66,7 +66,7 @@ describe("저장·알림", () => {
     setSetting("headingScrollOffset", 60);
     expect(listener).toHaveBeenCalledTimes(1);
     expect(listener).toHaveBeenCalledWith("headingScrollOffset");
-    expect(JSON.parse(localStorage.getItem("mdeditor.settings")!).headingScrollOffset).toBe(60);
+    expect(JSON.parse(localStorage.getItem("frond.settings")!).headingScrollOffset).toBe(60);
   });
 
   it("모두 기본값으로 되돌린다", () => {

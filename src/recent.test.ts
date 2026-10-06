@@ -97,16 +97,16 @@ describe("loadRecent / saveRecent", () => {
   });
 
   it("예전 형식(경로 문자열 배열)도 읽는다", () => {
-    localStorage.setItem("mdeditor.recent", JSON.stringify(["C:\\a.md", "C:\\b.md"]));
+    localStorage.setItem("frond.recent", JSON.stringify(["C:\\a.md", "C:\\b.md"]));
     expect(loadRecent()).toEqual([e("C:\\a.md"), e("C:\\b.md")]);
   });
 
   it("깨진 값은 빈 목록으로, 깨진 항목은 건너뛰고 읽는다", () => {
-    localStorage.setItem("mdeditor.recent", "{not json");
+    localStorage.setItem("frond.recent", "{not json");
     expect(loadRecent()).toEqual([]);
-    localStorage.setItem("mdeditor.recent", JSON.stringify([1, 2]));
+    localStorage.setItem("frond.recent", JSON.stringify([1, 2]));
     expect(loadRecent()).toEqual([]);
-    localStorage.setItem("mdeditor.recent", JSON.stringify([{ title: "경로 없음" }, { path: "C:\\a.md", title: 3 }]));
+    localStorage.setItem("frond.recent", JSON.stringify([{ title: "경로 없음" }, { path: "C:\\a.md", title: 3 }]));
     expect(loadRecent()).toEqual([e("C:\\a.md")]);
   });
 });
