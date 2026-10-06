@@ -1,7 +1,7 @@
 # Frond
 
 Markdown(`.md`) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱입니다. Tauri 2 기반이라 설치기가 작고(약 5 MB) 빨리 뜹니다.
-이름 Frond는 고사리 잎이라는 뜻입니다(2026-10-06까지는 MdEditor. 저장소·크레이트 이름은 그대로).
+이름 Frond는 고사리 잎이라는 뜻입니다(2026-10-06까지는 MdEditor).
 
 ![Frond 기본 화면 — 왼쪽 목차, 오른쪽 본문](docs/screenshots/main.png)
 
@@ -281,7 +281,7 @@ cargo test                        # Rust 코어·백엔드 단위 테스트 (저
 npm run app:build                 # 릴리스 + NSIS 설치기
 ```
 
-- 스택: Tauri 2 · Vite · TypeScript(프레임워크 없음) · CodeMirror 6(+ `@codemirror/merge`) · markdown-it · highlight.js · Mermaid(tiny) · KaTeX · DOMPurify. 파일 읽기·쓰기는 Rust 크레이트 [`crates/mdeditor-core`](crates/mdeditor-core)가 맡습니다(바이트 보존)
+- 스택: Tauri 2 · Vite · TypeScript(프레임워크 없음) · CodeMirror 6(+ `@codemirror/merge`) · markdown-it · highlight.js · Mermaid(tiny) · KaTeX · DOMPurify. 파일 읽기·쓰기는 Rust 크레이트 [`crates/frond-core`](crates/frond-core)가 맡습니다(바이트 보존)
 - 폴더 구조·작업 규칙은 [CLAUDE.md](CLAUDE.md), 결정 기록은 [docs/decisions/](docs/decisions/)에 있습니다
 - 설정 항목은 `src/settings.ts`의 `SETTINGS`에 하나 더하면 설정 팝업의 해당 탭에 자동으로 나타납니다 (`add-setting` 스킬)
 - `docs/screenshots/`의 화면은 실제 앱(1200 × 760)에서 찍었습니다

@@ -28,8 +28,8 @@ A-1~A-4는 **Store 계정 없이** 만들고 테스트할 수 있다(개발용 �
 
 1. `git status`·`git worktree list` — 2026-10-06 18시 기준 다른 세션이 `MdEditor-ai-hook`(`feat/ai-hook-settings`)에서 작업 중이다.
    이 작업은 **새 워크트리 `../MdEditor-store`(`feat/store`)**에서 하고 단계가 끝날 때 main에 합친다
-2. [`frond-rename.md`](frond-rename.md)(크레이트 `mdeditor-core` → `frond-core`, localStorage `mdeditor.` → `frond.`)가 같은 날 할 일로 올라와 있다.
-   **이름 정리를 먼저 하고** 이 작업을 시작한다 — 순서가 바뀌면 새 Rust 모듈·`Cargo.toml` feature·새 localStorage 키가 이름 정리와 충돌한다.
+2. [`frond-rename.md`](frond-rename.md)(크레이트 `mdeditor-core` → `frond-core`, localStorage `mdeditor.` → `frond.`)는 2026-10-06 완료했다.
+   (원래 메모) **이름 정리를 먼저 하고** 이 작업을 시작한다 — 순서가 바뀌면 새 Rust 모듈·`Cargo.toml` feature·새 localStorage 키가 이름 정리와 충돌한다.
    이름 정리가 안 됐으면 사용자에게 어느 쪽을 먼저 할지 묻는다
 3. 새 localStorage 키는 `prefs.ts`의 접두사를 따른다(하드코딩하지 않는다)
 

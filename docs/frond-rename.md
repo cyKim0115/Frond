@@ -1,6 +1,6 @@
 # 남은 MdEditor 이름 → Frond 정리 (2026-10-06 할 일)
 
-작성: 2026-10-06 · 상태: **1번 완료(2026-10-06), 2번부터 대기 — 사용자가 "실행"이라고 하면 2번부터 이 문서 순서대로 한다**
+작성: 2026-10-06 · 상태: **완료 2026-10-06** (1번은 사용자가 GitHub에서, 2~7번은 76cha PC 에이전트. 결과는 아래 "실행 결과")
 배경: 앱 표시 이름은 2026-10-06 Frond로 바꿨다([`decisions/ideation/20261006-app-name.md`](decisions/ideation/20261006-app-name.md)).
 남은 `MdEditor`는 저장소·크레이트·내부 식별자다. 판단은 2026-10-06 세션에서 했고 이 문서가 그 결과다.
 
@@ -98,3 +98,10 @@
 - v2 워크트리에서 `git merge main`(빨리 감기) — v2 담당 세션이 작업 중이면 사용자에게 먼저 묻는다
 - [`next-session.md`](next-session.md) §3 8번을 닫고, `exp/live-preview`를 합칠 때 크레이트 경로 충돌을 풀어야 한다고 §2 I에 한 줄
 - 이 문서는 끝나면 상태를 **완료**로 바꾸고 남겨 둔다
+
+## 실행 결과 (2026-10-06, 76cha PC)
+
+- 2~5번 문서대로. `hooks.nsh` 매크로 이름(`MDEDITOR_*`, 선택)과 훅 기록 파일 `%TEMP%\mdeditor-open-hook.log`는 그대로 뒀다
+- localStorage 옮기기는 `prefs.ts` 모듈 첫 평가 때 한 번(`migrateLegacyPrefs`) — 저장값은 전부 이 모듈을 거친다. 테스트 `src/prefs.test.ts`
+- "시작 전 확인" 2·3번(v2 워크트리·`exp/live-preview`)은 이 PC에 없었다 — 다른 PC의 미병합 브랜치는 합칠 때 충돌을 맞춘다([`next-session.md`](next-session.md) §2 I·K)
+- 이 PC에는 옛 설치본이 없어 제거할 것이 없었다. 새 설치기로 처음 설치

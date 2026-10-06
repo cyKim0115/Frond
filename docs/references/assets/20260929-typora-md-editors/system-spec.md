@@ -2,7 +2,7 @@
 
 - Title: MdEditor Phase 1 뷰어 MVP — 파일 열기 경로 · 렌더 파이프라인 · UI 기조 · 외부 변경 리로드 · 설치기/파일 연결
 - Spec version: 1.0 (2026-09-29)
-- Based on brief: [reference-brief.md](reference-brief.md) (Ev# 인용은 이 원장 기준) · [ASSET.md](ASSET.md) · [roadmap.md](../../../roadmap.md) Phase 1 · 스택 판정 [20260929-stack.md](../../../decisions/ideas/20260929-stack.md) Modified approach 2–7(구현 규칙) · MVP 선택 [20260929-mvp-scope.md](../../../decisions/ideation/20260929-mvp-scope.md) V1 · 코어 [crates/mdeditor-core](../../../../crates/mdeditor-core/README.md)
+- Based on brief: [reference-brief.md](reference-brief.md) (Ev# 인용은 이 원장 기준) · [ASSET.md](ASSET.md) · [roadmap.md](../../../roadmap.md) Phase 1 · 스택 판정 [20260929-stack.md](../../../decisions/ideas/20260929-stack.md) Modified approach 2–7(구현 규칙) · MVP 선택 [20260929-mvp-scope.md](../../../decisions/ideation/20260929-mvp-scope.md) V1 · 코어 [crates/frond-core](../../../../crates/frond-core/README.md)
 - Similarity: inspired
 - Status: implemented — Phase 1 구현·실기 완료(1-7 8번 보류), 2026-10-06 구현 반영 절 추가. Phase 2·셸 트랙은 별도 스펙 없이 로드맵 EARS가 스펙이다
 
@@ -26,7 +26,7 @@
 
 가로지르는 규칙 (로드맵 "가로지르는 규칙"):
 
-10. When CI가 돌면, the `crates/mdeditor-core` `samples/raw` 왕복 테스트 shall 바이트 불변으로 통과한다 (brief O22·F11).
+10. When CI가 돌면, the `crates/frond-core` `samples/raw` 왕복 테스트 shall 바이트 불변으로 통과한다 (brief O22·F11).
 11. When 문서를 렌더하면, the 파이프라인 shall DOMPurify(brief R7)·링크 스킴 허용 목록(brief W10)·`on_navigation` 가로채기(brief G15)·asset scope 문서 폴더 비재귀(brief R17·R18)·CSP `img-src 'self' asset: http://asset.localhost`(brief R16)를 모두 적용한다.
 12. When 빌드하면, the 잠금 파일 shall tauri ≥ 2.12 / tao ≥ 0.35.4(brief O8) / `tauri-plugin-single-instance` ≥ 2.4.5(brief S3) / `minimumWebview2Version` 150(brief G1·G3)을 만족한다.
 
@@ -125,14 +125,14 @@ render/: markdown-it(plugins, data-line) → 이미지 src: dir 기준 절대경
   - `src-tauri/src/elevation.rs` — `is_elevated` (`OpenProcessToken` + `GetTokenInformation(TokenElevation)`, 조회 실패는 `false`)
   - `src-tauri/tauri.conf.json` — `bundle.fileAssociations [{ext:["md","markdown"], name:"MdEditor.Markdown", description:"Markdown 문서", mimeType:"text/markdown", role:"Editor"}]`(brief S1·W7) · `bundle.windows { webviewInstallMode:{type:"downloadBootstrapper"}, nsis:{ installMode:"currentUser", installerHooks:"nsis/hooks.nsh", minimumWebview2Version:"150" } }`(brief S5·G4) · `app.security { csp:"default-src 'self'; img-src 'self' asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self'", assetProtocol:{enable:true, scope:[]} }`(정적 scope 비움, 런타임 `allow_directory`로만 확장, brief R16) · `windows[0] { dragDropEnabled:true, minWidth:400, minHeight:300 }` · `capabilities/default.json`은 `core:default`·`dialog:allow-open`·`opener:allow-open-url`(http/https/mailto)만
   - `src-tauri/nsis/hooks.nsh` — `NSIS_HOOK_POSTINSTALL`: `Software\Classes\.md`·`.markdown`에 `OpenWithProgids\MdEditor.Markdown`, `.mdown/.mkd/.mkdn/.mdwn`은 `OpenWithProgids`만(brief A8·A19) · `Software\Classes\Applications\mdeditor.exe\SupportedTypes`·`FriendlyAppName`(brief A11) · `Software\MdEditor\Capabilities`(`ApplicationName`·`ApplicationDescription` 필수·`FileAssociations\.md=MdEditor.Markdown`) + `Software\RegisteredApplications\MdEditor`(brief A5) · `!insertmacro UPDATEFILEASSOC`(SHChangeNotify, brief A14·S2). `NSIS_HOOK_POSTUNINSTALL`: 자기 ProgId·`OpenWithProgids` 값·Capabilities·RegisteredApplications만 삭제, `.ext` 기본값은 건드리지 않음(brief A9·A10)
-  - 루트 `Cargo.toml` 워크스페이스에 `crates/mdeditor-core` + `src-tauri`. `.gitignore`에 `node_modules/ dist/ src-tauri/target/`. Vite `server.watch.ignored: ["**/src-tauri/**"]`(next-session §2). `CLAUDE.md` 구조·빌드 절 채우기
+  - 루트 `Cargo.toml` 워크스페이스에 `crates/frond-core` + `src-tauri`. `.gitignore`에 `node_modules/ dist/ src-tauri/target/`. Vite `server.watch.ignored: ["**/src-tauri/**"]`(next-session §2). `CLAUDE.md` 구조·빌드 절 채우기
 - Dependencies: tauri 2.12+, tauri-plugin-single-instance 2.4.5+, tauri-plugin-dialog, tauri-plugin-opener, notify-debouncer-full, blake3, url, windows(토큰·QueryCurrentDefault), mdeditor-core / markdown-it 15, markdown-it-cjk-friendly, markdown-it-anchor, markdown-it-task-lists, markdown-it-footnote, markdown-it-front-matter, dompurify, highlight.js, github-markdown-css, D2Coding woff2(OFL)
 - Vertical slice definition: `pnpm tauri dev`로 창 → `samples/showcase.md`를 인수로 열기 → 1 s 내 렌더 + TOC + 상태바 → VS Code로 같은 파일 저장 → 3 s 내 스크롤 유지 갱신 → 두 번째 인수 실행이 기존 창에서 열림. 여기까지 1-1~1-5, 설치기 1-6은 그 다음
 
 ### Verification plan (1-7)
 
 - 렌더: `samples/showcase.md`(표·체크리스트·코드·이미지·각주·front matter)를 GitHub 렌더와 나란히 비교 · `samples/paths/paths.md`의 퍼센트 인코딩·꺾쇠 8개는 필수, "인코딩 없이" 3개는 Open decisions 1
-- 바이트 보존: `cd crates/mdeditor-core && cargo test`(단위 12 + 픽스처 11) + `cargo run --example roundtrip -- ../../samples/raw` 후 `git status --short samples/raw` 빈 출력 — CI 필수
+- 바이트 보존: `cd crates/frond-core && cargo test`(단위 12 + 픽스처 11) + `cargo run --example roundtrip -- ../../samples/raw` 후 `git status --short samples/raw` 빈 출력 — CI 필수
 - 대용량: `powershell -File samples/gen-large.ps1` → `samples/large/2mb.md`·`10mb.md` 열기 시간·스크롤·프로세스 트리 메모리 기록(Phase 0-3 측정 절차 재사용)
 - 실기: Win10 19045 + Win11 24H2/25H2, WebView2 Evergreen 최신. 설치 → 우클릭 추천 목록 → 첫 더블클릭 프롬프트 → '항상' → 같은 버전 재설치·상위 버전 설치 후 유지(brief A10) → 제거 후 `.md` 기본값 고아 없음(brief A9). 설정 > 기본 앱에 MdEditor 노출 여부 기록(next-session §3)
 - IME 보강: `git checkout archived-exp/ime-spike` → `spike/ime-spike` 앱으로 이전 IME(`ConfigureImeVersion=1`)·Win11에서 ①–⑧ 재실측, 스택 판정 결과표의 빈 행에 기록. 실패 시 `--tsf-off` → Modified approach 1 (b)(c)로 재판정

@@ -1,4 +1,4 @@
-# MdEditor 개발 로드맵
+# Frond 개발 로드맵
 
 작성: 2026-09-29 · 근거: [참고 자산](references/assets/20260929-typora-md-editors/ASSET.md) · [스택 판정](decisions/ideas/20260929-stack.md) · [엔진 판정](decisions/ideas/20260929-editor-engine.md) · [MVP 3안](decisions/ideation/20260929-mvp-scope.md)
 
@@ -21,7 +21,7 @@
 
 ## Phase 0 — 스파이크와 코어 (구현 전 검증)
 
-**상태: 완료 2026-09-29.** 0-1은 Win10 19045 새 IME 기준 잠정 통과(이전 IME·Win11은 1-7에서 보강). 결과와 수치는 [`decisions/ideas/20260929-stack.md`](decisions/ideas/20260929-stack.md) "Phase 0 결과 기록란". 코어는 `crates/mdeditor-core`(main), 스파이크·hello 앱은 `archived-exp/ime-spike`·`archived-exp/wpf-hello`.
+**상태: 완료 2026-09-29.** 0-1은 Win10 19045 새 IME 기준 잠정 통과(이전 IME·Win11은 1-7에서 보강). 결과와 수치는 [`decisions/ideas/20260929-stack.md`](decisions/ideas/20260929-stack.md) "Phase 0 결과 기록란". 코어는 `crates/frond-core`(main, 2026-10-06 `mdeditor-core`에서 개명), 스파이크·hello 앱은 `archived-exp/ime-spike`·`archived-exp/wpf-hello`.
 
 목표: 스택 판정의 조건(IME)을 실측으로 닫고, UI 없이도 검증 가능한 파일 충실도 코어를 만든다.
 
@@ -29,7 +29,7 @@
 |------|--------|------------------|
 | 0-1 IME 스파이크 (`exp/ime-spike`) | Tauri 2 최소 앱: `<textarea>` / CM6 plain / CM6 + replace 데코 세 편집면 | When 한국어 MS IME(새·이전 각각)로 아래 시나리오를 Win10 19045·Win11에서 수행하면, the 세 편집면 중 최소 CM6 plain shall 글자 유실·중복·자소 분리 없이 입력을 받는다 |
 | | 시나리오: ① 기존 텍스트가 있는 편집면 첫 클릭 후 즉시 한글 입력(tauri #15436) ② 조합 중 버튼 클릭·Alt+Tab(#5475, G16) ③ 조합 중 Enter·Ctrl+S(G18) ④ 자동 줄바꿈 경계에서 입력(G17) ⑤ 선택+Backspace 후 입력(T20) ⑥ YAML front matter 직후 문단(T20) ⑦ 백틱·`**` 뒤 한글(#4251) ⑧ 데코 위젯 바로 앞에서 조합 | 결과표를 `docs/decisions/ideas/20260929-stack.md` Follow-up에 기록. 실패 시 플래그(G6) → textarea/EditContext(G7) → Electron 순으로 재판정 |
-| 0-2 파일 충실도 코어 (Rust crate `mdeditor-core`) | `FileDocument` 읽기/쓰기: BOM 스니핑 → UTF-8 검증 → chardetng(EUC-KR 후보) → 디코드, 줄별 EOL 맵·끝 개행 플래그, 무편집 저장 = 원본 바이트, 편집 저장 = 재결합·재인코딩(`*_without_replacement` 손실 검사) → 임시파일 + `ReplaceFileW`(실패 시 in-place) | When `samples/raw/*.md`를 열고 편집 없이 저장하면, the 코어 shall 바이트를 1도 바꾸지 않는다 (`git status` 깨끗, CI 테스트). When 한 줄만 편집해 저장하면, shall 그 줄 외의 바이트·EOL·BOM·끝 개행을 보존한다. When CP949로 표현 불가한 문자를 넣고 저장하면, shall 조용히 손상하지 않고 UTF-8 변환 여부를 묻는 오류를 돌려준다 |
+| 0-2 파일 충실도 코어 (Rust crate `frond-core`, 옛 `mdeditor-core`) | `FileDocument` 읽기/쓰기: BOM 스니핑 → UTF-8 검증 → chardetng(EUC-KR 후보) → 디코드, 줄별 EOL 맵·끝 개행 플래그, 무편집 저장 = 원본 바이트, 편집 저장 = 재결합·재인코딩(`*_without_replacement` 손실 검사) → 임시파일 + `ReplaceFileW`(실패 시 in-place) | When `samples/raw/*.md`를 열고 편집 없이 저장하면, the 코어 shall 바이트를 1도 바꾸지 않는다 (`git status` 깨끗, CI 테스트). When 한 줄만 편집해 저장하면, shall 그 줄 외의 바이트·EOL·BOM·끝 개행을 보존한다. When CP949로 표현 불가한 문자를 넣고 저장하면, shall 조용히 손상하지 않고 UTF-8 변환 여부를 묻는 오류를 돌려준다 |
 | 0-3 Windows 실측 | Tauri hello vs **WPF + .NET 10 + WebView2 hello** 같은 PC에서 콜드/웜 시작 시간·프로세스 트리 RSS(WebView2 프로세스 포함) 각 10회 중앙값 | 콜드 시작 < 1 s 목표치 확인. 수치는 ASSET "Rules & numbers"와 스택 판정 Follow-up에 기록. WPF 코드는 측정 후 폐기(`exp/wpf-hello`) |
 | 0-4 픽스처 보강 | 한글·공백·`[`·`#` 경로 이미지 픽스처(`samples/paths/`), 2 MB·10 MB 대용량 샘플(`samples/gen-large.ps1` 생성, 미커밋) | (바이트 픽스처 `samples/raw/`는 `-text` 규칙 유지) |
 
@@ -90,7 +90,7 @@ Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이
 |---|---|
 | 훅 | `Start-Process` 인수에 `--from-hook=claude`·`codex`. 받은 목록이 생기면 "여러 개면 마지막 하나만" 제한을 풀고 전부 넘긴다 |
 | 백엔드 | `on_second_instance`가 표식을 보면 `open-file` 대신 `hook-file` 이벤트(경로·출처·시각)를 보내고, 창을 앞으로 가져오지 않는다(`set_focus` 생략, `request_user_attention`으로 작업 표시줄만 깜빡). 앱이 꺼져 있을 때(첫 실행)는 볼 문서가 없으니 그대로 연다 |
-| 프런트 | 열린 문서가 없으면 바로 연다. 있으면 탐색 영역에 **'새 문서' 탭**(머리 띠 탭 구조가 이미 있다 — 지금은 '최근 파일' 하나)에 쌓는다: 제목·파일 이름·폴더·출처·시각, 안 읽음 점. 누르면 열고 읽음. 오른쪽 클릭 '파일 위치 열기'·'목록에서 빼기', '모두 지우기'. 저장은 localStorage(`mdeditor.inbox`) |
+| 프런트 | 열린 문서가 없으면 바로 연다. 있으면 탐색 영역에 **'새 문서' 탭**(머리 띠 탭 구조가 이미 있다 — 지금은 '최근 파일' 하나)에 쌓는다: 제목·파일 이름·폴더·출처·시각, 안 읽음 점. 누르면 열고 읽음. 오른쪽 클릭 '파일 위치 열기'·'목록에서 빼기', '모두 지우기'. 저장은 localStorage(`frond.inbox`) |
 | 알림 | 탭 아이콘에 안 읽은 수 배지 + 상태바 '새 문서 n'(누르면 탐색 영역의 그 탭). 화면 위 배너는 외부 변경 배너와 자리를 다투므로 쓰지 않는다. Windows 알림 센터 토스트는 플러그인·권한이 늘어 뺀다(필요하면 나중에) |
 | 설정 | 'AI 훅이 만든 문서' = 목록에 쌓기(기본) / 바로 열기 — `add-setting` 스킬로 탐색 탭에 |
 | 3-1 탭 뒤 | 설정에 '뒤 탭으로 열기'를 더한다. 받은 목록은 그대로 둔다(탭은 연 것, 목록은 아직 안 본 것) |

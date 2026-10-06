@@ -98,7 +98,7 @@
 export const SITE = {
   name: "Frond",
   url: import.meta.env.SITE_URL ?? "http://localhost:4321", // U-2 뒤 https://<도메인>
-  repo: "https://github.com/cyKim0115/Frond",               // frond-rename 전이면 MdEditor(GitHub가 넘겨 준다)
+  repo: "https://github.com/cyKim0115/Frond",
   docs: "https://cykim.gitbook.io/frond/",                 // gitbook-site U-1 전에는 "준비 중" 표시
   storeUrl: null as string | null,                          // R-4 공개 뒤 https://apps.microsoft.com/detail/<StoreId>
   wingetId: null as string | null,                          // R-5 뒤 "cyKim.Frond"
