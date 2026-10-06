@@ -108,8 +108,7 @@
 
 ## 2. 사용자가 할 일 ★ 실기 테스트
 
-**새 설치기 준비됨 — V2 단계 4·5 포함 `350c1e1` 빌드(13:52)**: `targeteleaseundle
-sis\Frond_0.1.0_x64-setup.exe`(6.6 MiB). G·H를 보기 전에 Frond를 닫고 이걸로 재설치한다(아래 WMI 방식, 에이전트에게 '재설치해줘'라고 해도 된다). 단계 6 라이브프리뷰는 이 설치기에 없다(§2 I의 따로 실행 파일).
+**새 설치기 준비됨 — V2 단계 4·5 포함 `350c1e1` 빌드(13:52)**: `target\release\bundle\nsis\Frond_0.1.0_x64-setup.exe`(6.6 MiB). G·H를 보기 전에 Frond를 닫고 이걸로 재설치한다(아래 WMI 방식, 에이전트에게 '재설치해줘'라고 해도 된다). 단계 6 라이브프리뷰는 이 설치기에 없다(§2 I의 따로 실행 파일).
 
 **설치본 = Frond 이름 변경 빌드(`6e3ef34`, 13:03)** — 2026-10-06 앱 이름을 **Frond**로 바꾼 빌드로 이전 설치했다(결정 [`ideation/20261006-app-name.md`](decisions/ideation/20261006-app-name.md)): 옛 MdEditor 무인 제거('앱 데이터 삭제' 없이) → `Frond_0.1.0_x64-setup.exe /S`, 바탕 화면 바로가기는 지움(전에도 없었음). 확인(컨테이너 밖): `%LOCALAPPDATA%\Frond\mdeditor.exe`·시작 메뉴 Frond, `.md` 기본값 `MdEditor.Markdown` → Frond exe, `RegisteredApplications\Frond`, `%APPDATA%\MdEditor` → `%APPDATA%\Frond` 이전(테마 2개), WebView2 설정 그대로. **그 뒤 main에 들어온 V2 단계 4·5(`c71d978`~`d4ae531`)는 설치본에 없다** → §2 G·H 확인 전에 새 빌드로 재설치(아래 WMI 방식).
 **Claude 데스크톱에서 설치기·설치본 앱을 돌릴 때는 WMI(`Win32_Process.Create`)로 컨테이너 밖에서** — 세션 셸은 MSIX 컨테이너라 AppData 새 파일이 Claude 패키지 LocalCache로 가상화된다. 이번에 안에서 돌린 첫 설치는 사용자 쪽에 안 보여 밖에서 다시 설치했다. 남은 문제는 §3-7.
