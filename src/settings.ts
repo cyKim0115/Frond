@@ -163,6 +163,18 @@ export const SETTINGS = {
     step: 15,
     unit: "초",
   },
+  hookDocs: {
+    kind: "select",
+    section: "nav",
+    label: "AI 훅이 만든 문서",
+    hint: "Claude Code·Codex 훅(integrations/)이 새 md를 만들었을 때. 쌓아 두면 보던 문서·스크롤이 그대로이고 창도 앞으로 오지 않습니다. 탐색기에서 연 파일은 늘 바로 엽니다",
+    default: "inbox",
+    options: [
+      { value: "inbox", label: "'새 문서' 목록에 쌓기" },
+      { value: "background", label: "뒤 탭으로 열기 (목록에도)" },
+      { value: "open", label: "바로 열기 (창을 앞으로)" },
+    ],
+  },
   restoreSession: {
     kind: "select",
     section: "nav",

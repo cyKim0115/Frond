@@ -171,7 +171,8 @@ body {
 .panel-empty { margin: 4px 14px; font-size: 12px; color: var(--muted); }
 .panel-empty[hidden] { display: none; }
 
-#recent-list {
+/* 파일 목록(최근 파일·새 문서) — 항목 모양은 .recent-open */
+.file-list {
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -179,7 +180,36 @@ body {
   margin: 0;
   padding: 0 6px 8px;
 }
-#recent-list li { position: relative; }
+.file-list li { position: relative; }
+/* 새 문서(로드맵 3-6): 안 읽은 항목 앞 점 */
+#inbox-list li.unread .recent-open { padding-left: 18px; }
+#inbox-list li.unread::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 12px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.nav-tab { position: relative; }
+.nav-badge {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+.nav-badge[hidden] { display: none; }
 .recent-open {
   display: flex;
   flex-direction: column;
@@ -217,7 +247,7 @@ body {
   translate: 0 -50%;
   opacity: 0;
 }
-#recent-list li:hover .recent-remove,
+.file-list li:hover .recent-remove,
 .recent-remove:focus-visible { opacity: 1; }
 
 /* ---- 목차 --------------------------------------------------------------------- */

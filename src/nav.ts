@@ -1,6 +1,6 @@
 /**
  * 왼쪽 탐색 영역 — 제목 표시줄 왼쪽 끝의 토글 버튼(Ctrl+Shift+E)으로 열고 닫는다. 폭 애니메이션은 CSS(style.css).
- * 머리 띠의 정사각형 탭으로 패널을 고른다. 지금은 '최근 파일' 탭 하나.
+ * 머리 띠의 정사각형 탭으로 패널을 고른다 — '최근 파일', 'AI가 만든 새 문서'(inbox-panel.ts, 로드맵 3-6).
  * 최근 파일 항목을 오른쪽 클릭하면 탐색기에서 파일 위치를 연다.
  */
 
@@ -27,6 +27,8 @@ export interface Nav {
   /** 활성 탭이 바뀌었을 때 — 목록 순서는 두고 현재 파일 표시만 옮긴다. 열린 문서가 없으면 null */
   setCurrent(path: string | null): void;
   toggle(): void;
+  /** 탐색 영역을 열고 그 탭을 고른다 */
+  show(tab: string): void;
 }
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
@@ -198,5 +200,9 @@ export function initNav(hooks: NavHooks): Nav {
       renderRecent();
     },
     toggle,
+    show(tab) {
+      setOpen(true);
+      selectTab(tab);
+    },
   };
 }
