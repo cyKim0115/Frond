@@ -14,6 +14,13 @@
 .markdown-body > :first-child {
   margin-top: 0;
 }
+/* 큰 문서 블록 묶음(render/chunks.ts) — 문서 첫·끝 블록이 한 단계 안에 있어도 위·아래 여백을 없앤다 (github-markdown.css의 `>*:first-child`와 같게) */
+.markdown-body > .md-chunk:first-child > :first-child {
+  margin-top: 0 !important;
+}
+.markdown-body > .md-chunk:last-child > :last-child {
+  margin-bottom: 0 !important;
+}
 
 /* ---- 제목 — 크기 배율은 GitHub 그대로 (h1 2em · h2 1.5em · h3 1.25em · h4 1em · h5 .875em · h6 .85em) ---- */
 .markdown-body h1,

@@ -20,7 +20,7 @@ import { createSourceEditor, type SourceEditor } from "./editor";
 import { initFindBar } from "./find";
 import { initNav } from "./nav";
 import { docTitle, samePath } from "./recent";
-import { highlightCodeBlocks, LARGE_SOFT_LIMIT, renderMarkdown, type TocEntry } from "./render";
+import { CHUNK_CLASS, highlightCodeBlocks, LARGE_CHUNK_BLOCKS, LARGE_SOFT_LIMIT, renderMarkdown, type TocEntry } from "./render";
 import { initSidebarResize } from "./resize";
 import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey } from "./settings";
 import { initSettingsDialog } from "./settings-dialog";
@@ -228,9 +228,14 @@ function titleOf(text: string): string | undefined {
 function renderView(text: string): void {
   if (!current) return;
   // 2 MB(스펙 largeSoftLimit)를 넘는 문서는 하이라이트를 생략하고, 이미지는 지연 로드,
-  // 큰 문서 모드(화면 밖 레이아웃 생략·패널 애니메이션 끔)로 그린다
+  // 큰 문서 모드(블록 묶음 단위로 화면 밖 레이아웃 생략·패널 애니메이션 끔)로 그린다
   const large = current.info.byte_len > LARGE_SOFT_LIMIT || text.length > LARGE_SOFT_LIMIT;
-  const result = renderMarkdown(text, { baseDir: current.dir, toAssetUrl, lazyImages: large });
+  const result = renderMarkdown(text, {
+    baseDir: current.dir,
+    toAssetUrl,
+    lazyImages: large,
+    chunkBlocks: large ? LARGE_CHUNK_BLOCKS : undefined,
+  });
   app.classList.toggle("large-doc", large);
   article.innerHTML = result.html;
   article.hidden = false;
@@ -254,6 +259,7 @@ function renderView(text: string): void {
     }),
   );
   headings = Array.from(article.querySelectorAll<HTMLElement>("h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]"));
+  indexChunks();
   sidebar.hidden = result.toc.length === 0;
   updateActiveHeading();
   findBar.refresh();
@@ -268,18 +274,34 @@ function viewTopLine(): number {
 function viewLineRange(): { top: number; bottom: number } {
   const rect = viewer.getBoundingClientRect();
   let top: number | null = null;
-  for (const el of article.children as HTMLCollectionOf<HTMLElement>) {
-    if (el.dataset.line === undefined) continue;
-    const box = el.getBoundingClientRect();
-    if (top === null && box.bottom > rect.top + 4) top = Number(el.dataset.line);
-    else if (top !== null && box.top >= rect.bottom) return { top, bottom: Number(el.dataset.line) };
+  for (const child of article.children as HTMLCollectionOf<HTMLElement>) {
+    let blocks: Iterable<HTMLElement> = [child];
+    if (child.classList.contains(CHUNK_CLASS)) {
+      // 큰 문서의 묶음은 묶음 상자로 먼저 거른다 — 화면 밖 묶음 안의 블록을 재면 그 묶음을 배치하게 된다
+      const box = child.getBoundingClientRect();
+      if (top === null && box.bottom <= rect.top + 4) continue;
+      if (top !== null && box.top >= rect.bottom) {
+        const first = child.querySelector<HTMLElement>(":scope > [data-line]");
+        if (first) return { top, bottom: Number(first.dataset.line) };
+        continue;
+      }
+      blocks = child.children as HTMLCollectionOf<HTMLElement>;
+    }
+    for (const el of blocks) {
+      if (el.dataset.line === undefined) continue;
+      const box = el.getBoundingClientRect();
+      if (top === null && box.bottom > rect.top + 4) top = Number(el.dataset.line);
+      else if (top !== null && box.top >= rect.bottom) return { top, bottom: Number(el.dataset.line) };
+    }
   }
   return { top: top ?? 0, bottom: Infinity };
 }
 
 /** 소스 줄 `line`(0 기준) 이하에서 시작하는 마지막 최상위 블록을 화면 맨 위로 */
 function scrollViewToLine(line: number): void {
-  const blocks = Array.from(article.children as HTMLCollectionOf<HTMLElement>).filter((el) => el.dataset.line !== undefined);
+  const blocks = Array.from(
+    article.querySelectorAll<HTMLElement>(`:scope > [data-line], :scope > .${CHUNK_CLASS} > [data-line]`),
+  );
   let lo = 0;
   let hi = blocks.length - 1;
   let hit = -1;
@@ -879,6 +901,21 @@ toc.addEventListener("click", (event) => {
 
 /** 문서 순서의 본문 제목과 목차 링크(제목 id → 링크). `renderView()`가 채운다 */
 let headings: HTMLElement[] = [];
+/** 큰 문서의 블록 묶음(render/chunks.ts)과, 묶음마다 그 묶음 이후 첫 제목의 `headings` 번호. 묶지 않은 문서는 빈 배열 */
+let chunks: HTMLElement[] = [];
+let chunkHeadingStart: number[] = [];
+
+function indexChunks(): void {
+  chunks = Array.from(article.children as HTMLCollectionOf<HTMLElement>).filter((el) => el.classList.contains(CHUNK_CLASS));
+  const chunkIndex = new Map(chunks.map((c, i) => [c as Element, i]));
+  chunkHeadingStart = new Array<number>(chunks.length).fill(headings.length);
+  for (let h = headings.length - 1; h >= 0; h--) {
+    const c = chunkIndex.get(headings[h].closest(`.${CHUNK_CLASS}`)!);
+    if (c !== undefined) chunkHeadingStart[c] = h;
+  }
+  // 제목 없는 묶음은 다음 묶음의 시작 번호를 물려받는다
+  for (let c = chunks.length - 2; c >= 0; c--) chunkHeadingStart[c] = Math.min(chunkHeadingStart[c], chunkHeadingStart[c + 1]);
+}
 const tocLinks = new Map<string, HTMLAnchorElement>();
 let activeLink: HTMLAnchorElement | null = null;
 
@@ -901,6 +938,19 @@ function updateActiveHeading(): void {
     // 제목 위치는 문서 순서대로 커진다 — 선을 넘지 않은 첫 제목을 이진 탐색 (10 MB 샘플은 제목 2만 3천 개라 스크롤마다 전부 재면 끊긴다)
     let lo = 0;
     let hi = headings.length;
+    if (chunks.length > 0) {
+      // 화면 밖(건너뛴) 묶음 안 제목은 묶음 상자 밖으로 넘친 자리를 돌려준다 — 선이 걸린 묶음을 상자로 먼저 찾고 그 안에서만 잰다
+      let a = 0;
+      let b = chunks.length;
+      while (a < b) {
+        const mid = (a + b) >> 1;
+        if (chunks[mid].getBoundingClientRect().top <= line) a = mid + 1;
+        else b = mid;
+      }
+      const c = a - 1;
+      lo = c < 0 ? 0 : chunkHeadingStart[c];
+      hi = c < 0 ? 0 : (chunkHeadingStart[c + 1] ?? headings.length);
+    }
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
       if (headings[mid].getBoundingClientRect().top <= line) lo = mid + 1;

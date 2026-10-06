@@ -15,6 +15,7 @@ import anchor from "markdown-it-anchor";
 import cjkFriendly from "markdown-it-cjk-friendly";
 import footnote from "markdown-it-footnote";
 import frontMatter from "markdown-it-front-matter";
+import { chunkPlugin } from "./chunks";
 import { dataLinePlugin } from "./data-line";
 import { htmlAllowlistPlugin } from "./html";
 import { isAllowedLink, rewriteInlineLinks } from "./links";
@@ -23,6 +24,7 @@ import { taskListsPlugin } from "./task-lists";
 import type { RenderOptions, RenderResult, TocEntry } from "./types";
 
 export type { RenderOptions, RenderResult, TocEntry } from "./types";
+export { CHUNK_CLASS } from "./chunks";
 export { highlightCodeBlocks } from "./highlight";
 export { resolvePath } from "./paths";
 
@@ -31,6 +33,7 @@ type RenderEnv = {
   baseDir: string;
   toAssetUrl: (absPath: string) => string;
   lazyImages?: boolean;
+  chunkBlocks?: number;
   toc: TocEntry[];
   frontMatter?: string;
 };
@@ -79,6 +82,8 @@ function createMarkdownIt(): MarkdownItInstance {
 
   // 플러그인(anchor·linkify·footnote) 뒤에 push → 모든 토큰이 완성된 뒤 목차·front matter·링크 재작성
   md.core.ruler.push("mdeditor_collect", collectRule);
+  // 토큰 목록을 바꾸므로 맨 끝
+  md.use(chunkPlugin);
   return md;
 }
 
@@ -146,13 +151,22 @@ export function hasClosedFrontMatter(text: string): boolean {
 /** 스펙 `largeSoftLimit` — 이 바이트를 넘는 문서는 셸이 하이라이트를 생략하고 큰 문서 모드(style.css `large-doc`)로 그린다 */
 export const LARGE_SOFT_LIMIT = 2 * 1024 * 1024;
 
+/** 큰 문서 모드에서 한 묶음(chunks.ts)에 넣을 최상위 블록 수 — 10 MB 샘플(블록 14만 개)이 묶음 1,400여 개가 된다 */
+export const LARGE_CHUNK_BLOCKS = 100;
+
 /** 동기. 큰 문서의 예산 판단(2 MB·10 MB)은 셸이 한다 */
 export function renderMarkdown(source: string, options: RenderOptions): RenderResult {
   // 디코더가 BOM을 남겼어도 front matter·첫 제목이 깨지지 않게
   const text = source.charCodeAt(0) === 0xfeff ? source.slice(1) : source;
   // 렌더는 동기이고 `md`는 싱글턴이라 렌더마다 토글해도 안전하다
   md.block.ruler[hasClosedFrontMatter(text) ? "enable" : "disable"]("front_matter");
-  const env: RenderEnv = { baseDir: options.baseDir, toAssetUrl: options.toAssetUrl, lazyImages: options.lazyImages, toc: [] };
+  const env: RenderEnv = {
+    baseDir: options.baseDir,
+    toAssetUrl: options.toAssetUrl,
+    lazyImages: options.lazyImages,
+    chunkBlocks: options.chunkBlocks,
+    toc: [],
+  };
   const html = sanitizeHtml(md.render(text, env));
   const result: RenderResult = { html, toc: env.toc };
   if (env.frontMatter !== undefined) result.frontMatter = env.frontMatter;

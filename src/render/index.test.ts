@@ -425,3 +425,59 @@ describe("front matter 경계", () => {
     expect(Array.from(crlf.root.children).map((el) => el.tagName)).toEqual(["H1", "HR"]);
   });
 });
+
+describe("큰 문서 블록 묶음 (chunkBlocks)", () => {
+  function chunked(source: string, size: number) {
+    const root = document.createElement("div");
+    root.innerHTML = renderMarkdown(source, { ...OPTIONS, chunkBlocks: size }).html;
+    return root;
+  }
+  const tags = (el: Element) => Array.from(el.children).map((c) => c.tagName);
+
+  it("최상위 블록만 size개씩 묶고, 블록·data-line·내용은 그대로다", () => {
+    const source = Array.from({ length: 7 }, (_, i) => `문단 ${i}`).join("\n\n");
+    const plain = render(source).root;
+    const root = chunked(source, 3);
+    expect(Array.from(root.children).every((c) => c.tagName === "DIV" && c.className === "md-chunk")).toBe(true);
+    expect(Array.from(root.children).map((c) => c.children.length)).toEqual([3, 3, 1]);
+    const inner = Array.from(root.querySelectorAll(":scope > .md-chunk > *"));
+    expect(inner.map((el) => el.outerHTML)).toEqual(Array.from(plain.children).map((el) => el.outerHTML));
+  });
+
+  it("묶지 않으면 지금처럼 블록이 바로 자식이다", () => {
+    expect(render("a\n\nb").root.querySelector(".md-chunk")).toBeNull();
+  });
+
+  it("제목·구분선 앞에서는 묶음을 나누지 않고 다음 블록까지 늘린다 (경계 여백이 겹치지 않으므로)", () => {
+    const root = chunked("a\n\nb\n\n# 제목\n\n---\n\nc\n\nd\n\ne", 2);
+    expect(Array.from(root.children).map(tags)).toEqual([["P", "P", "H1", "HR"], ["P", "P"], ["P"]]);
+  });
+
+  it("주석만 있는 원문 HTML은 세지 않고 거기서 시작하지도 않는다 — 바로 뒤 제목이 묶음 맨 위가 되지 않게", () => {
+    const root = chunked("a\n\nb\n\n<!-- 숨은 주석 -->\n\n## 제목\n\nc\n\n<hr>\n\nd", 2);
+    expect(Array.from(root.children).map(tags)).toEqual([["P", "P", "H2"], ["P", "HR"], ["P"]]);
+  });
+
+  it("목록·표·코드·인용은 블록 하나로 센다 — 안쪽 블록으로 쪼개지 않는다", () => {
+    const root = chunked("- a\n- b\n\n> q\n>\n> r\n\n| x |\n|---|\n| 1 |\n\n```\ncode\n```\n\n끝", 2);
+    expect(Array.from(root.children).map(tags)).toEqual([["UL", "BLOCKQUOTE"], ["TABLE", "PRE"], ["P"]]);
+  });
+
+  it("원문 HTML이 여러 블록에 걸쳐 열려 있는 동안은 나누지 않는다", () => {
+    const root = chunked("a\n\n<details>\n<summary>열기</summary>\n\n안 **굵게**\n\n둘째\n\n</details>\n\nb\n\nc", 1);
+    const details = root.querySelector("details")!;
+    expect(details.querySelector("summary")!.textContent).toBe("열기");
+    expect(details.querySelectorAll("p")).toHaveLength(2);
+    expect(details.parentElement!.className).toBe("md-chunk");
+    expect(details.nextElementSibling).toBeNull(); // details 뒤 b는 다음 묶음
+    expect(root.lastElementChild!.textContent!.trim()).toBe("c");
+  });
+
+  it("각주 섹션은 마지막 묶음 안에 통째로 들어간다", () => {
+    const root = chunked("본문[^1]\n\n둘째\n\n[^1]: 각주 내용", 1);
+    const section = root.querySelector("section.footnotes")!;
+    expect(section.parentElement!.className).toBe("md-chunk");
+    expect(section.querySelector("li")!.textContent).toContain("각주 내용");
+    expect(root.querySelectorAll(".md-chunk .md-chunk")).toHaveLength(0);
+  });
+});

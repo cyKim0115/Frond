@@ -18,12 +18,14 @@ export interface RenderOptions {
   toAssetUrl: (absPath: string) => string;
   /** 이미지에 `loading="lazy"` — 셸이 큰 문서(스펙 `largeSoftLimit` 초과)에 켠다. 기본 false */
   lazyImages?: boolean;
+  /** 최상위 블록을 이 개수씩 `<div class="md-chunk">`로 묶는다(chunks.ts) — 셸이 큰 문서에 켠다. 없으면 묶지 않는다 */
+  chunkBlocks?: number;
 }
 
 export interface RenderResult {
   /**
    * DOMPurify를 거친 안전한 HTML.
-   * - 블록 요소에 `data-line="시작줄"` (0 기준)
+   * - 블록 요소에 `data-line="시작줄"` (0 기준). `chunkBlocks`면 최상위 블록이 `.md-chunk` 안에 한 단계 들어간다
    * - 상대 `.md`/`.markdown` 링크에 `data-local-path="절대 Windows 경로"` (셸이 앱 내에서 연다)
    * - http(s) 링크에 `target="_blank" rel="noopener"`
    * - 코드 펜스는 `<pre><code class="language-xxx" data-lang="xxx">` — 하이라이트는 `highlightCodeBlocks()`가 나중에
