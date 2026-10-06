@@ -4,9 +4,10 @@
  * '적용'은 설정 '테마'로 고른다 — 팝업은 열어 둔 채 여러 테마를 차례로 입혀 볼 수 있다.
  * 2026-10-06 전에는 '추가'하면 테마 폴더에 복사했다(store-launch A-2에서 바꿈 — 그 사본은 catalog.ts가 한 번만 보이게 한다).
  * 맨 아래 '구매자 전용' 묶음(theme/supporter.ts)은 누구나 미리보기만 하고, 적용은 구매자만 한다(store-launch A-3).
+ * 잠금은 카탈로그 출처로 정한다 — 테마 폴더에 같은 id의 고친 사본이 있으면 그 사본(사용자 테마)이 적용되므로 사용자 테마 권리를 본다.
  */
 
-import type { ThemeOrigin } from "./theme/catalog";
+import { themeOrigin, type ThemeOrigin } from "./theme/catalog";
 import { RECOMMENDED_GROUPS, RECOMMENDED_THEMES } from "./theme/recommended";
 import { SUPPORTER_THEMES } from "./theme/supporter";
 import type { ThemeDef } from "./theme/themes";
@@ -64,6 +65,7 @@ export function initRecommendedDialog(hooks: RecommendedDialogHooks): { open(): 
       meta.append(strip);
     }
     meta.append(`${theme.base === "dark" ? "다크" : "라이트"} · ${entry.description}`);
+    if (entry.origin === "user") meta.append(" · 테마 폴더의 고친 사본이 적용됩니다");
     info.append(meta);
 
     const actions = el("span", "theme-item-actions");
@@ -99,13 +101,13 @@ export function initRecommendedDialog(hooks: RecommendedDialogHooks): { open(): 
         group(
           g.label,
           g.source,
-          RECOMMENDED_THEMES.filter((e) => e.group === g.id).map((e) => ({ ...e, origin: "recommended" as const })),
+          RECOMMENDED_THEMES.filter((e) => e.group === g.id).map((e) => ({ ...e, origin: themeOrigin(e.theme.id) ?? "recommended" })),
         ),
       ),
       group(
         "구매자 전용",
         supporterLocked ? "미리보기는 누구나 — 적용은 구매하면 열립니다" : "구매해 주셔서 고맙습니다",
-        SUPPORTER_THEMES.map((e) => ({ ...e, origin: "supporter" as const })),
+        SUPPORTER_THEMES.map((e) => ({ ...e, origin: themeOrigin(e.theme.id) ?? "supporter" })),
         supporterLocked,
       ),
     );

@@ -11,8 +11,10 @@ const OLD_PREFIX = "mdeditor.";
  * 첫 실행 때 한 번 — `frond.` 키가 하나도 없고 `mdeditor.` 키가 있으면 전부 `frond.`로 복사한다. 옛 키는 지우지 않는다
  * (옛 설치본으로 돌아가도 동작). 옮긴 키 수를 돌려준다. 모듈을 처음 불러올 때 돌아서 어떤 값을 읽기보다 먼저다
  */
-export function migrateLegacyPrefs(storage: Storage = localStorage): number {
+export function migrateLegacyPrefs(store?: () => Storage): number {
   try {
+    // 저장소 접근 자체가 던질 수 있어(SecurityError) try 안에서 꺼낸다 — 모듈을 불러오다 앱이 멈추지 않게
+    const storage = store ? store() : localStorage;
     const keys: string[] = [];
     for (let i = 0; i < storage.length; i++) {
       const key = storage.key(i);

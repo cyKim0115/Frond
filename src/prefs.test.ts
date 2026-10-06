@@ -29,4 +29,11 @@ describe("localStorage 접두사 frond. (frond-rename §4)", () => {
     expect(migrateLegacyPrefs()).toBe(0);
     expect(localStorage.length).toBe(0);
   });
+
+  it("저장소 접근이 막혀도 던지지 않는다", () => {
+    const blocked = () => {
+      throw new DOMException("blocked", "SecurityError");
+    };
+    expect(migrateLegacyPrefs(blocked)).toBe(0);
+  });
 });
