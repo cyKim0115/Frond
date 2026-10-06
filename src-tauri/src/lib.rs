@@ -15,6 +15,7 @@ mod assoc;
 mod drafts;
 mod elevation;
 mod export;
+mod install;
 mod print_menu;
 mod save;
 mod themes;
@@ -210,6 +211,7 @@ pub fn run() {
             assoc::query_default_app,
             assoc::is_registered,
             elevation::is_elevated,
+            install::get_install_info,
             save::save_document,
             save::save_document_as,
             drafts::write_draft,
