@@ -72,10 +72,13 @@ Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이
 
 ## Phase 3 — 탐색 (V2 요소)
 
+**상태: 구현 완료 2026-10-06** (3-6 `ba7dca4` · 3-1·3-5 `0601a95`(+ 메모리 상한 `3ede4d0`) · 3-3 `c71d978` · 3-4 `16813b0` · 3-2 `db371fe` · 4-1·4-2 `38704e5`) — 사용자 실기는 [`next-session.md`](next-session.md) §2 G.
+완료 조건 실측: 2,000줄 편집 → 분할 뷰 미리보기 갱신 51~89 ms. 탭 20개(보통 문서) +116 MB, 10 MB 문서 탭 +550 MB → 큰 문서는 최근 2개만 보기 화면 유지(`MAX_LARGE_RENDERED`).
+
 - 탭(문서당 CM6 state 보존, 두 번째 더블클릭은 새 탭), 폴더 트리 + TOC 동시 표시(Typora 최다 요구 T16·T23), 분할 뷰(소스 | 미리보기) + `data-line` 스크롤 동기(R2·R3), 파일 트리 감시(notify recursive), 세션 복원
 - 완료 조건: 2,000줄 문서에서 편집 → 미리보기 갱신 < 100 ms, 탭 20개에서 메모리 상한 확인
 
-### 3-6 AI 훅 문서 받은 목록 (2026-10-06 사용자 요청)
+### 3-6 AI 훅 문서 받은 목록 (2026-10-06 사용자 요청) — 구현 완료 2026-10-06 (`ba7dca4`, 3-1 탭 뒤에 했으므로 '뒤 탭으로 열기'까지)
 
 문제: AI 훅([`integrations/`](../integrations/README.md))이 새 md를 열면 보던 문서가 그 문서로 바뀌어 읽던 자리를 잃는다(편집 중이면 저장 확인 팝업).
 
@@ -94,6 +97,8 @@ Phase 번호와 따로 가는 셸 작업이다. MVP 안(V1–V3)과 관계없이
 - 완료 조건: 문서를 보던 중 Claude Code가 새 md를 만들면 보던 문서·스크롤·커서가 그대로이고 창이 앞으로 오지 않으며 목록·상태바에 새 항목이 생긴다. 탐색기 더블클릭은 지금처럼 바로 열고 앞으로 온다. 앱이 꺼져 있으면 훅 문서를 바로 연다
 
 ## Phase 4 — 확장 렌더·내보내기 (V2 요소)
+
+**상태: Mermaid(tiny 지연 로드·strict·테마 따라 다시 그림)·GitHub Alerts 2026-10-06 완료(`38704e5`).** 나머지는 단계 5.
 
 - KaTeX(펜스·`$` 감지 시 지연 로드, 폰트 번들), Mermaid 12 tiny(`securityLevel strict`, 지연 로드), highlight.js → Shiki(JS 엔진, fine-grained 5~10개 언어, dual theme) 교체 검토, GitHub Alerts
 - HTML 내보내기(테마 CSS 인라인, 이미지 상대/base64 옵션 — Typora Export 사양 T·G21), `window.print()`로 PDF(인쇄 CSS: `@page`, 코드 블록 배경, 긴 `pre`에는 `break-inside: avoid` 금지)
