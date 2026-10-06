@@ -21,7 +21,7 @@ AI 코딩 도구가 `.md` 파일을 **새로 만들면** Frond에 넘깁니다. 
 
 ## 설치
 
-훅 스크립트(`open-new-md.ps1`)와 Claude Code·Codex 설정 예시는 저장소의 [integrations/README.md](https://github.com/cyKim0115/MdEditor/blob/main/integrations/README.md)에 있습니다. Frond를 먼저 설치한 뒤 따라 합니다.
+훅 스크립트(`open-new-md.ps1`)와 Claude Code·Codex 설정 예시는 저장소의 [integrations/README.md](https://github.com/cyKim0115/Frond/blob/main/integrations/README.md)에 있습니다. Frond를 먼저 설치한 뒤 따라 합니다.
 
 ## 열지 않는 것
 
