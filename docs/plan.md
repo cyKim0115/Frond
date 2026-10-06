@@ -17,7 +17,7 @@
 | AI 앱 연동 (새 md 열기 훅) | 완료, 실기 닫음 10/1 | — |
 | V1 보류 결정 D1~D7 | 정리 10/1, 구현 10/2 | D5(줄바꿈 변환·[비교])는 백로그 |
 | 앱 아이콘 Hash Caret | 10/2 커밋. 10/6 색 변경(세이지 초록 배경·흰 커서)·재설치 완료 | — |
-| 앱 이름 Frond (옛 MdEditor) | 10/6 결정·커밋·설치기 빌드 | 설치 이전(MdEditor 제거 → Frond 설치) — 사용자 확인 대기 |
+| 앱 이름 Frond (옛 MdEditor) | 10/6 결정·커밋, 설치 이전 완료(MdEditor 제거 → Frond, 데이터 폴더 이전 확인) | — |
 | V2 범위 (단계 3) | **B 쓰임새 순** 10/6 (사용자 위임) | [`decisions/ideation/20261006-v2-scope.md`](decisions/ideation/20261006-v2-scope.md) |
 | Phase 3 (단계 4) | **구현 완료 10/6** — 탭·세션 복원·분할 뷰·비교·폴더 트리·AI 훅 받은 목록 | 사용자 실기 [`next-session.md`](next-session.md) §2 G |
 | Phase 4 (단계 5) | **구현 완료 10/6** — Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄 손질, Shiki는 DEFER | 사용자 실기 [`next-session.md`](next-session.md) §2 H |

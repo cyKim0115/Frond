@@ -90,6 +90,8 @@ cd crates/mdeditor-core; cargo run --example roundtrip -- ../../samples/raw   # 
 - 앱 이름은 `productName` "Frond"(창 제목·설치 폴더·시작 메뉴·기본 앱 목록 `RegisteredApplications\Frond`). 내부 식별자는
   MdEditor 그대로 둔다 — ProgId `MdEditor.Markdown`(사용자 `UserChoice`가 가리킴), identifier `com.cykim.mdeditor`(WebView2 데이터·설정),
   localStorage `mdeditor.*`, exe `mdeditor.exe`, 크레이트 이름. 바꾸면 기본 앱 지정·설정이 끊긴다
+- Claude 데스크톱 세션의 셸은 MSIX 컨테이너다 — 설치기·설치본 앱은 `Invoke-CimMethod Win32_Process Create`로 밖에서 돌린다.
+  안에서 돌리면 AppData 새 파일(설치 폴더·시작 메뉴·`%APPDATA%\Frond`)이 Claude 패키지 LocalCache에만 생겨 사용자 쪽에 안 보인다
 - 창은 `lib.rs`에서 코드로 만든다 (`on_navigation` 훅 때문). `tauri.conf.json`의 `app.windows`는 비워 둔다
 - 창은 `decorations(false)`. 제목 표시줄 버튼·드래그는 프런트가 그리고, 창 API를 새로 쓰면 `capabilities/default.json`에 권한을 더한다
 - 색은 테마 토큰(`src/theme/themes.ts` 셸 8·문서 48)만 쓴다. 새 색이 필요하면 토큰을 늘리고 내장 라이트·다크 둘 다 채운다
