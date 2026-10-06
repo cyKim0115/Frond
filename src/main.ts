@@ -12,7 +12,7 @@
  * - 보기 화면은 탭마다 `<article>`을 두고 활성 탭 것만 보인다 — 탭을 오가도 다시 그리지 않고 하이라이트·그림도 남는다
  */
 
-import type { EditorState, StateEffect, Text } from "@codemirror/state";
+import { type EditorState, type StateEffect, Text } from "@codemirror/state";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -141,6 +141,8 @@ interface Tab {
   restoreLine: number | null;
   /** 초안 복구를 이미 물었다 */
   draftChecked: boolean;
+  /** 디스크 내용과 비교 중 (로드맵 3-4) — 편집기 상태에 비교 표시가 들어 있다 */
+  comparing: boolean;
 }
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
@@ -288,6 +290,7 @@ function createTab(doc: DocumentPayload, mode: Mode, index = active ? tabs.index
     editorLine: 0,
     restoreLine: null,
     draftChecked: false,
+    comparing: false,
   };
   tabs.splice(Math.min(Math.max(0, index), tabs.length), 0, tab);
   return tab;
@@ -582,6 +585,7 @@ async function reloadInBackground(tab: Tab, encoding = tab.forcedEncoding): Prom
 function adopt(tab: Tab, doc: DocumentPayload, nextMode: Mode): void {
   tab.doc = doc;
   tab.missing = false;
+  tab.comparing = false;
   tab.editorState = null;
   tab.savedDoc = null;
   tab.renderedText = null;
@@ -723,8 +727,9 @@ let headingTick = 0;
 
 function ensureEditor(): SourceEditor {
   if (editor) return editor;
-  editor = createSourceEditor(editorHost, { onChange: onEditorChange, onPasteImages: pasteImages });
+  editor = createSourceEditor(editorHost, { onChange: onEditorChange, onPasteImages: pasteImages, onCompareChange });
   editor.setLineWrapping(getSetting("editorLineWrap") === "wrap");
+  editor.setDark(effectiveTheme().base === "dark");
   editor.view.scrollDOM.addEventListener("scroll", () => {
     saveSession();
     onPaneScroll("editor");
@@ -864,6 +869,7 @@ function onEditorChange(): void {
     const doc = editorDoc(tab);
     if (doc && tab.savedDoc) setDirty(tab, !doc.eq(tab.savedDoc));
   }, 250);
+  if (tab.comparing) onCompareChange();
   // 작은 문서는 목차·보기 화면을 편집을 따라 갱신한다 (큰 문서는 보기로 돌아갈 때·분할에서는 저장할 때 한 번).
   // 분할 뷰는 바로 보이니 짧게 기다린다 — 갱신은 바뀐 블록만(render/morph.ts)
   window.clearTimeout(previewTimer);
@@ -881,6 +887,64 @@ function onEditorChange(): void {
     },
     tab.mode === "split" ? PREVIEW_DELAY_SPLIT : PREVIEW_DELAY,
   );
+}
+
+// ---- 비교 (로드맵 3-4, 결정 D5) ---------------------------------------------------------
+// 편집 중에 다른 프로그램이 파일을 바꿨을 때 디스크 내용과 편집 중 내용의 차이를 편집기 안에 보인다(editor.ts `setCompare`).
+// 비교를 시작하면 탭의 기준을 디스크의 새 내용으로 옮긴다(etag·저장된 내용) — 그래서 저장해도 충돌 팝업이 다시 뜨지 않고,
+// 모든 부분을 '디스크 것으로' 고르면 저장할 것이 없어진다
+
+async function startCompare(tab: Tab): Promise<void> {
+  if (!IS_TAURI) return;
+  let disk: DocumentPayload;
+  try {
+    disk = await loadDocument(tab.doc.path, tab.forcedEncoding);
+  } catch (e) {
+    showBanner(`비교할 디스크 내용을 읽지 못했습니다: ${e}`, [], true, "", tab);
+    return;
+  }
+  if (!tabs.includes(tab)) return;
+  activate(tab);
+  if (tab.mode === "view") setMode("source");
+  const ed = attachEditor(tab);
+  tab.doc = disk;
+  tab.missing = false;
+  tab.savedDoc = Text.of(disk.text.split("\n"));
+  tab.comparing = true;
+  ed.setCompare(disk.text);
+  setDirty(tab, !ed.view.state.doc.eq(tab.savedDoc));
+  watchDocument(tab);
+  updateDocChrome();
+  showBanner(
+    "비교 중 — 빨간 줄은 디스크(다른 프로그램이 저장한 내용), 초록 줄은 편집 중인 내용입니다. 부분마다 고르고, 저장하면 편집기 내용으로 파일을 씁니다.",
+    [
+      { label: "비교 끝내기", run: () => endCompare(tab) },
+      {
+        label: "디스크 내용으로 (내 변경 버림)",
+        run: () => {
+          endCompare(tab);
+          void reload({ discard: true }, tab);
+        },
+      },
+    ],
+    false,
+    "compare",
+    tab,
+  );
+  if (ed.compareChunks() === 0) endCompare(tab, "차이가 없습니다");
+}
+
+function endCompare(tab: Tab, message?: string): void {
+  tab.comparing = false;
+  if (editor && editorTab === tab) editor.setCompare(null);
+  if (tab.banner?.kind === "compare") hideBanner(tab);
+  if (message) flashStatus(message);
+}
+
+/** 모든 차이를 골랐으면 비교를 끝낸다 */
+function onCompareChange(): void {
+  const tab = editorTab;
+  if (tab?.comparing && editor?.compareChunks() === 0) endCompare(tab, "차이를 모두 골랐습니다");
 }
 
 function setDirty(tab: Tab, next: boolean): void {
@@ -1045,6 +1109,7 @@ async function handleSaveFailure(failure: SaveFailure | string, tab: Tab): Promi
           : "연 뒤에 다른 프로그램이 이 파일을 저장했습니다. 덮어쓰면 그 변경이 사라집니다.",
         detail: tab.doc.path,
         choices: [
+          ...(failure.missing ? [] : [{ value: "compare", label: "비교" }]),
           { value: "save-as", label: "다른 이름으로 저장…" },
           { value: "force", label: failure.missing ? "다시 만들기" : "덮어쓰기", kind: failure.missing ? "primary" : "danger" },
         ],
@@ -1053,6 +1118,7 @@ async function handleSaveFailure(failure: SaveFailure | string, tab: Tab): Promi
       });
       if (choice === "force") return save({ force: true }, tab);
       if (choice === "save-as") return saveAs(tab);
+      if (choice === "compare") void startCompare(tab);
       return false;
     }
     case "unmappable": {
@@ -1616,6 +1682,7 @@ function applyEffectiveTheme(): void {
   const root = document.documentElement;
   // 그림(Mermaid)은 라이트·다크 팔레트가 따로라 바뀐 쪽으로 다시 그린다 (뒤 탭은 앞으로 올 때)
   if (active) void renderDiagrams(active.article, theme.base === "dark");
+  editor?.setDark(theme.base === "dark");
   if (!themeReady || ms === 0) {
     applyTheme(theme);
     return;
@@ -1989,6 +2056,7 @@ function onFileChanged(path: string, hash: string): void {
   showBanner(
     "다른 프로그램이 이 파일을 바꿨습니다. 편집한 내용은 아직 저장하지 않았습니다.",
     [
+      { label: "비교", run: () => void startCompare(tab) },
       { label: "다시 읽기 (내 변경 버림)", run: () => void reload({ discard: true }, tab) },
       { label: "내 변경 유지", run: () => hideBanner(tab) },
     ],
