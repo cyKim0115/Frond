@@ -2,17 +2,17 @@
    창 테두리가 없으므로(lib.rs decorations false) 각 열이 제 배경색으로 창 맨 위까지 올라가고,
    그 머리 띠(.col-header)가 모여 제목 표시줄이 된다 — 위쪽에 따로 떨어진 띠가 생기지 않는다.
    아래 색 토큰은 JS 적용 전 첫 그림·인쇄용 대체값이다. 화면에서는 테마 모델(src/theme/themes.ts)이
-   <style id="theme-vars">로 같은 이름의 토큰을 덮는다 — 색을 바꾸려면 themes.ts의 내장 테마도 같이 고친다. */
+   <style id="theme-vars">로 같은 이름의 토큰을 덮는다 — 값은 내장 라이트·다크(세이지 차콜)와 같아야 한다(themes.test.ts가 지킨다). */
 
 :root {
-  --fg: #1f2328;
-  --bg: #ffffff;
-  --muted: #59636e;
-  --line: #d0d7de;
-  --accent: #0969da;
+  --fg: #2c3333;
+  --bg: #fcfdfc;
+  --muted: #515b56;
+  --line: #dae1da;
+  --accent: #567e65;
   --on-accent: #ffffff;
   --danger: #cf222e;
-  --sidebar-bg: #f6f8fa;
+  --sidebar-bg: #f0f3f0;
   --hover: color-mix(in srgb, var(--fg) 7%, transparent);
   --pressed: color-mix(in srgb, var(--fg) 12%, transparent);
   --titlebar-h: 36px;
@@ -27,26 +27,26 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --fg: #e6edf3;
-    --bg: #0d1117;
-    --muted: #9198a1;
-    --line: #30363d;
-    --accent: #58a6ff;
-    --on-accent: #0d1117;
+    --fg: #e4eae4;
+    --bg: #1b2221;
+    --muted: #949a96;
+    --line: #474e4c;
+    --accent: #96bea1;
+    --on-accent: #1b2221;
     --danger: #f85149;
-    --sidebar-bg: #161b22;
+    --sidebar-bg: #262e2c;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --fg: #e6edf3;
-  --bg: #0d1117;
-  --muted: #9198a1;
-  --line: #30363d;
-  --accent: #58a6ff;
-  --on-accent: #0d1117;
+  --fg: #e4eae4;
+  --bg: #1b2221;
+  --muted: #949a96;
+  --line: #474e4c;
+  --accent: #96bea1;
+  --on-accent: #1b2221;
   --danger: #f85149;
-  --sidebar-bg: #161b22;
+  --sidebar-bg: #262e2c;
   color-scheme: dark;
 }
 @media (prefers-reduced-motion: reduce) {

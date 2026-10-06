@@ -3,13 +3,16 @@
  * 고르면 사용자 테마로 테마 폴더에 복사된다(가져오기와 같은 길). 앱에는 내장 라이트·다크만 박혀 있고, 이 목록은 출발점이다.
  *
  * - 세피아: 손으로 고른 예제 테마 파일(docs/themes/sepia.json)을 가져오기와 같은 검증(`parseThemeFile`)으로 읽는다
+ * - GitHub 라이트·다크: 2026-10-06까지의 내장 라이트·다크. 내장이 세이지 차콜로 바뀌어 예전 색으로 돌아갈 길로 둔다
  * - 웨딩 팔레트: media.io '웨딩 컬러 팔레트'(https://www.media.io/ko/color-palette/wedding-color-palette.html)의 5색 팔레트 20개.
- *   팔레트마다 역할 5개(배경·보조면·글자·강조·보조 강조)만 정하고 나머지 토큰은 섞기·대비로 만든다(`paletteTheme`).
- *   강조색이 배경과 대비가 모자라면 색상은 두고 밝기만 옮겨 WCAG 4.5:1을 맞춘다(`readable`)
+ *   팔레트마다 역할 5개만 정하고 나머지 토큰은 섞기·대비로 만든다(palette.ts `paletteTheme`)
  */
 
 import sepiaJson from "../../docs/themes/sepia.json?raw";
-import { parseThemeFile, type ThemeBase, type ThemeDef } from "./themes";
+import { type Five, mix, paletteTheme, type Roles, SAGE_CHARCOAL, sageCharcoalLight, soft } from "./palette";
+import { GITHUB_DARK, GITHUB_LIGHT, parseThemeFile, type ThemeBase, type ThemeDef } from "./themes";
+
+export { contrast, mix, readable } from "./palette";
 
 export interface RecommendedTheme {
   theme: ThemeDef;
@@ -27,156 +30,9 @@ export const RECOMMENDED_GROUPS: readonly { id: RecommendedGroupId; label: strin
   { id: "wedding", label: "웨딩 컬러 팔레트", source: "색 출처: media.io '웨딩 컬러 팔레트'" },
 ];
 
-// ---- 색 계산 ------------------------------------------------------------------------
-
-type Rgb = [number, number, number];
-
-function parse(hex: string): Rgb {
-  const h = hex.replace("#", "");
-  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) as Rgb;
-}
-
-function toHex(c: Rgb): string {
-  return `#${c.map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0")).join("")}`;
-}
-
-/** `a`에 `b`를 `t`(0–1)만큼 섞는다 */
-export function mix(a: string, b: string, t: number): string {
-  const x = parse(a);
-  const y = parse(b);
-  return toHex([0, 1, 2].map((i) => x[i] + (y[i] - x[i]) * t) as Rgb);
-}
-
-const soft = (color: string, t = 0.5) => mix(color, "#ffffff", t);
-
-function alpha(hex: string, a: number): string {
-  return `rgba(${parse(hex).join(", ")}, ${a})`;
-}
-
-/** WCAG 상대 휘도 */
-function luminance(hex: string): number {
-  const [r, g, b] = parse(hex).map((v) => {
-    const s = v / 255;
-    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/** WCAG 대비 (1–21) */
-export function contrast(a: string, b: string): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((p, q) => q - p);
-  return (hi + 0.05) / (lo + 0.05);
-}
-
-function toHsl([r, g, b]: Rgb): [number, number, number] {
-  const [R, G, B] = [r / 255, g / 255, b / 255];
-  const max = Math.max(R, G, B);
-  const min = Math.min(R, G, B);
-  const l = (max + min) / 2;
-  if (max === min) return [0, 0, l];
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  const h = max === R ? (G - B) / d + (G < B ? 6 : 0) : max === G ? (B - R) / d + 2 : (R - G) / d + 4;
-  return [h / 6, s, l];
-}
-
-function fromHsl(h: number, s: number, l: number): Rgb {
-  if (s === 0) return [l * 255, l * 255, l * 255];
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
-  const ch = (t: number) => {
-    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
-    if (u < 1 / 6) return p + (q - p) * 6 * u;
-    if (u < 1 / 2) return q;
-    if (u < 2 / 3) return p + (q - p) * (2 / 3 - u) * 6;
-    return p;
-  };
-  return [ch(h + 1 / 3) * 255, ch(h) * 255, ch(h - 1 / 3) * 255];
-}
-
-/** 색상(hue)·채도는 두고 밝기만 옮겨 `bg` 대비 `min` 이상으로 — 밝은 배경이면 어둡게, 어두운 배경이면 밝게 */
-export function readable(color: string, bg: string, min = 4.5): string {
-  if (contrast(color, bg) >= min) return color;
-  const [h, s, l] = toHsl(parse(color));
-  const darken = luminance(bg) > 0.18;
-  for (let step = 1; step <= 100; step++) {
-    const next = toHex(fromHsl(h, s, darken ? l * (1 - step / 100) : l + (1 - l) * (step / 100)));
-    if (contrast(next, bg) >= min) return next;
-  }
-  return darken ? "#000000" : "#ffffff";
-}
-
-// ---- 팔레트 → 테마 --------------------------------------------------------------------
-
-interface Roles {
-  /** 본문 배경 */
-  bg: string;
-  /** 사이드바·코드 블록 배경 */
-  surface: string;
-  /** 본문 글자 */
-  fg: string;
-  /** 링크·버튼·코드 키워드·소스 제목 */
-  accent: string;
-  /** 코드 문자열·목록 기호 */
-  second: string;
-  /** 흐린 글자 — 없으면 글자·배경을 섞어 만든다 */
-  muted?: string;
-  /** 경계선 — 없으면 글자·배경을 섞어 만든다 */
-  line?: string;
-}
-
-/** 역할 5개에서 셸·문서 토큰을 만든다. 나머지(경고·성공 색 등)는 base 내장 테마 값 */
-export function paletteTheme(id: string, name: string, base: ThemeBase, roles: Roles): ThemeDef {
-  const dark = base === "dark";
-  const { bg, surface } = roles;
-  const fg = readable(roles.fg, bg, 7);
-  const muted = readable(roles.muted ?? mix(fg, bg, 0.4), bg, 4.5);
-  const line = roles.line ?? mix(fg, bg, dark ? 0.78 : 0.82);
-  const accent = readable(roles.accent, bg, 4.5);
-  const second = readable(roles.second, bg, 4.5);
-  const onAccent = contrast(accent, "#ffffff") >= contrast(accent, dark ? bg : fg) ? "#ffffff" : dark ? bg : fg;
-  return {
-    id,
-    name,
-    base,
-    shell: { bg, "sidebar-bg": surface, fg, muted, line, accent, "on-accent": onAccent },
-    doc: {
-      "bgColor-default": bg,
-      "bgColor-muted": surface,
-      "bgColor-neutral-muted": alpha(fg, dark ? 0.16 : 0.08),
-      "fgColor-default": fg,
-      "fgColor-muted": muted,
-      "fgColor-accent": accent,
-      "borderColor-default": line,
-      "borderColor-muted": `${line}b3`,
-      "borderColor-accent-emphasis": accent,
-      "selection-bg": alpha(accent, dark ? 0.36 : 0.24),
-      "selection-bg-inactive": alpha(accent, dark ? 0.2 : 0.14),
-      "color-prettylights-syntax-keyword": accent,
-      "color-prettylights-syntax-entity-tag": accent,
-      "color-prettylights-syntax-markup-heading": accent,
-      "color-prettylights-syntax-string": second,
-      "color-prettylights-syntax-variable": second,
-      "color-prettylights-syntax-markup-list": second,
-      "color-prettylights-syntax-constant": readable(mix(accent, second, 0.5), bg),
-      "color-prettylights-syntax-entity": readable(mix(second, fg, 0.35), bg),
-      "color-prettylights-syntax-comment": muted,
-      "color-prettylights-syntax-brackethighlighter-angle": muted,
-      "color-prettylights-syntax-markup-bold": fg,
-      "color-prettylights-syntax-markup-italic": fg,
-      "color-prettylights-syntax-storage-modifier-import": fg,
-    },
-  };
-}
-
-type Five = readonly [string, string, string, string, string];
-
 function wedding(slug: string, name: string, mood: string, colors: Five, base: ThemeBase, roles: (c: Five) => Roles): RecommendedTheme {
   return { theme: paletteTheme(`wedding-${slug}`, name, base, roles(colors)), group: "wedding", description: mood, palette: colors };
 }
-
-/** 미니멀 화이트 세이지 차콜 — 라이트(WEDDING)와 다크 짝(RECOMMENDED_THEMES)이 같은 원본 팔레트를 쓴다 */
-const SAGE_CHARCOAL: Five = ["#ffffff", "#a6b8a6", "#2f3235", "#e6e2dc", "#6b6f74"];
 
 // 원본 페이지 순서. 역할: 배경은 가장 밝은(다크면 가장 어두운) 색을 흰색과 섞어 누그러뜨리고, 보조면은 그 옆 색조
 const WEDDING: readonly RecommendedTheme[] = [
@@ -212,15 +68,9 @@ const WEDDING: readonly RecommendedTheme[] = [
     (c) => ({ bg: soft(c[2], 0.55), surface: soft(c[2], 0.2), fg: c[4], accent: c[1], second: c[0] })),
   wedding("tropical-orchid-palm", "트로피컬 오키드 팜", "열대의, 생생한, 자신감 있는", ["#c45a9a", "#2f7d4a", "#f3f0e7", "#f6b5c8", "#1b2a2a"], "light",
     (c) => ({ bg: c[2], surface: mix(c[2], c[3], 0.25), fg: c[4], accent: c[0], second: c[1] })),
-  // 이 팔레트만 원본의 회색 베이지(c[3]) 대신 세이지(c[1])를 면·글자·강조에 은은히 깔아 전체에 초록빛이 돈다
-  wedding("minimal-white-sage-charcoal", "미니멀 화이트 세이지 차콜", "깨끗한, 미니멀리스트, 차분한", SAGE_CHARCOAL, "light",
-    (c) => {
-      const bg = mix(c[0], c[1], 0.035);
-      const surface = mix(c[0], c[1], 0.17);
-      const fg = mix(c[2], "#1e3a2a", 0.15);
-      // 사이드바(surface)가 본문보다 어두워 흐린 글자 기본값으로는 대비가 모자라니 surface 기준으로 맞춘다
-      return { bg, surface, fg, accent: mix(c[1], "#2f6b4a", 0.6), second: mix(c[4], c[1], 0.3), muted: readable(mix(fg, c[1], 0.3), surface), line: mix(c[1], bg, 0.6) };
-    }),
+  // 내장 라이트와 같은 색 — 원본 팔레트 목록을 그대로 두려고 남긴다(palette.ts `sageCharcoalLight`)
+  wedding("minimal-white-sage-charcoal", "미니멀 화이트 세이지 차콜", "깨끗한, 미니멀리스트, 차분한 — 내장 라이트와 같은 색", SAGE_CHARCOAL, "light",
+    sageCharcoalLight),
   wedding("rustic-burlap-sage", "러스틱 벌랩 세이지", "소박한, 자연스러운, 아늑한", ["#d8c6a6", "#7b8f6a", "#f4efe6", "#5a4b3c", "#2f2b26"], "light",
     (c) => ({ bg: c[2], surface: mix(c[2], c[0], 0.4), fg: c[4], accent: c[1], second: c[3] })),
   wedding("art-deco-emerald-gold", "아르데코 에메랄드 골드", "화려한, 대담한, 빈티지-럭셔리", ["#0b6b4f", "#d4af37", "#0f1a1a", "#f5f0e6", "#2a3d36"], "dark",
@@ -234,32 +84,15 @@ function fromFile(text: string, stem: string, description: string): RecommendedT
   return parsed.ok ? [{ theme: parsed.theme, group: "mdeditor", description }] : [];
 }
 
-/** 화이트 세이지 차콜의 다크 짝 — 원본 팔레트에 다크는 없어서 Frond 묶음에 둔다. 차콜 바탕에 세이지 초록빛 */
-const SAGE_CHARCOAL_DARK: RecommendedTheme = (() => {
-  const c = SAGE_CHARCOAL;
-  const bg = mix(mix(c[2], "#1e3a2a", 0.3), "#000000", 0.35);
-  const surface = mix(bg, c[1], 0.08);
-  const fg = mix(c[0], c[1], 0.3);
-  const roles: Roles = {
-    bg,
-    surface,
-    fg,
-    accent: mix(c[1], "#7fc79a", 0.4),
-    second: mix(c[4], c[1], 0.5),
-    // 다크는 사이드바(surface)가 본문보다 밝아 흐린 글자는 surface 기준으로 맞춘다
-    muted: readable(mix(fg, bg, 0.4), surface),
-  };
-  return {
-    theme: paletteTheme("minimal-sage-charcoal-dark", "미니멀 세이지 차콜 다크", "dark", roles),
-    group: "mdeditor",
-    description: "화이트 세이지 차콜의 다크 짝 — 차콜 바탕에 세이지 초록빛",
-    palette: c,
-  };
-})();
+/** 예전 내장 테마 — 모든 토큰을 다 가진 팔레트를 id·이름만 바꿔 사용자 테마로 */
+const GITHUB: readonly RecommendedTheme[] = [
+  { theme: { ...GITHUB_LIGHT, id: "github-light", name: "GitHub 라이트" }, group: "mdeditor", description: "2026-10-06까지의 기본 라이트 — 흰 바탕에 GitHub 파랑" },
+  { theme: { ...GITHUB_DARK, id: "github-dark", name: "GitHub 다크" }, group: "mdeditor", description: "2026-10-06까지의 기본 다크 — GitHub 다크 색" },
+];
 
 /** 팝업 순서 = 묶음 순서(RECOMMENDED_GROUPS) → 묶음 안 순서 */
 export const RECOMMENDED_THEMES: readonly RecommendedTheme[] = [
   ...fromFile(sepiaJson, "sepia", "누런 종이 느낌 — 오래 읽기 편한 따뜻한 라이트"),
-  SAGE_CHARCOAL_DARK,
+  ...GITHUB,
   ...WEDDING,
 ];

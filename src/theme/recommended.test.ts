@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { contrast, readable, RECOMMENDED_GROUPS, RECOMMENDED_THEMES } from "./recommended";
-import { isBuiltinTheme, parseThemeFile, resolveTheme, themeToJson } from "./themes";
+import { BUILTIN_THEMES, GITHUB_DARK, GITHUB_LIGHT, isBuiltinTheme, parseThemeFile, resolveTheme, themeToJson } from "./themes";
 
 describe("추천 테마", () => {
-  it("세피아 + 웨딩 팔레트 20종, id가 겹치지 않고 내장 id가 아니다", () => {
+  it("세피아·GitHub 라이트·다크 + 웨딩 팔레트 20종, id가 겹치지 않고 내장 id가 아니다", () => {
     const ids = RECOMMENDED_THEMES.map((e) => e.theme.id);
-    expect(ids[0]).toBe("sepia");
+    expect(ids.slice(0, 3)).toEqual(["sepia", "github-light", "github-dark"]);
     expect(RECOMMENDED_THEMES.filter((e) => e.group === "wedding")).toHaveLength(20);
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ids) expect(isBuiltinTheme(id), id).toBe(false);
@@ -31,29 +31,20 @@ describe("추천 테마", () => {
     }
   });
 
-  it("화이트 세이지 차콜은 사이드바·본문·글자 모두 초록빛이 돌고, 사이드바 위 흐린 글자도 읽힌다", () => {
+  it("웨딩 화이트 세이지 차콜은 내장 라이트와 같은 색이다", () => {
     const t = resolveTheme(RECOMMENDED_THEMES.find((x) => x.theme.id === "wedding-minimal-white-sage-charcoal")!.theme);
-    const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    for (const key of ["sidebar-bg", "bg", "fg", "line"] as const) {
-      const [r, g, b] = channels(t.shell[key]);
-      expect(g, key).toBeGreaterThan(r);
-      expect(g, key).toBeGreaterThanOrEqual(b);
-    }
-    expect(contrast(t.shell.muted, t.shell["sidebar-bg"])).toBeGreaterThanOrEqual(4.5);
+    const light = BUILTIN_THEMES[0];
+    expect(t.shell).toEqual(light.shell);
+    expect(t.doc).toEqual(light.doc);
   });
 
-  it("세이지 차콜 다크는 어두운 초록 차콜이고, 사이드바 위 흐린 글자도 읽힌다", () => {
-    const entry = RECOMMENDED_THEMES.find((x) => x.theme.id === "minimal-sage-charcoal-dark")!;
-    expect(entry.theme.base).toBe("dark");
-    const t = resolveTheme(entry.theme);
-    const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    for (const key of ["sidebar-bg", "bg"] as const) {
-      const [r, g, b] = channels(t.shell[key]);
-      expect(g, key).toBeGreaterThan(r);
-      expect(g, key).toBeGreaterThanOrEqual(b);
-      expect(r + g + b, key).toBeLessThan(255 * 3 * 0.25);
+  it("GitHub 라이트·다크는 예전 내장 색 그대로다", () => {
+    for (const [id, palette] of [["github-light", GITHUB_LIGHT], ["github-dark", GITHUB_DARK]] as const) {
+      const t = resolveTheme(RECOMMENDED_THEMES.find((x) => x.theme.id === id)!.theme);
+      expect(t.base).toBe(palette.base);
+      expect(t.shell).toEqual(palette.shell);
+      expect(t.doc).toEqual(palette.doc);
     }
-    expect(contrast(t.shell.muted, t.shell["sidebar-bg"])).toBeGreaterThanOrEqual(4.5);
   });
 });
 
