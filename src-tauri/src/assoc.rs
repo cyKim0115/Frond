@@ -4,8 +4,9 @@
 //! 연결을 직접 쓰지 않는다 — Windows 8+는 `UserChoice`를 해시로 보호하므로 앱이 스스로 기본 앱이 될 수 없고,
 //! 설정 앱을 열어 사용자가 고르게 하는 것이 유일한 정식 경로다.
 //!
-//! ProgId는 `MdEditor.Markdown`(`tauri.conf.json` `bundle.fileAssociations[].name`)이다.
-//! [`query_default_app`]이 이 문자열을 돌려주면 MdEditor가 기본 앱이다.
+//! ProgId는 `MdEditor.Markdown`(`tauri.conf.json` `bundle.fileAssociations[].name`)이다. 앱 이름이 Frond로 바뀌어도
+//! 그대로 둔다 — 사용자가 고른 기본 앱(`UserChoice`)이 이 문자열을 가리키므로 바꾸면 연결이 끊긴다.
+//! [`query_default_app`]이 이 문자열을 돌려주면 Frond가 기본 앱이다.
 
 use tauri::{AppHandle, Manager};
 use windows::Win32::Foundation::HWND;
@@ -13,7 +14,7 @@ use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
 use winreg::RegKey;
 
 /// `HKCU\Software\RegisteredApplications` 값 이름 — `hooks.nsh`의 `${PRODUCTNAME}`과 같아야 한다.
-const REGISTERED_APP: &str = "MdEditor";
+const REGISTERED_APP: &str = "Frond";
 /// 기본 앱을 조회할 확장자.
 const QUERY_EXT: &str = ".md";
 /// Windows 11 첫 빌드. 이 이상이면 설정 앱이 `registeredAppUser` 쿼리로 앱 페이지를 바로 연다.
@@ -71,7 +72,7 @@ pub(crate) fn shell_open(hwnd: Option<HWND>, target: &str) -> Result<(), String>
     }
 }
 
-/// Windows 설정 → 앱 → 기본 앱을 연다. Win11(빌드 22000+)은 MdEditor 페이지로 바로, Win10은 목록으로.
+/// Windows 설정 → 앱 → 기본 앱을 연다. Win11(빌드 22000+)은 Frond 페이지로 바로, Win10은 목록으로.
 #[tauri::command]
 pub fn open_default_apps_settings(app: AppHandle) -> Result<(), String> {
     // tauri 가 주는 HWND 는 다른 windows 크레이트 버전의 타입일 수 있으므로 포인터만 옮겨 담는다
@@ -151,7 +152,7 @@ fn query_current_default(ext: &str) -> Result<Option<String>, String> {
     }
 }
 
-/// 설치기가 `HKCU\Software\RegisteredApplications\MdEditor`를 썼는지 — 기본 앱 UI에 MdEditor가 뜨는 조건.
+/// 설치기가 `HKCU\Software\RegisteredApplications\Frond`를 썼는지 — 기본 앱 UI에 Frond가 뜨는 조건.
 #[tauri::command]
 pub fn is_registered() -> bool {
     RegKey::predef(HKEY_CURRENT_USER)
@@ -166,7 +167,7 @@ mod tests {
 
     #[test]
     fn win11_build_targets_app_page() {
-        let expected = "ms-settings:defaultapps?registeredAppUser=MdEditor";
+        let expected = "ms-settings:defaultapps?registeredAppUser=Frond";
         assert_eq!(settings_uri(Some(22000)), expected);
         assert_eq!(settings_uri(Some(26100)), expected);
     }

@@ -384,7 +384,7 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
 #tabs::-webkit-scrollbar { display: none; }
 /* 열린 문서가 없으면 앱 이름 */
 #tabs.empty::before {
-  content: "MdEditor";
+  content: "Frond";
   align-self: center;
   padding: 0 4px;
   font-size: 12px;

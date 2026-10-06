@@ -1,4 +1,4 @@
-﻿; MdEditor NSIS 훅 — tauri.conf.json bundle.windows.nsis.installerHooks (roadmap 1-6 설치기·파일 연결)
+﻿; Frond NSIS 훅 — tauri.conf.json bundle.windows.nsis.installerHooks (roadmap 1-6 설치기·파일 연결)
 ;
 ; 이 파일은 UTF-8 **BOM 포함**이어야 한다. makensis 는 BOM 으로 인코딩을 판별한다
 ; (bundler 도 -INPUTCHARSET UTF8 로 호출하지만 !include 파일은 BOM 이 기준).
@@ -30,6 +30,7 @@
 ; POSTINSTALL 이 다시 만든다. 어느 쪽이든 UserChoice 는 건드리지 않으므로 사용자가 고른 기본 앱이 유지된다.
 
 ; ProgId — tauri.conf.json bundle.fileAssociations[0].name 과 같아야 한다 (템플릿은 이 값을 define 으로 주지 않는다)
+; 앱 이름(PRODUCTNAME)이 MdEditor → Frond 로 바뀌어도 그대로 둔다 — UserChoice 가 이 ProgId 를 가리킨다
 !define MDEDITOR_PROGID "MdEditor.Markdown"
 
 ; 확장자 하나: '연결 프로그램' 추천 목록(OpenWithProgids) + 실행 파일 지원 유형(SupportedTypes)

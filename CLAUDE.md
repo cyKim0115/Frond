@@ -1,6 +1,6 @@
-# MdEditor
+# Frond (저장소 이름 MdEditor)
 
-Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱.
+Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 2026-10-06 앱 이름을 MdEditor → Frond로 바꿨다.
 
 **현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이다. 에이전트 §3 2~4(인쇄 확인·원문 HTML 허용 목록·`www.` 자동 링크)는 2026-10-02 완료, 남은 §3-5는 B-2·B-9 통과 뒤. 통과하면 MVP(V1) 완료.
 [docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기)는 2026-10-06 구현·재설치 완료. 단계 1 에이전트 몫(V1 검수 [fidelity-report](docs/references/assets/20260929-typora-md-editors/fidelity-report.md) SHIPPABLE 조건부·스펙 동기화·RAG 캡처)도 2026-10-06 완료 — V1은 B-2·B-9만 남았다. 단계 3은 B(쓰임새 순)로 진행, 이후 단계는 사용자 확인을 기다리지 않고 진행하며 실기 목록은 next-session §2에 모은다(사용자 지시 2026-10-06).**
@@ -52,7 +52,7 @@ Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tau
 crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
 src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·load_document), watch.rs(외부 변경),
                        assoc.rs(파일 연결·기본 앱), elevation.rs(관리자 권한 감지), save.rs(저장·etag 충돌·인코딩·줄바꿈 변환),
-                       print_menu.rs(WebView2 기본 메뉴 '인쇄' → 앱 인쇄 확인), drafts.rs(초안 백업), assets.rs(붙여넣은 이미지), themes.rs(사용자 테마 폴더),
+                       print_menu.rs(WebView2 기본 메뉴 '인쇄' → 앱 인쇄 확인), drafts.rs(초안 백업), appdata.rs(데이터 폴더 %APPDATA%\Frond·옛 MdEditor 폴더 이전), assets.rs(붙여넣은 이미지), themes.rs(사용자 테마 폴더),
                        nsis/hooks.nsh(설치기 레지스트리 훅), capabilities/(최소 권한)
 src/                   프런트(vanilla TS). main.ts 셸(열기·보기/소스 모드·저장·초안·외부 변경·목차·상태바·줌·설정 적용),
                        editor.ts(CM6 소스 편집기), find.ts(보기 모드 찾기), render/(markdown-it 파이프라인, types.ts가 계약, html.ts 원문 HTML 허용 목록,
@@ -82,6 +82,9 @@ cd crates/mdeditor-core; cargo run --example roundtrip -- ../../samples/raw   # 
 ```
 
 - Vite `server.watch.ignored`에 `src-tauri`·`target`이 빠지면 cargo가 쓰는 exe 때문에 dev 서버가 EBUSY로 죽는다
+- 앱 이름은 `productName` "Frond"(창 제목·설치 폴더·시작 메뉴·기본 앱 목록 `RegisteredApplications\Frond`). 내부 식별자는
+  MdEditor 그대로 둔다 — ProgId `MdEditor.Markdown`(사용자 `UserChoice`가 가리킴), identifier `com.cykim.mdeditor`(WebView2 데이터·설정),
+  localStorage `mdeditor.*`, exe `mdeditor.exe`, 크레이트 이름. 바꾸면 기본 앱 지정·설정이 끊긴다
 - 창은 `lib.rs`에서 코드로 만든다 (`on_navigation` 훅 때문). `tauri.conf.json`의 `app.windows`는 비워 둔다
 - 창은 `decorations(false)`. 제목 표시줄 버튼·드래그는 프런트가 그리고, 창 API를 새로 쓰면 `capabilities/default.json`에 권한을 더한다
 - 색은 테마 토큰(`src/theme/themes.ts` 셸 8·문서 48)만 쓴다. 새 색이 필요하면 토큰을 늘리고 내장 라이트·다크 둘 다 채운다

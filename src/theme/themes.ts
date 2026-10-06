@@ -238,7 +238,7 @@ export function isBuiltinTheme(id: string): boolean {
 }
 
 /**
- * 사용자 테마 — 진짜 원본은 테마 폴더(`%APPDATA%\MdEditor\themes`, 백엔드 themes.rs)다.
+ * 사용자 테마 — 진짜 원본은 테마 폴더(`%APPDATA%\Frond\themes`, 백엔드 themes.rs)다.
  * 폴더는 비동기로 읽히므로 마지막 목록을 localStorage에 캐시해 두고 시작할 때 동기로 쓴다 — 설정 모듈이
  * 저장된 `theme: "내-테마"`를 읽는 순간 목록에 없으면 기본값으로 되돌려 버리기 때문이다
  */

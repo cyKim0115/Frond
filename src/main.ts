@@ -1356,7 +1356,7 @@ async function offerDraft(tab: Tab): Promise<void> {
 // ---- 상태바·제목 ----------------------------------------------------------------------
 
 function updateTitle(): void {
-  const title = active ? `${active.dirty ? "● " : ""}${active.doc.name} — MdEditor` : "MdEditor";
+  const title = active ? `${active.dirty ? "● " : ""}${active.doc.name} — Frond` : "Frond";
   document.title = title;
   if (IS_TAURI) void getCurrentWindow().setTitle(title);
 }

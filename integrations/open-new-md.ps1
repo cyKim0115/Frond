@@ -1,9 +1,9 @@
-﻿# AI 코딩 도구가 새 .md 파일을 만들면 MdEditor로 연다 — PostToolUse 훅 (integrations/README.md)
+﻿# AI 코딩 도구가 새 .md 파일을 만들면 Frond(옛 이름 MdEditor)로 연다 — PostToolUse 훅 (integrations/README.md)
 #
 # 입력: 훅 stdin JSON
 #   Claude Code  Write 도구 → tool_input.file_path, tool_response.type ("create" | "update")
 #   Codex        apply_patch → tool_input.command 안의 "*** Add File: <경로>" 줄 (상대 경로는 cwd 기준)
-# 동작: 열 파일을 `--from-hook=<claude|codex>` 표식과 함께 MdEditor에 넘긴다. 이미 떠 있으면 single-instance가 기존 창에 넘기고,
+# 동작: 열 파일을 `--from-hook=<claude|codex>` 표식과 함께 Frond(mdeditor.exe)에 넘긴다. 이미 떠 있으면 single-instance가 기존 창에 넘기고,
 #       앱은 표식을 보고 보던 문서를 바꾸지 않은 채 탐색 영역 '새 문서' 목록에 쌓는다(설정 'AI 훅이 만든 문서', 로드맵 3-6).
 #       꺼져 있으면 그 문서로 바로 뜬다. 표식을 모르는 예전 설치본은 `-` 인수를 건너뛰어 예전처럼 연다.
 # AI 작업을 막지 않도록 무슨 일이 있어도 exit 0. 판단 결과는 %TEMP%\mdeditor-open-hook.log에 한 줄씩 남긴다.
@@ -28,7 +28,7 @@ function Read-HookInput {
 function Get-CreatedPaths($Payload) {
     switch ($Payload.tool_name) {
         'Write' {
-            # 덮어쓰기(update)는 열지 않는다 — 이미 열려 있으면 MdEditor의 외부 변경 감지가 다시 읽는다
+            # 덮어쓰기(update)는 열지 않는다 — 이미 열려 있으면 Frond의 외부 변경 감지가 다시 읽는다
             if ($Payload.tool_response.type -ne 'create') { return @() }
             return @([string]$Payload.tool_input.file_path)
         }
@@ -44,7 +44,7 @@ function Get-CreatedPaths($Payload) {
     }
 }
 
-# 이 파일을 MdEditor로 열지. AI가 자기 작업용으로 쓰는 md(메모리·계획·스크래치)는 열지 않는다
+# 이 파일을 Frond로 열지. AI가 자기 작업용으로 쓰는 md(메모리·계획·스크래치)는 열지 않는다
 function Test-ShouldOpen([string]$Path) {
     if ($Path -notmatch '\.(md|markdown)$') { return $false }
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
@@ -67,7 +67,7 @@ function Get-MdEditorExe {
     $key = 'HKCU:\Software\Classes\MdEditor.Markdown\shell\open\command'
     $command = (Get-ItemProperty -LiteralPath $key -ErrorAction SilentlyContinue).'(default)'
     if ($command -match '^\s*"([^"]+)"') { $exe = $Matches[1] }
-    else { $exe = Join-Path $env:LOCALAPPDATA 'MdEditor\mdeditor.exe' }
+    else { $exe = Join-Path $env:LOCALAPPDATA 'Frond\mdeditor.exe' }
     if (Test-Path -LiteralPath $exe -PathType Leaf) { return $exe }
     return $null
 }
@@ -79,7 +79,7 @@ try {
 
     $exe = Get-MdEditorExe
     if (-not $exe) {
-        Write-HookLog "MdEditor 설치 경로를 찾지 못함: $($targets[-1])"
+        Write-HookLog "Frond 설치 경로를 찾지 못함: $($targets[-1])"
         exit 0
     }
     # 출처 표식 — 앱이 탐색기에서 연 것과 구별해 보던 문서를 밀어내지 않는다. 받은 목록이 있어 전부 넘긴다

@@ -23,7 +23,7 @@ export interface RecommendedTheme {
 export type RecommendedGroupId = "mdeditor" | "wedding";
 
 export const RECOMMENDED_GROUPS: readonly { id: RecommendedGroupId; label: string; source?: string }[] = [
-  { id: "mdeditor", label: "MdEditor" },
+  { id: "mdeditor", label: "Frond" },
   { id: "wedding", label: "웨딩 컬러 팔레트", source: "색 출처: media.io '웨딩 컬러 팔레트'" },
 ];
 
@@ -234,7 +234,7 @@ function fromFile(text: string, stem: string, description: string): RecommendedT
   return parsed.ok ? [{ theme: parsed.theme, group: "mdeditor", description }] : [];
 }
 
-/** 화이트 세이지 차콜의 다크 짝 — 원본 팔레트에 다크는 없어서 MdEditor 묶음에 둔다. 차콜 바탕에 세이지 초록빛 */
+/** 화이트 세이지 차콜의 다크 짝 — 원본 팔레트에 다크는 없어서 Frond 묶음에 둔다. 차콜 바탕에 세이지 초록빛 */
 const SAGE_CHARCOAL_DARK: RecommendedTheme = (() => {
   const c = SAGE_CHARCOAL;
   const bg = mix(mix(c[2], "#1e3a2a", 0.3), "#000000", 0.35);
