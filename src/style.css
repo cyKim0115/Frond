@@ -297,16 +297,68 @@ body {
 #titlebar { transition: padding-left var(--panel-dur) var(--panel-ease); }
 /* 탐색 영역이 닫혀 있고 목차도 없으면 토글이 이 띠 위에 얹힌다 */
 #app[data-nav="closed"] #sidebar[hidden] ~ #main #titlebar { padding-left: var(--toggle-w); }
-#title-text {
+/* ---- 탭 띠 (src/tabs.ts, 로드맵 3-1) — 제목 표시줄 가운데. 탭 사이·뒤 빈 곳은 창 이동 영역 ---- */
+#tabs {
   flex: 1;
   min-width: 0;
-  padding: 0 12px;
+  align-self: stretch;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+#tabs::-webkit-scrollbar { display: none; }
+/* 열린 문서가 없으면 앱 이름 */
+#tabs.empty::before {
+  content: "MdEditor";
+  align-self: center;
+  padding: 0 4px;
   font-size: 12px;
   color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
+.tab {
+  flex: 0 1 200px;
+  min-width: 84px;
+  height: calc(var(--titlebar-h) - 6px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 10px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 7px 7px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: default;
+  user-select: none;
+}
+.tab:hover { background: var(--hover); color: var(--fg); }
+.tab[aria-selected="true"] {
+  background: var(--sidebar-bg);
+  border-color: var(--line);
+  color: var(--fg);
+}
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tab.dragging { opacity: 0.7; }
+.tab-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab .tab-close { flex: none; width: 18px; height: 18px; opacity: 0; }
+.tab:hover .tab-close,
+.tab[aria-selected="true"] .tab-close { opacity: 1; }
+/* 저장하지 않은 탭은 닫기 자리에 점 — 올리면 × */
+.tab.dirty .tab-close { opacity: 1; }
+.tab.dirty .tab-close svg { display: none; }
+.tab.dirty .tab-close::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.tab.dirty .tab-close:hover svg { display: block; }
+.tab.dirty .tab-close:hover::before { display: none; }
 #open-settings { margin-right: 6px; }
 #window-controls { display: flex; align-self: stretch; }
 #window-controls button {
@@ -348,17 +400,19 @@ body {
   padding: 0 5px;
   font-size: 12px;
 }
-#document[hidden], #welcome[hidden] { display: none; }
+#viewer > .doc[hidden], #welcome[hidden] { display: none; }
+#viewer > .doc { zoom: var(--doc-zoom, 1); }
+#welcome .welcome-hint { font-size: 12px; }
 /* 큰 문서(main.ts `large-doc`, 2 MB 초과) — 화면 밖 블록·목차 줄은 레이아웃·페인트를 건너뛴다. 탐색 영역·목차·창 폭이
    바뀔 때 문서 전체를 다시 줄바꿈하지 않는다(10 MB 샘플, 브라우저 미리보기: 첫 레이아웃 7.6 s → 0.9 s, 폭 변경 1회 380 → ~250 ms).
    문서는 최상위 블록 100개 묶음(render/chunks.ts `.md-chunk`) 단위로 건너뛴다 — 블록마다 걸면 건너뛰는 상자 14만 개를 훑느라
    스크롤 한 번이 1 s를 넘었다. 높이는 한 번 그린 값을 기억(auto)하고 그 전에는 추정값(블록당 48px). 패널 애니메이션은 프레임마다
    다시 배치하므로 끈다 */
 #app.large-doc { --panel-dur: 0ms; }
-#app.large-doc #document > * { content-visibility: auto; contain-intrinsic-size: auto 4800px; }
+#viewer > .doc.large > * { content-visibility: auto; contain-intrinsic-size: auto 4800px; }
 #app.large-doc #toc > a { content-visibility: auto; contain-intrinsic-size: auto 24px; }
 /* 목차·문서 안 링크로 이동한 제목·각주 위에 남기는 간격 — 설정 '제목 이동 시 위쪽 여백'(main.ts가 변수를 채운다) */
-#document [id] { scroll-margin-top: var(--heading-scroll-offset, 24px); }
+#viewer > .doc [id] { scroll-margin-top: var(--heading-scroll-offset, 24px); }
 
 #banner {
   flex: none;
@@ -493,7 +547,6 @@ body {
 #statusbar #status-encoding:hover,
 #statusbar #status-eol:hover { color: var(--fg); text-decoration: underline; }
 #statusbar #status-encoding.warn { color: var(--danger); }
-#title-text .dirty { color: var(--accent); margin-right: 4px; }
 #status-path { overflow: hidden; text-overflow: ellipsis; }
 #statusbar .warn { color: #d1242f; }
 

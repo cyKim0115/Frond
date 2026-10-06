@@ -163,6 +163,17 @@ export const SETTINGS = {
     step: 15,
     unit: "초",
   },
+  restoreSession: {
+    kind: "select",
+    section: "nav",
+    label: "시작할 때",
+    hint: "지난번에 열어 둔 탭(문서·보기/소스·보던 위치)을 다시 엽니다. 저장하지 않은 편집은 초안 복구로 되살립니다",
+    default: "restore",
+    options: [
+      { value: "restore", label: "지난번 탭 다시 열기" },
+      { value: "none", label: "빈 창으로 시작" },
+    ],
+  },
   recentMax: {
     kind: "number",
     section: "nav",
