@@ -16,6 +16,7 @@
 | `20261001-v1-open-decisions` D7 | 큰 문서(1 MB 이상, 2026-10-02 사용자 지정) `Ctrl+P` — 확인 팝업 후 인쇄 | `ADOPT` | 2026-10-01 | `20261001-v1-open-decisions.md` |
 | `20261001-ai-app-open` A1·A2 | AI 앱 오른쪽 창에 MdEditor 넣기 / 화면 오른쪽 사이드 모드 — 폐기 | `REJECT` | 2026-10-01 | `20261001-ai-app-open.md` |
 | `20261001-ai-app-open` A3·A4 | Claude Code·Codex PostToolUse 훅으로 **새로 만든 md만** MdEditor로 열기 (`integrations/`) | `ADOPT` | 2026-10-01 | `20261001-ai-app-open.md` |
+| `20261006-shiki` | 코드 강조 highlight.js → Shiki 교체 — 300줄 강조 81.7 ms vs 3.2 ms, 번들 886 KB vs 67 KB, 테마 토큰과 분리 → 유지 | `DEFER` | 2026-10-06 | `20261006-shiki.md` |
 
 ## How to add
 
