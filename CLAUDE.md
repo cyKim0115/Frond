@@ -3,7 +3,7 @@
 Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 2026-10-06 앱 이름을 MdEditor → Frond로 바꿨다.
 
 **현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이다. 에이전트 §3 2~4(인쇄 확인·원문 HTML 허용 목록·`www.` 자동 링크)는 2026-10-02 완료, 남은 §3-5는 B-2·B-9 통과 뒤. 통과하면 MVP(V1) 완료.
-[docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기)는 2026-10-06 구현·재설치 완료. 단계 1 에이전트 몫(V1 검수 [fidelity-report](docs/references/assets/20260929-typora-md-editors/fidelity-report.md) SHIPPABLE 조건부·스펙 동기화·RAG 캡처)도 2026-10-06 완료 — V1은 B-2·B-9만 남았다. 단계 3은 B(쓰임새 순)로 진행, 이후 단계는 사용자 확인을 기다리지 않고 진행하며 실기 목록은 next-session §2에 모은다(사용자 지시 2026-10-06).**
+[docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기)는 2026-10-06 구현·재설치 완료. 단계 1 에이전트 몫(V1 검수 [fidelity-report](docs/references/assets/20260929-typora-md-editors/fidelity-report.md) SHIPPABLE 조건부·스펙 동기화·RAG 캡처)도 2026-10-06 완료 — V1은 B-2·B-9만 남았다. 단계 3은 B(쓰임새 순)로 진행, 이후 단계는 사용자 확인을 기다리지 않고 진행하며 실기 목록은 next-session §2에 모은다(사용자 지시 2026-10-06). **단계 4(Phase 3 탭·세션·분할 뷰·비교·폴더 트리·AI 훅 받은 목록) + 4-1 Mermaid·4-2 Alerts 2026-10-06 구현 완료** — V2 작업은 `v2` 브랜치(워크트리 `../MdEditor-v2`)에서 하고 단계가 끝날 때 main에 합친다.**
 할 일·열린 결정은 [docs/next-session.md](docs/next-session.md) §2·§3, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
@@ -50,22 +50,26 @@ docs/qa/               실기 증거 — <날짜>-<범위>/ 캡처·바이트 �
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
 Cargo.toml             루트 워크스페이스 (crates/mdeditor-core + src-tauri). release 프로필 lto·opt-level s
 crates/mdeditor-core   바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
-src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·load_document), watch.rs(외부 변경),
+src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·AI 훅 표식 --from-hook·load_document), watch.rs(외부 변경, 문서마다),
+                       tree.rs(폴더 트리 목록·재귀 감시),
                        assoc.rs(파일 연결·기본 앱), elevation.rs(관리자 권한 감지), save.rs(저장·etag 충돌·인코딩·줄바꿈 변환),
                        print_menu.rs(WebView2 기본 메뉴 '인쇄' → 앱 인쇄 확인), drafts.rs(초안 백업), appdata.rs(데이터 폴더 %APPDATA%\Frond·옛 MdEditor 폴더 이전), assets.rs(붙여넣은 이미지), themes.rs(사용자 테마 폴더),
                        nsis/hooks.nsh(설치기 레지스트리 훅), capabilities/(최소 권한)
-src/                   프런트(vanilla TS). main.ts 셸(열기·보기/소스 모드·저장·초안·외부 변경·목차·상태바·줌·설정 적용),
+src/                   프런트(vanilla TS). main.ts 셸(탭별 문서 상태·열기·보기/소스/분할 모드·저장·초안·외부 변경·비교·세션·목차·상태바·줌·설정 적용),
+                       tabs.ts(제목 표시줄 탭 띠), session.ts(세션 복원 저장값), split.ts(분할 뷰 손잡이·스크롤 동기 계산),
+                       tree-panel.ts(탐색 영역 폴더 트리), inbox.ts·inbox-panel.ts(AI 훅 문서 받은 목록),
                        editor.ts(CM6 소스 편집기), find.ts(보기 모드 찾기), render/(markdown-it 파이프라인, types.ts가 계약, html.ts 원문 HTML 허용 목록,
-                       chunks.ts 큰 문서 블록 묶음), wordcount.ts(상태바 글자 수),
+                       chunks.ts 큰 문서 블록 묶음, alerts.ts GitHub Alerts, mermaid.ts 다이어그램 지연 로드, morph.ts 미리보기 부분 갱신),
+                       wordcount.ts(상태바 글자 수),
                        theme/(문서 CSS·폰트, themes.ts 테마 모델·토큰·테마 파일 검증), theme-panel.ts(설정 테마 목록),
                        theme/recommended.ts·recommended-dialog.ts(추천 테마 — 세피아·웨딩 팔레트, 팔레트→토큰 파생),
                        style.css(셸 CSS·대체 색 토큰)
-                       titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), nav.ts(왼쪽 탐색 영역·최근 파일),
+                       titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), nav.ts(왼쪽 탐색 영역 탭·최근 파일),
                        recent.ts(최근 목록 순수 함수·문서 제목 추출),
                        resize.ts(목차 폭), settings.ts(설정 스키마 — 항목을 더하면 팝업에 자동 표시), settings-dialog.ts,
                        dialog.ts(알림·확인 팝업), context-menu.ts(오른쪽 클릭 메뉴), prefs.ts(UI 상태 localStorage)
 public/fonts/          D2Coding woff2 (OFL) 번들
-integrations/          AI 앱 연동 — open-new-md.ps1(Claude Code·Codex PostToolUse 훅: 새 md를 MdEditor로 열기). UTF-8 BOM 유지
+integrations/          AI 앱 연동 — open-new-md.ps1(Claude Code·Codex PostToolUse 훅: 새 md를 --from-hook 표식과 함께 앱에 넘김). UTF-8 BOM 유지
 spike/                 (main에 없음) Phase 0 실험 앱·측정 — archived-exp/ime-spike, archived-exp/wpf-hello
 ```
 
