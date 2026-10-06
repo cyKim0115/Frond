@@ -283,7 +283,8 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 10. **AI 훅 설정 탭 머지 (2026-10-06 오늘 할 일)** — §2 K 통과 뒤 `git merge feat/ai-hook-settings`(main 폴더, 다른 세션 작업과 겹치면 정리) →
     `npm run app:build` → 설치본 재설치(WMI) → 임시 워크트리 `../MdEditor-ai-hook`·브랜치·`target\ai-hook-test` 지우기.
     Store(9번) 때: MSIX 안 exe(WindowsApps)는 직접 실행이 막힐 수 있어 훅 명령에 **실행 별칭** 경로를 넣어야 한다 — `ai_hook_setup.rs` `current_exe()` 자리
-11. **GitBook 사용 설명서 꾸미기 (2026-10-06 오늘 할 일, 사용자가 실행 지시하면)** — 싱크 설정(`.gitbook.yaml` → `docs/site/`)은 푸시 완료.
+11. **GitBook 사용 설명서 꾸미기 (2026-10-06 오늘 할 일)** — **에이전트 몫 A-1~A-4 완료·푸시 2026-10-06**(20쪽, Git Sync success). 남은 것: A-5 상호작용 그림 5장(12번 웹사이트 A-3 장면 스크립트와 함께),
+    A-6 사용자 확인 뒤 항목(사이트 게시·README 사용법 줄이기·CLAUDE.md 한 줄), 설정 페이지 AI 연동 탭 절(10번 머지 뒤). 원래 계획:
     A-1 빈 사이트 → U-1 사용자 Git Sync 연결 → A-2 꾸밈(세이지 주 색·ko) → A-3 목차 뼈대 → A-4 README 사용법 옮기기 → A-5 스크린샷 다시 찍기 → A-6 확인.
     임시 워크트리 `docs/gitbook`에서 쓰고 한 번에 푸시(main 푸시 = 공개). 설정 페이지는 10번 머지 뒤 모습으로. 사용자 결정 U-2 블록 방침. 순서·완료 조건: [`gitbook-site.md`](gitbook-site.md)
 12. **웹사이트(제품 페이지) 만들기 (2026-10-06 오늘 할 일, 사용자가 실행 지시하면 — Cursor 핸드오프)** — fork.dev식 홈·다운로드·릴리스 노트·개인정보처리방침을
