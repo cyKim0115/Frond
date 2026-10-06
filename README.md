@@ -288,4 +288,5 @@ npm run app:build                 # 릴리스 + NSIS 설치기
 
 ## 라이선스
 
-MIT. 번들한 D2Coding 글꼴은 SIL Open Font License 1.1입니다([public/fonts/D2Coding-OFL.txt](public/fonts/D2Coding-OFL.txt)).
+소스 코드는 [MIT](LICENSE)입니다. "Frond" 이름과 앱 아이콘은 MIT 대상이 아닙니다 — 고쳐서 다시 배포할 때는 다른 이름·아이콘을 써 주세요([TRADEMARKS.md](TRADEMARKS.md)).
+번들한 D2Coding 글꼴은 SIL Open Font License 1.1입니다([public/fonts/D2Coding-OFL.txt](public/fonts/D2Coding-OFL.txt)).
