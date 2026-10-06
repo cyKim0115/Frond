@@ -1,6 +1,7 @@
 # Store 출시·선택 구매 — 먼저 할 일 (2026-10-06 할 일)
 
-작성: 2026-10-06 · 상태: **대기 — 에이전트 몫(A)은 사용자가 "실행"이라고 하면 아래 순서대로, 사용자 몫(U)은 사용자가 직접**
+작성: 2026-10-06 · 상태: **에이전트 몫 A-1~A-5 완료(2026-10-06, `feat/store` → main, 푸시 안 함). 사용자 몫 U-1·U-2·가격 대기. 다음은 R-2 MSIX**
+이름 정리(`frond-rename.md`)는 사용자가 이 작업 뒤로 미뤘다(2026-10-06 큐 지시) — 새 코드는 MdEditor 이름 상태로 썼고 이름 정리가 함께 고친다
 결정: [`decisions/ideas/20261006-store-monetization.md`](decisions/ideas/20261006-store-monetization.md)(Store MSIX + Durable add-on) ·
 [`decisions/ideas/20261006-license.md`](decisions/ideas/20261006-license.md)(MIT 확정)
 근거 조사: [Frond 윈도우 앱 배포 방법](research/reports/Frond%20윈도우%20앱%20배포%20방법.md) · [Frond 스토어 유료 해금 방식](research/reports/Frond%20스토어%20유료%20해금%20방식.md)
@@ -15,12 +16,12 @@
 | 0 | LICENSE(MIT)·`TRADEMARKS.md`·결정 기록 2건·로드맵/계획표 "하지 않는 것"에서 MSIX 빼기 | 에이전트 | — | ✅ 2026-10-06 |
 | U-1 | **계정 유형 정하기** — 개인 계정 / 사업자등록 후 회사 계정 | 사용자 | R-3 Partner Center 가입 | 대기 |
 | U-2 | **세무사 상담 잡기** — 아래 질문 4개 | 사용자 | 첫 유료 판매(add-on 공개) | 대기 |
-| U-3 | 테마 폴더 위치 정하기 — 권장 `Documents\Frond\themes` | 사용자 | A-2 | 대기 (말이 없으면 권장안) |
-| A-1 | 설치 방식 판정 함수 | 에이전트 | A-3, R-2 | "실행" 대기 |
-| A-2 | 추천 테마 카탈로그 분리 (+ U-3 폴더 이전) | 에이전트 | A-3 | "실행" 대기 |
-| A-3 | 권리 판정 뼈대 + 테마 게이트 + '정보' 탭 | 에이전트 | R-3 | "실행" 대기 |
-| A-4 | 구매 권유 스케줄러 | 에이전트 | 공개 출시 | "실행" 대기 |
-| A-5 | 개인정보처리방침·Store 설명문(한·영) 초안 | 에이전트 | R-3 제출 | "실행" 대기 |
+| U-3 | 테마 폴더 위치 정하기 — 권장 `Documents\Frond\themes` | 사용자 | A-2 | ✅ 권장안 적용 2026-10-06 (말이 없어 기본값) |
+| A-1 | 설치 방식 판정 함수 | 에이전트 | A-3, R-2 | ✅ 2026-10-06 `install.rs` — `GetCurrentPackageFullName`·Scoop 경로·디버그/`target` 경로, 커맨드 `get_install_info` |
+| A-2 | 추천 테마 카탈로그 분리 (+ U-3 폴더 이전) | 에이전트 | A-3 | ✅ 2026-10-06 `theme/catalog.ts` — 추천은 폴더 복사 없이 목록에, 같은 색 옛 사본은 한 번만·고친 사본은 사용자 테마, 팝업은 적용만. 테마 폴더 `문서\Frond\themes`로 한 번 이전(다른 볼륨이면 복사) |
+| A-3 | 권리 판정 뼈대 + 테마 게이트 + '정보' 탭 | 에이전트 | R-3 | ✅ 2026-10-06 `license.rs`(Store 밖은 `Open`=모두 열림, Store판은 Store 공급자 자리, 디버그 `FROND_ENTITLEMENT=free/supporter`)·`license.ts`·`purchase.ts`, 게이트는 `catalog.ts` `visibleTheme`, 구매자 전용 테마 4종 `docs/themes/supporter/` |
+| A-4 | 구매 권유 스케줄러 | 에이전트 | 공개 출시 | ✅ 2026-10-06 `license.ts` `shouldNag`(+테스트) · `purchase.ts` 비모달 배너, 저장·인쇄·내보내기는 `whileBusy` 가드 |
+| A-5 | 개인정보처리방침·Store 설명문(한·영) 초안 | 에이전트 | R-3 제출 | ✅ 2026-10-06 `docs/site/privacy.md`(설명서 '참고'에 연결, 영어 요약 포함)·`docs/store-listing.md` |
 
 A-1~A-4는 **Store 계정 없이** 만들고 테스트할 수 있다(개발용 공급자로 구매 상태를 흉내 낸다). 계정·세무(U-1·U-2)는 코드와 별개로 병행한다.
 

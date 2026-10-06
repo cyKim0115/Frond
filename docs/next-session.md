@@ -26,6 +26,7 @@
 | 단계 6 Phase 5 라이브프리뷰 | **실험 구현 2026-10-06** — `exp/live-preview` `e678bad`(main 미병합). 한글 IME 게이트 §2 I |
 | 단계 5 Phase 4 | **구현 완료 2026-10-06** — 4-3 KaTeX·4-4 HTML 내보내기·4-5 인쇄 손질, 4-6 Shiki 검토 `DEFER`. 사용자 실기 §2 H |
 | 단계 4 Phase 3 (+ 4-1·4-2) | **구현 완료 2026-10-06** — 3-6 AI 훅 받은 목록·3-1 탭·3-5 세션 복원·3-3 분할 뷰·3-4 비교·3-2 폴더 트리, Mermaid·Alerts. `v2` 브랜치에서 작업해 main에 합침. 사용자 실기 §2 G |
+| Store 출시 준비 A-1~A-5 (단계 7) | **구현 2026-10-06** — `feat/store`를 main에 합침(푸시 안 함). 설치 방식 판정·추천 테마 카탈로그·테마 폴더 `문서\Frond\themes`·권리 판정·테마 게이트·정보 탭·구매 권유·개인정보처리방침·Store 문구. 사용자 실기 §2 L, 다음은 R-2 MSIX([`store-launch.md`](store-launch.md)) |
 | AI 훅 설정 탭 (배포용) | **구현 2026-10-06, main 미병합** — 브랜치 `feat/ai-hook-settings`(임시 워크트리 `../MdEditor-ai-hook`). 실기·머지는 **오늘 할 일** §2 K·§3-10 |
 
 ### 2026-10-06 작업 — AI 훅 설정 탭 (`feat/ai-hook-settings`, 사용자 요청: 배포용, 개인 경로 없이)
@@ -260,6 +261,16 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 6. **끄기** → 설정 파일에서 Frond 항목만 빠지고 다른 훅은 그대로인지. 다시 켜기
 7. 통과하면 §3-10 머지 → 설치본 재설치 → 설정에서 다시 **이 Frond로 바꾸기**(시험 exe를 지운 뒤 설치본을 한 번 켜면 자동으로 고쳐진다)
 
+### L. Store 준비 (2026-10-06) — 재설치 뒤 확인
+
+설치기판은 구매자 기능이 모두 열려 있어(결정) 평소 화면은 거의 같다. 바뀐 것만 본다.
+
+1. 설정 → 테마 → **폴더 열기**가 `문서\Frond\themes`를 여는지, 예전 `%APPDATA%\Frond\themes`의 테마 파일이 옮겨져 목록에 그대로 있는지
+2. **추천 테마…** 팝업: '추가' 없이 **적용**만, 맨 아래 **구매자 전용** 4종(설치기판은 적용됨). 예전에 추가해 둔 추천 테마가 목록에 두 번 보이지 않는지
+3. 설정 **정보** 탭: 버전 0.1.0 · 설치 방식 '설치기' · 상태 '모든 기능 열림 — Store 밖 설치본'
+4. (선택) 무료 화면 — `$env:FROND_ENTITLEMENT='free'; npm run app:dev`: 사용자 테마를 고르면 같은 쪽 내장 테마로 보이고 '구매자 기능' 표시, 가져오기·복제는 구매 안내, 권유 배너는 유예(7일·5회) 뒤에만. 브라우저 미리보기는 `?entitlement=free&nag=now`
+5. 에이전트가 확인한 것: vitest·cargo test·tsc, 미리보기에서 잠금 표시·구매 안내·정보 탭·추천 팝업 잠금 배지, 헤드리스 Chrome으로 권유 배너. 실제 Store 구매(R-3)는 Private audience 게시 뒤
+
 ### E. 확인이 필요한 결정
 
 없음 — 테마 파일 형식 확정·푸시 완료 (2026-10-01).
@@ -277,7 +288,7 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 7. ~~AI 훅 컨테이너 실행~~ — 2026-10-06 `open-new-md.ps1`이 WMI(`Win32_Process.Create`)로 밖에서 띄우게 고침(실패하면 `Start-Process`). 시험 앱으로 확인: WMI로 띄우면 실제 `%LOCALAPPDATA%`에, 예전 방식은 Claude 패키지 LocalCache에 썼다. 원래 메모: AI 훅이 Claude 데스크톱 세션에서 앱을 **새로** 띄우면 그 앱도 MSIX 컨테이너 안에서 돈다 → 테마·초안 쓰기가 Claude 패키지 LocalCache로 가서 사용자가 직접 띄운 앱에는 안 보인다(이미 떠 있는 앱으로 넘길 때는 상관없음). `integrations/open-new-md.ps1`이 `Win32_Process.Create`(WMI)나 탐색기 경유로 밖에서 띄우게 고친다. Codex 등 컨테이너 밖 도구는 지금 그대로. 2026-10-06 Frond 이전 설치 중 발견
 8. **남은 MdEditor 이름 → Frond 정리 (2026-10-06 할 일, 사용자가 실행 지시하면)** — 저장소 이름·크레이트·localStorage 접두사는 바꾸고
    ProgId·identifier·exe 이름은 남긴다. 범위·순서·검증: [`frond-rename.md`](frond-rename.md)
-9. **Store 출시·선택 구매 먼저 할 일 (2026-10-06 할 일, 사용자가 실행 지시하면)** — 결정: Store MSIX + Durable add-on, 라이선스 MIT 확정(LICENSE·`TRADEMARKS.md` 추가 완료).
+9. ~~**Store 출시·선택 구매 먼저 할 일**~~ — **에이전트 몫 A-1~A-5 2026-10-06 완료**(main 합침, 푸시 안 함, 실기 §2 L). 남은 것: 사용자 U-1·U-2·가격, 그다음 R-2 MSIX. 원래 계획: — 결정: Store MSIX + Durable add-on, 라이선스 MIT 확정(LICENSE·`TRADEMARKS.md` 추가 완료).
    에이전트 A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문.
    **8번 이름 정리를 먼저** 하고 새 워크트리 `feat/store`에서. 순서·완료 조건: [`store-launch.md`](store-launch.md)
 10. **AI 훅 설정 탭 머지 (2026-10-06 오늘 할 일)** — §2 K 통과 뒤 `git merge feat/ai-hook-settings`(main 폴더, 다른 세션 작업과 겹치면 정리) →

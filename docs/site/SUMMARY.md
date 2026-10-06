@@ -38,3 +38,4 @@
 * [단축키](reference/shortcuts.md)
 * [알아 둘 점·문제 해결](reference/troubleshooting.md)
 * [라이선스](reference/license.md)
+* [개인정보처리방침](privacy.md)
