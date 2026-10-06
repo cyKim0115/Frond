@@ -22,8 +22,8 @@
 | Phase 3 (단계 4) | **구현 완료 10/6** — 탭·세션 복원·분할 뷰·비교·폴더 트리·AI 훅 받은 목록 | 사용자 실기 [`next-session.md`](next-session.md) §2 G |
 | Phase 4 (단계 5) | **구현 완료 10/6** — Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄 손질, Shiki는 DEFER | 사용자 실기 [`next-session.md`](next-session.md) §2 H |
 | Phase 5 (단계 6) | **실험 구현 10/6** — `exp/live-preview`(main 미병합) | 사용자 한글 IME [`next-session.md`](next-session.md) §2 I |
-| 배포·수익화 (단계 7) | **결정 10/6** — Store MSIX + Durable add-on 선택 구매, 라이선스 MIT 확정. R-0 완료 | 오늘 할 일 [`store-launch.md`](store-launch.md) — 사용자 U-1 계정 유형·U-2 세무사, 에이전트 A-1~A-5 |
-| 웹사이트 (제품 페이지) | **결정 10/6** — Astro 정적 `website/` + Cloudflare Workers, 설명서는 GitBook. 도메인 전엔 로컬에서 모양만 | 오늘 할 일 [`website-launch.md`](website-launch.md) — 에이전트 A-0~A-5(사용자 도움 없음), 사용자 U-1 도메인·U-2 Cloudflare |
+| 배포·수익화 (단계 7) | **결정 10/6** — Store MSIX + Durable add-on 선택 구매, 라이선스 MIT 확정. R-0 완료, **R-1(A-1~A-5) 구현 10/6** | 다음 R-2 MSIX [`store-launch.md`](store-launch.md) — 사용자 U-1 계정 유형·U-2 세무사, 실기 [`next-session.md`](next-session.md) §2 L |
+| 웹사이트 (제품 페이지) | **결정 10/6, A-0~A-5 구현 10/6** — Astro 정적 `website/` + Cloudflare Workers, 설명서는 GitBook. 도메인 전엔 로컬에서 모양만 | [`website-launch.md`](website-launch.md) — 남은 A-6(실제 앱 장면), 사용자 확인 [`next-session.md`](next-session.md) §2 M, U-1 도메인·U-2 Cloudflare |
 
 > **V1(MVP)은 사용자 확인 2건만 남았다.** 2026-10-06 사용자 지시로 이후 단계는 기다리지 않고 진행하고, 사용자 확인 항목은 [`next-session.md`](next-session.md) §2에 모은다.
 
@@ -113,7 +113,7 @@ V1 범위는 여기서 끝난다. 계속 갈지, 간다면 무엇부터인지 �
 | R-0 | ~~LICENSE(MIT)·`TRADEMARKS.md`·결정 기록·이 계획~~ — 10/6 완료 | 에이전트 | — | — |
 | U-1 | 계정 유형(개인 / 사업자등록 + 회사 계정) — 개인 → 회사 전환 불가 | **사용자** | — | 첫 공개 제출 전 |
 | U-2 | 세무사 상담(한국분 부가세·사업 개시일·원천징수·겸업) | **사용자** | — | 첫 유료 판매 전 |
-| R-1 | A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문 | 에이전트 | [`frond-rename.md`](frond-rename.md) 먼저 | 개발용 공급자로 무료 ↔ 구매자 전환 확인 |
+| R-1 | ~~A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문~~ — 10/6 구현(단위 테스트 통과, 실제 앱 무료 ↔ 구매자 전환은 next-session §2 L-4) | 에이전트 | [`frond-rename.md`](frond-rename.md) 먼저 | 개발용 공급자로 무료 ↔ 구매자 전환 확인 |
 | R-2 | MSIX 로컬 패키지 + MSIX 분기 | 에이전트 | A-1 | 로컬 MSIX 설치본 실기 |
 | R-3 | Store Private 제출·add-on·Store 공급자 | 에이전트 + 사용자(가입) | R-2, U-1 | 프로모션 코드로 해금·복원 |
 | R-4 | 가격·공개 | **사용자** | V1 닫기, U-2 | Store Public |

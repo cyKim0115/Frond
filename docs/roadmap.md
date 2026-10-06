@@ -21,7 +21,7 @@
 
 ## Phase 0 — 스파이크와 코어 (구현 전 검증)
 
-**상태: 완료 2026-09-29.** 0-1은 Win10 19045 새 IME 기준 잠정 통과(이전 IME·Win11은 1-7에서 보강). 결과와 수치는 [`decisions/ideas/20260929-stack.md`](decisions/ideas/20260929-stack.md) "Phase 0 결과 기록란". 코어는 `crates/mdeditor-core`(main), 스파이크·hello 앱은 `archived-exp/ime-spike`·`archived-exp/wpf-hello`.
+**상태: 완료 2026-09-29.** 0-1은 Win10 19045 새 IME 기준 잠정 통과(이전 IME·Win11은 1-7에서 보강). 결과와 수치는 [`decisions/ideas/20260929-stack.md`](decisions/ideas/20260929-stack.md) "Phase 0 결과 기록란". 코어는 `crates/frond-core`(main, 2026-10-06 `mdeditor-core`에서 이름 바꿈), 스파이크·hello 앱은 `archived-exp/ime-spike`·`archived-exp/wpf-hello`.
 
 목표: 스택 판정의 조건(IME)을 실측으로 닫고, UI 없이도 검증 가능한 파일 충실도 코어를 만든다.
 
@@ -119,7 +119,7 @@ Mermaid는 tiny 지연 로드·strict·테마 따라 다시 그림, KaTeX는 수
 ## 배포 트랙 — Store·선택 구매 (2026-10-06 결정)
 
 Phase와 따로 가는 배포 작업이다. 결정은 [`decisions/ideas/20261006-store-monetization.md`](decisions/ideas/20261006-store-monetization.md), 먼저 할 일과 순서는 [`store-launch.md`](store-launch.md).
-**상태: 계획 2026-10-06 — R-0 완료, R-1은 "실행" 지시 대기.** 근거 조사: [`research/reports/`](research/reports/)(배포 방법·유료 해금 방식).
+**상태: R-0 완료, R-1 구현 2026-10-06(실제 앱 확인 [`next-session.md`](next-session.md) §2 L), 다음은 R-2 MSIX.** 근거 조사: [`research/reports/`](research/reports/)(배포 방법·유료 해금 방식).
 
 | 작업 | 내용 | 완료 조건 |
 |------|------|-----------|
