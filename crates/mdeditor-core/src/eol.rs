@@ -37,6 +37,16 @@ impl Eol {
         }
     }
 
+    /// [`label`](Self::label)의 역. 대소문자는 가리지 않는다.
+    pub fn from_label(label: &str) -> Option<Eol> {
+        match label.trim().to_ascii_uppercase().as_str() {
+            "LF" => Some(Eol::Lf),
+            "CRLF" => Some(Eol::CrLf),
+            "CR" => Some(Eol::Cr),
+            _ => None,
+        }
+    }
+
     /// 종결자가 하나도 없는 파일에 새 줄을 추가할 때 쓸 기본값.
     pub fn platform_default() -> Eol {
         if cfg!(windows) {
@@ -198,6 +208,15 @@ mod tests {
             let (text, eols) = normalize(raw);
             assert_eq!(join(&text, &eols, Eol::Lf), raw, "raw={raw:?}");
         }
+    }
+
+    #[test]
+    fn from_label_is_inverse_of_label() {
+        for e in [Eol::Lf, Eol::CrLf, Eol::Cr] {
+            assert_eq!(Eol::from_label(e.label()), Some(e));
+        }
+        assert_eq!(Eol::from_label(" crlf "), Some(Eol::CrLf));
+        assert_eq!(Eol::from_label("LFCR"), None);
     }
 
     #[test]

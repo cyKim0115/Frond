@@ -79,6 +79,7 @@ const toc = $("#toc");
 const statusDefault = $<HTMLButtonElement>("#status-default");
 const statusMode = $<HTMLButtonElement>("#status-mode");
 const statusEncoding = $<HTMLButtonElement>("#status-encoding");
+const statusEol = $<HTMLButtonElement>("#status-eol");
 const app = $("#app");
 
 const IS_TAURI = "__TAURI_INTERNALS__" in window;
@@ -499,6 +500,8 @@ interface SaveOptions {
   force?: boolean;
   convertTo?: string;
   bom?: boolean;
+  /** 모든 줄의 줄바꿈을 이것으로 바꿔 저장한다 (`LF`·`CRLF`) */
+  eol?: string;
 }
 
 /** Ctrl+S. 성공(또는 저장할 것 없음)이면 true */
@@ -511,7 +514,7 @@ async function save(options: SaveOptions = {}): Promise<boolean> {
   await flushComposition();
   const doc = current;
   const text = workingText();
-  if (!dirty && !options.force && !options.convertTo) {
+  if (!dirty && !options.force && !options.convertTo && !options.eol) {
     flashStatus("변경 없음");
     return true;
   }
@@ -523,6 +526,7 @@ async function save(options: SaveOptions = {}): Promise<boolean> {
       force: options.force === true,
       convertTo: options.convertTo ?? null,
       bom: options.bom ?? null,
+      eol: options.eol ?? null,
     });
     doc.text = text;
     doc.hash = saved.hash;
@@ -720,7 +724,10 @@ function updateDocChrome(): void {
   statusEncoding.title = info.lossy
     ? "일부 바이트를 해석하지 못했습니다 (손실 디코드, 읽기 전용) — 눌러서 다른 인코딩으로 다시 열기"
     : "인코딩 — 눌러서 다른 인코딩으로 다시 열기·변환";
-  $("#status-eol").textContent = info.mixed_eol ? `${info.eol} (혼합)` : info.eol;
+  statusEol.textContent = info.mixed_eol ? `${info.eol} (혼합)` : info.eol;
+  statusEol.title = info.mixed_eol
+    ? `줄바꿈이 섞여 있습니다 (가장 많은 것: ${info.eol}) — 눌러서 한 가지로 변환`
+    : "줄바꿈 — 눌러서 LF·CRLF로 변환";
 }
 
 let flashTimer = 0;
@@ -799,7 +806,44 @@ async function encodingMenu(): Promise<void> {
   if (ok) await save({ convertTo: label, bom: bom === "bom" });
 }
 
+/** 줄바꿈 메뉴 — 모든 줄을 LF 또는 CRLF로 바꿔 바로 저장한다 (결정 D5). 평소 저장은 줄별 원래 줄바꿈을 지킨다 */
+async function eolMenu(): Promise<void> {
+  if (!current) return;
+  if (!IS_TAURI) {
+    showBanner("브라우저 미리보기에서는 줄바꿈을 바꿀 수 없습니다.");
+    return;
+  }
+  const { info } = current;
+  if (info.lossy) {
+    showBanner("일부 바이트를 해석하지 못한 문서(손실 디코드)라 변환할 수 없습니다. 인코딩을 먼저 맞게 다시 여세요.", [], true);
+    return;
+  }
+  const choice = await showChoice({
+    title: "줄바꿈",
+    message: `지금: ${statusEol.textContent}. 변환하면 모든 줄의 줄바꿈을 하나로 맞춰 파일을 바로 저장합니다. LF는 macOS·Linux·Git 저장소에서, CRLF는 Windows 메모장 등에서 흔히 씁니다.`,
+    choices: [
+      { value: "LF", label: "LF로 변환해 저장" },
+      { value: "CRLF", label: "CRLF로 변환해 저장" },
+    ],
+    cancelLabel: "닫기",
+    vertical: true,
+  });
+  if (!choice) return;
+  if (!info.mixed_eol && info.eol === choice) {
+    flashStatus(`이미 모든 줄이 ${choice}입니다`);
+    return;
+  }
+  const ok = await showDialog({
+    title: "줄바꿈 변환",
+    message: `이 파일의 모든 줄바꿈을 ${choice}(으)로 바꿔 저장합니다. 파일 바이트가 바뀝니다.${dirty ? " 저장하지 않은 편집도 함께 저장됩니다." : ""}`,
+    confirmLabel: "변환해 저장",
+    cancelLabel: "취소",
+  });
+  if (ok) await save({ eol: choice });
+}
+
 statusEncoding.addEventListener("click", () => void encodingMenu());
+statusEol.addEventListener("click", () => void eolMenu());
 statusMode.addEventListener("click", () => setMode(mode === "view" ? "source" : "view"));
 
 // ---- 링크 ------------------------------------------------------------------

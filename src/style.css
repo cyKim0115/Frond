@@ -483,9 +483,11 @@ body {
 #statusbar [hidden] { display: none; }
 /* 누를 수 있는 상태 표시 — 글자는 상태바 색, 올리면 밑줄 */
 #statusbar #status-mode,
-#statusbar #status-encoding { color: inherit; }
+#statusbar #status-encoding,
+#statusbar #status-eol { color: inherit; }
 #statusbar #status-mode:hover,
-#statusbar #status-encoding:hover { color: var(--fg); text-decoration: underline; }
+#statusbar #status-encoding:hover,
+#statusbar #status-eol:hover { color: var(--fg); text-decoration: underline; }
 #statusbar #status-encoding.warn { color: var(--danger); }
 #title-text .dirty { color: var(--accent); margin-right: 4px; }
 #status-path { overflow: hidden; text-overflow: ellipsis; }
