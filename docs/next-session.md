@@ -100,7 +100,8 @@
 
 ## 2. 사용자가 할 일 ★ 실기 테스트
 
-**설치본은 이름만 뒤처짐** — 설치된 것은 2026-10-06 `dda4c6e`(세이지 초록 아이콘) 빌드의 **MdEditor**다(`setup.exe /S /NS` 무인, `.md` 연결·RegisteredApplications 그대로, `ie4uinit -show`로 아이콘 캐시 갱신). 같은 날 앱 이름을 **Frond**로 바꿨고(`ccfec00`, 결정 [`ideation/20261006-app-name.md`](decisions/ideation/20261006-app-name.md)) `Frond_0.1.0_x64-setup.exe`는 빌드했지만 이전 설치(옛 MdEditor 무인 제거 → Frond 설치, 설치 폴더 `%LOCALAPPDATA%\Frond`, 시작 메뉴 이름 변경)는 사용자 확인 대기다. 기능은 설치본과 같다.
+**설치본 = Frond 이름 변경 빌드(`6e3ef34`, 13:03)** — 2026-10-06 앱 이름을 **Frond**로 바꾼 빌드로 이전 설치했다(결정 [`ideation/20261006-app-name.md`](decisions/ideation/20261006-app-name.md)): 옛 MdEditor 무인 제거('앱 데이터 삭제' 없이) → `Frond_0.1.0_x64-setup.exe /S`, 바탕 화면 바로가기는 지움(전에도 없었음). 확인(컨테이너 밖): `%LOCALAPPDATA%\Frond\mdeditor.exe`·시작 메뉴 Frond, `.md` 기본값 `MdEditor.Markdown` → Frond exe, `RegisteredApplications\Frond`, `%APPDATA%\MdEditor` → `%APPDATA%\Frond` 이전(테마 2개), WebView2 설정 그대로. **그 뒤 main에 들어온 V2 단계 4·5(`c71d978`~`d4ae531`)는 설치본에 없다** → §2 G·H 확인 전에 새 빌드로 재설치(아래 WMI 방식).
+**Claude 데스크톱에서 설치기·설치본 앱을 돌릴 때는 WMI(`Win32_Process.Create`)로 컨테이너 밖에서** — 세션 셸은 MSIX 컨테이너라 AppData 새 파일이 Claude 패키지 LocalCache로 가상화된다. 이번에 안에서 돌린 첫 설치는 사용자 쪽에 안 보여 밖에서 다시 설치했다. 남은 문제는 §3-7.
 **`samples/raw/`는 바이트 픽스처라 직접 편집·저장하지 말고 복사본으로 시험한다.**
 
 ### B. Phase 2 편집·저장
@@ -209,6 +210,7 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 4. ~~`www.` 자동 링크~~(D2) — 2026-10-02 완료(`8ec7d4a`)
 5. ~~B·C 결과 → `fidelity-report.md` → MVP 닫기 → `capture-to-rag`(D6)~~ — 2026-10-06 에이전트 몫 완료(SHIPPABLE 조건부). B-2·B-9 통과하면 `ASSET.md` 상태 `verified`·`v0.1.0` 태그(사용자 결정)
 6. 단계 4~6 — [`plan.md`](plan.md) 단계 3 실행 순서대로. 단계마다 사용자 실기 목록을 §2에 더한다. **단계 4(+4-1·4-2)는 2026-10-06 완료(§2 G), 단계 5도 2026-10-06 완료(§2 H)** — 다음은 단계 6 라이브프리뷰 실험(`exp/live-preview`). 맨 앞은 **3-6 AI 훅 받은 목록**(2026-10-06 사용자 요청: 훅이 연 문서가 보던 문서를 바꿔 읽던 자리를 잃는다 → 훅만 표식으로 구별해 탐색 영역 '새 문서' 탭에 쌓기, 설계 [`roadmap.md`](roadmap.md) Phase 3 · 3-6)
+7. AI 훅이 Claude 데스크톱 세션에서 앱을 **새로** 띄우면 그 앱도 MSIX 컨테이너 안에서 돈다 → 테마·초안 쓰기가 Claude 패키지 LocalCache로 가서 사용자가 직접 띄운 앱에는 안 보인다(이미 떠 있는 앱으로 넘길 때는 상관없음). `integrations/open-new-md.ps1`이 `Win32_Process.Create`(WMI)나 탐색기 경유로 밖에서 띄우게 고친다. Codex 등 컨테이너 밖 도구는 지금 그대로. 2026-10-06 Frond 이전 설치 중 발견
 
 ## 4. 보강할 실측
 
