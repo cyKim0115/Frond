@@ -1,6 +1,6 @@
 # 웹사이트(제품 페이지) — 오늘 할 일 (Cursor 핸드오프)
 
-작성: 2026-10-06 · 상태: **에이전트 몫 A-0~A-5 완료 2026-10-06**(`feat/website` → main, 푸시 안 함, 워크트리 `../MdEditor-web`은 사용자 확인 뒤 지운다). A-6 선택·사용자 몫 U-1~U-3 남음
+작성: 2026-10-06 · 상태: **에이전트 몫 A-0~A-5 완료 2026-10-06**(`feat/website` → main, 푸시 안 함, 워크트리 `../MdEditor-web`·브랜치는 2026-10-07 지움 — 이후 작업은 main 폴더 `website/`). A-6 선택·사용자 몫 U-1~U-3 남음
 결정: [`decisions/ideas/20261006-website.md`](decisions/ideas/20261006-website.md) · 근거 조사: [Frond 웹사이트 구축 방법](research/reports/Frond%20웹사이트%20구축%20방법.md)
 같이 보는 계획: [`gitbook-site.md`](gitbook-site.md)(사용 설명서 = GitBook, 다른 세션) · [`store-launch.md`](store-launch.md)(Store 출시) · [`frond-rename.md`](frond-rename.md)(저장소 이름 `Frond`)
 
