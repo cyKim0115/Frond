@@ -1,6 +1,6 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 확인 §2 M. **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 origin보다 앞서 있음 — 푸시는 사용자 결정)
+작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 2026-10-07 비공개 웹사이트 저장소 `../frond-website`로 분리(확인 목록도 그쪽). **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 origin보다 앞서 있음 — 푸시는 사용자 결정)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
 이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
@@ -27,7 +27,7 @@
 | 단계 5 Phase 4 | **구현 완료 2026-10-06** — 4-3 KaTeX·4-4 HTML 내보내기·4-5 인쇄 손질, 4-6 Shiki 검토 `DEFER`. 사용자 실기 §2 H |
 | 단계 4 Phase 3 (+ 4-1·4-2) | **구현 완료 2026-10-06** — 3-6 AI 훅 받은 목록·3-1 탭·3-5 세션 복원·3-3 분할 뷰·3-4 비교·3-2 폴더 트리, Mermaid·Alerts. `v2` 브랜치에서 작업해 main에 합침. 사용자 실기 §2 G |
 | Store 출시 준비 A-1~A-5 (단계 7) | **구현 2026-10-06** — `feat/store`를 main에 합침(푸시 안 함). 설치 방식 판정·추천 테마 카탈로그·테마 폴더 `문서\Frond\themes`·권리 판정·테마 게이트·정보 탭·구매 권유·개인정보처리방침·Store 문구. 사용자 실기 §2 L, 다음은 R-2 MSIX([`store-launch.md`](store-launch.md)) |
-| 제품 웹사이트 A-0~A-5 | **구현 2026-10-06** — `website/` Astro 정적(로컬만, 배포 없음), 장면 캡처 스크립트, 홈·받기·릴리스 노트·개인정보처리방침·404, 루트 `CHANGELOG.md`. 리뷰 [`qa/2026-10-06-website/`](qa/2026-10-06-website/README.md), 사용자 확인 §2 M |
+| 제품 웹사이트 A-0~A-5 | **구현 2026-10-06** — 2026-10-07 비공개 저장소 `cyKim0115/frond-website`(로컬 `../frond-website`)로 분리. 이 저장소에는 `CHANGELOG.md`(릴리스 노트 원본)·설명서 그림만 남는다. 계획·사용자 확인은 그 저장소 `docs/website-launch.md` §0-2 |
 | AI 훅 설정 탭 (배포용) | **구현 2026-10-06, main 미병합** — 브랜치 `feat/ai-hook-settings`(임시 워크트리 `../MdEditor-ai-hook`). 실기·머지는 **오늘 할 일** §2 K·§3-10 |
 
 ### 2026-10-06 작업 — AI 훅 설정 탭 (`feat/ai-hook-settings`, 사용자 요청: 배포용, 개인 경로 없이)
@@ -276,16 +276,9 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 4. (선택) 무료 화면 — `$env:FROND_ENTITLEMENT='free'; npm run app:dev`: 사용자 테마를 고르면 같은 쪽 내장 테마로 보이고 '구매자 기능' 표시, 가져오기·복제는 구매 안내, 권유 배너는 유예(7일·5회) 뒤에만. 브라우저 미리보기는 `?entitlement=free&nag=now`. 이때 `app:dev`가 exe 이름 고정(`mainBinaryName` mdeditor) 뒤에도 뜨는지, 권유 배너가 저장 충돌·다른 팝업과 겹치지 않는지(A-4 완료 조건 — 미리보기에서는 못 봄)도 같이 본다
 5. 에이전트가 확인한 것: vitest·cargo test·tsc, 미리보기에서 잠금 표시·구매 안내·정보 탭·추천 팝업 잠금 배지, 헤드리스 Chrome으로 권유 배너. 실제 Store 구매(R-3)는 Private audience 게시 뒤
 
-### M. 제품 웹사이트 (2026-10-06) — 모양·문구 확인
+### M. 제품 웹사이트 — 비공개 저장소로 옮김 (2026-10-07)
 
-보는 법: `cd C:\Users\cykim\repo\MdEditor\website; npm run dev` → `http://localhost:4321` (또는 리뷰 캡처 [`qa/2026-10-06-website/`](qa/2026-10-06-website/README.md))
-
-1. 히어로 제목 — 지금 ① **마크다운을 문서처럼**. 다른 안: ② 읽기 좋게 열고, 원본 그대로 저장합니다 ③ AI가 쓴 문서를 편하게 읽는 곳 — 고르면 `website/src/pages/index.astro`
-2. **만든 사람** 문구 — 지금 임시("한국의 1인 개발자가 만들고 있습니다."). 직접 쓸 한두 문장
-3. 기능 6개 문구·장면, 숫자 띠(10 MB·0.1초·추천 테마 23·관리자 권한 0), FAQ — 빼거나 고칠 것
-4. 받기 카드 네 상태(준비 중·Store 배지·직접 설치·winget) 캡처 — 공개 순서대로 `website/src/config.ts` 값만 바꾼다
-5. 도메인 U-1(후보 [`website-launch.md`](website-launch.md) §8) → Cloudflare U-2. 그 전에는 공개하지 않는다
-6. ~~워크트리 `../MdEditor-web`(`feat/website`) 지우기~~ — 2026-10-07 지움(main에 합쳐진 뒤, 사이트는 main 폴더에서 본다)
+확인 목록(히어로 제목·만든 사람 문구·기능·받기 카드·도메인)은 비공개 웹사이트 저장소 `../frond-website`의 `docs/website-launch.md` §0-2로 옮겼다.
 
 ### E. 확인이 필요한 결정
 
@@ -314,9 +307,8 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
     A-6 사용자 확인 뒤 항목(사이트 게시·README 사용법 줄이기·CLAUDE.md 한 줄), 설정 페이지 AI 연동 탭 절(10번 머지 뒤). 원래 계획:
     A-1 빈 사이트 → U-1 사용자 Git Sync 연결 → A-2 꾸밈(세이지 주 색·ko) → A-3 목차 뼈대 → A-4 README 사용법 옮기기 → A-5 스크린샷 다시 찍기 → A-6 확인.
     임시 워크트리 `docs/gitbook`에서 쓰고 한 번에 푸시(main 푸시 = 공개). 설정 페이지는 10번 머지 뒤 모습으로. 사용자 결정 U-2 블록 방침. 순서·완료 조건: [`gitbook-site.md`](gitbook-site.md)
-12. ~~**웹사이트(제품 페이지) 만들기**~~ — **에이전트 몫 A-0~A-5 2026-10-06 완료**(main 합침, 푸시 안 함, 사용자 확인 §2 M). 남은 것: A-6(실제 앱 장면 S9·S11·S12·설명서 missing-file, 선택), 사용자 U-1~U-3. 원래 계획: — fork.dev식 홈·다운로드·릴리스 노트·개인정보처리방침을
-    `website/`(Astro 정적)에 **도메인 없이 로컬에서** 끝까지(배포·계정 작업 없음). A-0 워크트리 `feat/website` → A-1 뼈대 → A-2 디자인 → A-3 사용 장면 캡처 스크립트(11번 A-5 설명서 그림과 공용)
-    → A-4 원고·페이지 → A-5 검증. 사용자 몫은 도메인·Cloudflare 연결(그때). 순서·완료 조건: [`website-launch.md`](website-launch.md), 결정 [`20261006-website`](decisions/ideas/20261006-website.md)
+12. ~~**웹사이트(제품 페이지) 만들기**~~ — 에이전트 몫 A-0~A-5 2026-10-06 완료. **2026-10-07 비공개 저장소 `cyKim0115/frond-website`(로컬 `../frond-website`)로 분리** —
+    남은 A-6·사용자 U-1~U-3·사용자 확인은 그 저장소 `docs/website-launch.md`
 
 ## 4. 보강할 실측
 

@@ -105,8 +105,8 @@ MSIX로 새로 설치하면 `%APPDATA%\Frond`가 패키지 전용 위치로 가�
 ### A-5 개인정보처리방침·Store 설명문 초안
 
 - `docs/privacy.md` — "로컬 파일만 읽고 쓰며 수집·전송하지 않음, 구매는 Microsoft Store가 처리". Win32 앱은 Store 정책 10.5.1상 항상 필요. 공개 URL은 GitHub Pages 또는 저장소 링크
-  — 2026-10-06 바뀜(결정 [`20261006-website`](decisions/ideas/20261006-website.md) W9): 위치는 **`docs/site/privacy.md`**(GitBook 설명서·웹사이트 `/privacy/`·Store가 같이 쓴다).
-  공개 URL은 도메인 전엔 GitBook 주소, 도메인 뒤엔 `https://<도메인>/privacy/`. 웹사이트 작업([`website-launch.md`](website-launch.md) A-4)이 먼저 만들 수 있다 — 먼저 하는 쪽이 만든다.
+  — 2026-10-06 바뀜(웹사이트 결정 `20261006-website` W9 — 비공개 웹사이트 저장소): 위치는 **`docs/site/privacy.md`**(GitBook 설명서·웹사이트 `/privacy/`·Store가 같이 쓴다).
+  공개 URL은 도메인 전엔 GitBook 주소, 도메인 뒤엔 `https://<도메인>/privacy/`. 웹사이트 작업(웹사이트 계획 A-4)이 먼저 만들 수 있다 — 먼저 하는 쪽이 만든다.
   스크린샷 목록은 웹사이트 §6 장면을 같이 쓴다
 - `docs/store-listing.md` — 한·영 설명(첫머리에 "모든 편집 기능 무료, 선택적 1회 구매로 사용자 테마·전용 테마"), 기능 목록, 스크린샷 목록(전용 테마 화면은 "구매자 전용" 표시), IARC 설문 메모
 

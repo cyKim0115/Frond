@@ -23,7 +23,7 @@
 | Phase 4 (단계 5) | **구현 완료 10/6** — Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄 손질, Shiki는 DEFER | 사용자 실기 [`next-session.md`](next-session.md) §2 H |
 | Phase 5 (단계 6) | **실험 구현 10/6** — `exp/live-preview`(main 미병합) | 사용자 한글 IME [`next-session.md`](next-session.md) §2 I |
 | 배포·수익화 (단계 7) | **결정 10/6** — Store MSIX + Durable add-on 선택 구매, 라이선스 MIT 확정. R-0 완료, **R-1(A-1~A-5) 구현 10/6** | 다음 R-2 MSIX [`store-launch.md`](store-launch.md) — 사용자 U-1 계정 유형·U-2 세무사, 실기 [`next-session.md`](next-session.md) §2 L |
-| 웹사이트 (제품 페이지) | **결정 10/6, A-0~A-5 구현 10/6** — Astro 정적 `website/` + Cloudflare Workers, 설명서는 GitBook. 도메인 전엔 로컬에서 모양만 | [`website-launch.md`](website-launch.md) — 남은 A-6(실제 앱 장면), 사용자 확인 [`next-session.md`](next-session.md) §2 M, U-1 도메인·U-2 Cloudflare |
+| 웹사이트 (제품 페이지) | **결정 10/6, A-0~A-5 구현 10/6** — Astro 정적 + Cloudflare Workers, 설명서는 GitBook. 도메인 전엔 로컬에서 모양만 | 2026-10-07 비공개 웹사이트 저장소 `../frond-website`로 분리 — 그쪽 `docs/website-launch.md`: 남은 A-6(실제 앱 장면), 사용자 확인 §0-2, U-1 도메인·U-2 Cloudflare |
 
 > **V1(MVP)은 사용자 확인 2건만 남았다.** 2026-10-06 사용자 지시로 이후 단계는 기다리지 않고 진행하고, 사용자 확인 항목은 [`next-session.md`](next-session.md) §2에 모은다.
 

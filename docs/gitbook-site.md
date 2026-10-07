@@ -5,7 +5,7 @@
 2026-10-06 첫 가져오기 success, 스페이스 편집 잠금 확인. 예전 스페이스용 [`.gitbook.yaml`](../.gitbook.yaml)(`c722719`)도 남아 있다. 개발 문서(`docs/` 나머지)는 싱크되지 않는다.
 사이트는 아직 **게시 전**(published false) — `cykim.gitbook.io/frond`는 게시해야 열린다
 보고: `docs/site/`를 고쳐 푸시한 작업은 웹훅 보고에 **GitBook 링크**를 붙인다 — 게시 뒤엔 공개 주소(해당 페이지까지), 게시 전엔 GitBook 앱의 Frond 사이트 링크(사용자 지시 2026-10-06)
-참고 조사(다른 세션, 진행 중): [`research/research_notes/Frond 웹사이트 구축 방법/`](research/research_notes/Frond%20웹사이트%20구축%20방법/docs_platforms.md) —
+참고 조사(다른 세션): 비공개 웹사이트 저장소 `../frond-website`의 `docs/research/research_notes/Frond 웹사이트 구축 방법/docs_platforms.md` —
 문서 플랫폼은 Starlight가 권장안, **GitBook Free + Git Sync가 차선안**이다. 이 계획은 사용자가 GitBook을 고른 것(2026-10-06)을 따르되, 나중에 옮기기 쉽게 쓴다
 
 목표: [`README.md`](../README.md)에 몰려 있는 사용법을 **한국어 사용 설명서**로 옮겨 `cykim.gitbook.io/frond`(가칭)에 공개한다.
@@ -30,7 +30,7 @@
 | A-2 | 꾸밈 설정 (아래 값) | 에이전트 | — | ✅ 2026-10-06 (API로 주 색·토글·GitHub 헤더 링크. 언어 ko는 API가 거절해 en 유지, 아이콘·파비콘 생략) |
 | A-3 | 목차·페이지 뼈대 — `SUMMARY.md` + 빈 페이지, 페이지마다 frontmatter `icon`·`description` | 에이전트 | A-4 | ✅ 2026-10-06 (20쪽) |
 | A-4 | 페이지 쓰기 — README 사용법을 옮기고 설명서 말투로 다듬기 | 에이전트 | A-6 | ✅ 2026-10-06 (설정 AI 연동 탭 절은 §3-10 머지 전이라 비움) |
-| A-5 | 스크린샷 다시 찍기 → `docs/site/images/` | 에이전트 | A-6 | 거의 (main·dark·source 세이지 차콜 재촬영, 2026-10-06 웹사이트 장면 스크립트 `website/scripts/capture-scenes.mjs`로 recent-files·find·settings·theme도 — 데모 문서. missing-file만 GitHub 색 그대로: 파일 감시가 실제 앱에만 있어 website-launch A-6 몫). 장면 스크립트 그림은 256색 PNG로 줄여 find 58·theme 69·settings 40·recent-files 64 KB(예산 150 KB 안, 2026-10-06 검토 뒤) |
+| A-5 | 스크린샷 다시 찍기 → `docs/site/images/` | 에이전트 | A-6 | 거의 (main·dark·source 세이지 차콜 재촬영, 2026-10-06 웹사이트 장면 스크립트(비공개 웹사이트 저장소 `../frond-website`의 `scripts/capture-scenes.mjs`)로 recent-files·find·settings·theme도 — 데모 문서. missing-file만 GitHub 색 그대로: 파일 감시가 실제 앱에만 있어 website-launch A-6 몫). 장면 스크립트 그림은 256색 PNG로 줄여 find 58·theme 69·settings 40·recent-files 64 KB(예산 150 KB 안, 2026-10-06 검토 뒤) |
 | A-6 | 확인·마무리 (완료 조건) | 에이전트 | — | 일부 (2026-10-06 푸시 → Git Sync success·편집 잠금·20쪽·그림 8장 가져옴 API 확인, 로컬 링크 검사 0건. 한글 묶음 제목이 `undefined` 주소가 돼 SUMMARY에 영문 슬러그 지정. 게시·README 줄이기·CLAUDE.md 한 줄은 사용자 확인 뒤) |
 
 ## 시작 전 확인 (에이전트)
@@ -80,7 +80,7 @@
 - 링크는 상대 `.md` 경로. `docs/site/` 밖 파일(`integrations/`·`docs/themes/` 등)은 루트 밖이라 싱크되지 않으니 GitHub 주소로 건다
 - 그림은 `docs/site/images/`에 두고 상대 경로로. 지금 [`docs/screenshots/`](screenshots/)는 2026-09-30 GitHub 색이라 **기본 테마 세이지 차콜로 다시 찍는다**
   (설치본을 CDP로 띄워 캡처, 라이트 기본·다크는 테마 페이지에만). 창 크기는 한 가지로 맞춘다
-  — 2026-10-06 추가: 캡처는 웹사이트 계획 [`website-launch.md`](website-launch.md) A-3의 장면 스크립트와 **같이 쓴다**(앱 기본 창 1100×800·DPR 2,
+  — 2026-10-06 추가: 캡처는 웹사이트 계획(비공개 웹사이트 저장소 `../frond-website`의 `docs/website-launch.md`) A-3의 장면 스크립트와 **같이 쓴다**(앱 기본 창 1100×800·DPR 2,
   설치본 대신 브라우저 미리보기 또는 식별자를 바꾼 빌드, 중립 경로의 데모 문서). 먼저 하는 쪽이 스크립트를 만든다
 - 바이트 픽스처 `samples/raw/`는 예시로 열지 않는다
 
@@ -97,7 +97,7 @@
 ## 그다음 (오늘 할 일 아님)
 
 - 개인정보처리방침 페이지 — [`store-launch.md`](store-launch.md) A-5와 합쳐 Store 제출용 공개 URL로 쓴다. 원본은 `docs/site/privacy.md` 하나 —
-  웹사이트 `/privacy/`도 이 파일을 그린다([`website-launch.md`](website-launch.md) §7, 2026-10-06 결정 W9)
+  웹사이트 `/privacy/`도 이 파일을 그린다(웹사이트 계획 §7, 2026-10-06 결정 W9 — 비공개 웹사이트 저장소)
 - 릴리스 노트 — GitHub Releases 배포가 시작되면
 - 영어 variant — 한국어판이 자리 잡은 뒤
 - 랜딩·다운로드 사이트와 도메인 — 웹사이트 조사 보고서가 나오면 정한다. GitBook 무료는 `gitbook.io` 주소·배지가 고정이라 랜딩은 따로 둔다

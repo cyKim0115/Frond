@@ -20,10 +20,8 @@ desktop.ini
 node_modules/
 dist/
 
-# 제품 웹사이트 (website/, Astro·wrangler)
-website/.astro/
-.wrangler/
-website/public/_redirects
+# 제품 웹사이트는 비공개 저장소 ../frond-website — 여기 다시 만들지 않는다 (2026-10-07)
+/website/
 *.local
 npm-debug.log*
 

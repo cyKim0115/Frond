@@ -4,7 +4,7 @@ Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 
 
 **현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이다. 에이전트 §3 2~4(인쇄 확인·원문 HTML 허용 목록·`www.` 자동 링크)는 2026-10-02 완료, 남은 §3-5는 B-2·B-9 통과 뒤. 통과하면 MVP(V1) 완료.
 [docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기)는 2026-10-06 구현·재설치 완료. 단계 1 에이전트 몫(V1 검수 [fidelity-report](docs/references/assets/20260929-typora-md-editors/fidelity-report.md) SHIPPABLE 조건부·스펙 동기화·RAG 캡처)도 2026-10-06 완료 — V1은 B-2·B-9만 남았다. 단계 3은 B(쓰임새 순)로 진행, 이후 단계는 사용자 확인을 기다리지 않고 진행하며 실기 목록은 next-session §2에 모은다(사용자 지시 2026-10-06). **단계 4(Phase 3 탭·세션·분할 뷰·비교·폴더 트리·AI 훅 받은 목록)·단계 5(Phase 4 Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄, Shiki DEFER) 2026-10-06 구현 완료** — 기능 작업은 기능 브랜치 + 임시 워크트리(`../MdEditor-<이름>`)에서 하고 머지 뒤 워크트리를 지운다(main 폴더는 다른 세션과 같이 쓰므로 전환하지 않는다, 상시 `v2` 워크트리는 2026-10-06 정리). 단계 6 라이브프리뷰는 `exp/live-preview`에만(2026-10-06 실험 구현, 사용자 IME 확인 전에는 main에 합치지 않는다).**
-**배포(단계 7)는 2026-10-06 Microsoft Store MSIX + Durable add-on 선택 구매로 결정, 라이선스 MIT 확정(LICENSE·TRADEMARKS.md)** — 에이전트 몫 R-1(A-1~A-5)은 2026-10-06 구현(실기 next-session §2 L), 다음은 R-2 MSIX([docs/store-launch.md](docs/store-launch.md)). 같은 날 GitBook 설명서(게시 전)·제품 웹사이트 A-0~A-5(로컬, 배포 전, 사용자 확인 §2 M)도 끝냈다.
+**배포(단계 7)는 2026-10-06 Microsoft Store MSIX + Durable add-on 선택 구매로 결정, 라이선스 MIT 확정(LICENSE·TRADEMARKS.md)** — 에이전트 몫 R-1(A-1~A-5)은 2026-10-06 구현(실기 next-session §2 L), 다음은 R-2 MSIX([docs/store-launch.md](docs/store-launch.md)). 같은 날 GitBook 설명서(게시 전)·제품 웹사이트 A-0~A-5(배포 전)도 끝냈다. **제품 웹사이트는 2026-10-07 비공개 저장소 `cyKim0115/frond-website`(로컬 `../frond-website`)로 분리했다.**
 할 일·열린 결정은 [docs/next-session.md](docs/next-session.md) §2·§3, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
 ## 상시 규칙
@@ -13,6 +13,8 @@ Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 
 - 확정된 결정은 system-crew 형식으로 `docs/decisions/` 아래에 남긴다 (아래 표). 대화로만 정한 것은 다음 세션에 사라진다
 - `samples/raw/`는 바이트 단위 테스트 픽스처다. 편집기로 열어 저장하거나 줄바꿈을 정규화하지 않는다
 - 커밋은 전역 `korean-git-commit` 룰을 따른다
+- 제품 웹사이트의 소스·계획·검수 캡처는 비공개 저장소 `../frond-website`에만 둔다(2026-10-07 사용자 지시 — 소스 비공개). 이 공개 저장소에 `website/`를 다시 만들거나 그쪽 문서를 복사하지 않는다(`.gitignore`가 `/website/`를 막는다).
+  웹사이트가 이 저장소에서 읽는 것은 `CHANGELOG.md`·`docs/site/privacy.md`, 쓰는 것은 설명서 그림 `docs/site/images/`뿐이다
 - `docs/site/`(GitBook 사용 설명서)를 고쳐 푸시한 작업은 웹훅 보고에 GitBook 링크를 붙인다 ([docs/gitbook-site.md](docs/gitbook-site.md) 머리)
 - Phase 1 스캐폴딩 시 이 파일의 `구조`·`빌드` 절을 채우고 `.gitignore`에 `node_modules/`·`dist/`·`src-tauri/target/`을 추가한다
 
@@ -48,14 +50,12 @@ docs/plan.md           한 장 계획표·로드맵 (단계 1~7, 날짜는 제�
 docs/store-launch.md   Store 출시·선택 구매 먼저 할 일 (단계 7, 사용자 몫 U·에이전트 몫 A — A-1~A-5 2026-10-06 완료)
 docs/store-listing.md  Store 제출 문구 초안 (한·영 설명·기능 목록·add-on·스크린샷·IARC 메모)
 docs/gitbook-site.md   GitBook 사용 설명서 꾸밀 계획 (A-1~A-4 완료, A-5·A-6 일부·게시는 사용자 확인 뒤, 꾸밈 값·목차·완료 조건)
-docs/website-launch.md 제품 웹사이트(fork.dev식, website/ Astro → Cloudflare) 계획 (A-0~A-5 완료, A-6·도메인 U-1~U-3 남음, 원고·장면 목록)
-website/               제품 웹사이트 — Astro 정적(src/config.ts 공개 상태 한 곳), wrangler.jsonc(배포는 사용자 몫), scenes/·scripts/capture-scenes.mjs(사용 장면 캡처, 설명서 그림과 공용)
 CHANGELOG.md           릴리스 노트 원본 — 사이트 /releases/·GitHub 릴리스가 같이 쓴다
 docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
 docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
 docs/qa/               실기 증거 — <날짜>-<범위>/ 캡처·바이트 로그 (판정 표는 next-session.md)
-docs/research/         조사 보고서 — reports/<제목>.md + research_notes/<제목>/ 근거 노트 (배포 채널·유료 해금·웹사이트 조사 2026-10-06)
+docs/research/         조사 보고서 — reports/<제목>.md + research_notes/<제목>/ 근거 노트 (배포 채널·유료 해금 조사 2026-10-06)
 docs/site/             GitBook 사용 설명서 — 사이트 Git Sync(루트 gitbook-docs.yaml, 스페이스 '사용 설명서'), README.md 첫 페이지 + SUMMARY.md 목차. 개발 문서는 여기 두지 않는다
 samples/               렌더링·파일 처리 확인용 마크다운 샘플 (raw/ 바이트 픽스처, paths/ 경로 픽스처, large/ 생성형)
 Cargo.toml             루트 워크스페이스 (crates/frond-core + src-tauri). release 프로필 lto·opt-level s
@@ -96,7 +96,6 @@ npm install                       # 처음 한 번 (Rust는 cargo가 알아서)
 npm run app:dev -- -- 파일.md      # Tauri dev (Vite 1422 + cargo run). 인수는 argv 열기 경로 테스트
 npm run app:build                 # 릴리스 + NSIS 설치기 → target/release/bundle/nsis/
 npm test                          # vitest (src/**/*.test.ts, 렌더 파이프라인)
-cd website; npm ci; npm run build  # 제품 웹사이트 (cf:dev = wrangler dev, cf:check = 배포 모의, scenes = 장면 캡처)
 npx tsc --noEmit                  # 타입 검사
 cargo test                        # 코어 + 백엔드 단위 테스트
 cd crates/frond-core; cargo run --example roundtrip -- ../../samples/raw   # 제자리 무편집 저장 → git status 깨끗
