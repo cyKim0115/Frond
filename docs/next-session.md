@@ -278,14 +278,14 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 
 ### M. 제품 웹사이트 (2026-10-06) — 모양·문구 확인
 
-보는 법: `cd C:\Users\cykim\repo\MdEditor-web\website; npm run dev` → `http://localhost:4321` (또는 리뷰 캡처 [`qa/2026-10-06-website/`](qa/2026-10-06-website/README.md))
+보는 법: `cd C:\Users\cykim\repo\MdEditor\website; npm run dev` → `http://localhost:4321` (또는 리뷰 캡처 [`qa/2026-10-06-website/`](qa/2026-10-06-website/README.md))
 
 1. 히어로 제목 — 지금 ① **마크다운을 문서처럼**. 다른 안: ② 읽기 좋게 열고, 원본 그대로 저장합니다 ③ AI가 쓴 문서를 편하게 읽는 곳 — 고르면 `website/src/pages/index.astro`
 2. **만든 사람** 문구 — 지금 임시("한국의 1인 개발자가 만들고 있습니다."). 직접 쓸 한두 문장
 3. 기능 6개 문구·장면, 숫자 띠(10 MB·0.1초·추천 테마 23·관리자 권한 0), FAQ — 빼거나 고칠 것
 4. 받기 카드 네 상태(준비 중·Store 배지·직접 설치·winget) 캡처 — 공개 순서대로 `website/src/config.ts` 값만 바꾼다
 5. 도메인 U-1(후보 [`website-launch.md`](website-launch.md) §8) → Cloudflare U-2. 그 전에는 공개하지 않는다
-6. 확인이 끝나면 워크트리 `../MdEditor-web`(`feat/website`, main에 합쳐짐)를 지운다
+6. ~~워크트리 `../MdEditor-web`(`feat/website`) 지우기~~ — 2026-10-07 지움(main에 합쳐진 뒤, 사이트는 main 폴더에서 본다)
 
 ### E. 확인이 필요한 결정
 
