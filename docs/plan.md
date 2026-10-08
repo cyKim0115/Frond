@@ -99,7 +99,7 @@ V1 범위는 여기서 끝난다. 계속 갈지, 간다면 무엇부터인지 �
 
 ### 단계 6 — Phase 5 인라인 라이브프리뷰 (12월~, 실험·선택) — **실험 구현 2026-10-06**, IME 게이트 대기
 
-`exp/live-preview` `e678bad`: 설정 편집 탭 '소스 표시 (실험)'으로 켜면 캐럿 없는 줄의 서식 기호를 숨기고 이미지·체크박스·글머리·구분선을 위젯으로 그린다(문서 텍스트 불변). 조합 중에는 데코레이션을 다시 만들지 않는다. 표·수식·Mermaid 블록 위젯은 아직 없다. 시험용 실행 파일 `C:\Users\cykim\repo\MdEditor\target\exp-live\FrondLive.exe`(식별자 `com.cykim.frond.live` — 설치본과 따로 뜬다). 판정 기록 [`decisions/ideas/20261006-live-preview.md`](decisions/ideas/20261006-live-preview.md).
+`exp/live-preview` `e678bad`: 설정 편집 탭 '소스 표시 (실험)'으로 켜면 캐럿 없는 줄의 서식 기호를 숨기고 이미지·체크박스·글머리·구분선을 위젯으로 그린다(문서 텍스트 불변). 조합 중에는 데코레이션을 다시 만들지 않는다. 표·수식·Mermaid 블록 위젯은 아직 없다. 시험용 실행 파일 `C:\Users\cykim\repo\Frond\target\exp-live\FrondLive.exe`(식별자 `com.cykim.frond.live` — 설치본과 따로 뜬다). 판정 기록 [`decisions/ideas/20261006-live-preview.md`](decisions/ideas/20261006-live-preview.md).
 
 `exp/live-preview` 브랜치에서만. 한글 IME 시나리오 ①–⑧과 무편집 저장 바이트 불변을 못 지키면 머지하지 않고 `archived-exp`로 보낸다.
 
