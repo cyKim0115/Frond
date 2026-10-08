@@ -57,7 +57,7 @@
 
 - `exp/live-preview` 브랜치(워크트리 `MdEditor-v2`에서 `v2`를 갈라 만듦) `e678bad`: `src/live-preview.ts` ViewPlugin — 보이는 범위의 Lezer 트리로 캐럿 없는 줄의 `#`·`**`·`` ` ``·`[`/`](주소)`·`>`·`\`를 숨기고, 이미지·체크박스(누르면 한 글자 토글)·글머리·구분선을 위젯으로, 제목 크기·인용선·코드 배경·본문 글꼴. 캐럿 줄은 원문(위젯 옆 조합 회피), 조합 중에는 map만 하고 `compositionend` 뒤 다시 만든다. front matter·주소 없는 `[글자]`는 꾸미지 않는다. 설정 편집 탭 **소스 표시 (실험)**
 - 확인: vitest 145건(라이브 6건 — 숨김·위젯·캐럿 줄 원문·겹침 없음·체크박스 토글·문서 불변), 헤드리스 Edge 화면. 데코레이션만 쓰므로 저장 경로는 소스 모드와 같다
-- 시험용 실행 파일: `C:\Users\cykim\repo\MdEditor\target\exp-live\FrondLive.exe` — 식별자 `com.cykim.frond.live`라 설치본과 따로 뜨고 설정·탭도 따로다(초안·테마 폴더 `%APPDATA%\Frond`는 같이 쓴다)
+- 시험용 실행 파일: `C:\Users\cykim\repo\Frond\target\exp-live\FrondLive.exe` — 식별자 `com.cykim.frond.live`라 설치본과 따로 뜨고 설정·탭도 따로다(초안·테마 폴더 `%APPDATA%\Frond`는 같이 쓴다)
 - 판정 기록: [`decisions/ideas/20261006-live-preview.md`](decisions/ideas/20261006-live-preview.md) — IME 통과면 실험 설정으로 main에, 실패면 `archived-exp/live-preview`
 
 ### 2026-10-06 작업 — 단계 5 (V2 Phase 4 나머지)
@@ -234,7 +234,7 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 
 ### I. 단계 6 라이브프리뷰 실험 — 한글 IME 게이트 (main에 넣을지 정하는 확인)
 
-실행: `C:\Users\cykim\repo\MdEditor\target\exp-live\FrondLive.exe` (설치 없이 바로 실행, 설치본과 따로 뜬다). 설정(`Ctrl+,`) → 편집 → **소스 표시 (실험)** = 라이브프리뷰 → 문서를 열고 `Ctrl+/`로 소스 모드.
+실행: `C:\Users\cykim\repo\Frond\target\exp-live\FrondLive.exe` (설치 없이 바로 실행, 설치본과 따로 뜬다). 설정(`Ctrl+,`) → 편집 → **소스 표시 (실험)** = 라이브프리뷰 → 문서를 열고 `Ctrl+/`로 소스 모드.
 직접(탐색기에서 더블클릭) 실행한다 — Claude 데스크톱 안에서 띄우면 설정이 컨테이너로 가상화된다. 데이터 폴더는 설치본과 같은 `%APPDATA%\Frond`(이미 이전됨)를 쓴다.
 
 1. 보이는 모양: 커서가 없는 줄은 `#`·`**`·링크 주소가 숨고, 이미지·체크박스·글머리가 그려지는지. 커서가 있는 줄만 원문인지
@@ -252,7 +252,7 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 
 ### K. AI 훅 설정 탭 (2026-10-06) — **오늘 할 일**: 시험 exe로 확인 → main 머지
 
-시험 exe: `C:\Users\cykim\repo\MdEditor\target\ai-hook-test\mdeditor.exe` — 브랜치 `feat/ai-hook-settings` 릴리스 빌드, 식별자 `com.cykim.frond.aihooktest`라
+시험 exe: `C:\Users\cykim\repo\Frond\target\ai-hook-test\mdeditor.exe` — 브랜치 `feat/ai-hook-settings` 릴리스 빌드, 식별자 `com.cykim.frond.aihooktest`라
 설치본과 따로 뜬다. **탐색기에서 직접 실행**(Claude 데스크톱 안에서 띄우면 컨테이너로 가상화된다). 훅은 켠 exe를 부르므로 시험 동안 AI 훅은 이 exe로 간다.
 
 1. 설정(`Ctrl+,`) → **AI 연동**: 맨 위 'AI 훅이 만든 문서'(탐색 탭에서 옮김), 아래 **AI 앱 연결**에 Claude Code·Codex가 '예전 스크립트(open-new-md.ps1)로 연결됨'으로 보이는지

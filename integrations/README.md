@@ -36,7 +36,7 @@ exe 경로를 읽는다 (없으면 `%LOCALAPPDATA%\Frond\mdeditor.exe`). `.md` �
           "if": "Write(*.md)",
           "command": "powershell.exe",
           "args": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
-                   "C:\\Users\\cykim\\repo\\MdEditor\\integrations\\open-new-md.ps1"],
+                   "C:\\Users\\cykim\\repo\\Frond\\integrations\\open-new-md.ps1"],
           "async": true,
           "timeout": 15
         }
@@ -56,7 +56,7 @@ matcher = "^apply_patch$"
 
 [[hooks.PostToolUse.hooks]]
 type = "command"
-command = 'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "C:\Users\cykim\repo\MdEditor\integrations\open-new-md.ps1"'
+command = 'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "C:\Users\cykim\repo\Frond\integrations\open-new-md.ps1"'
 timeout = 15
 ```
 
