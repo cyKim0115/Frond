@@ -1,6 +1,6 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 2026-10-07 비공개 웹사이트 저장소 `../frond-website`로 분리(확인 목록도 그쪽). **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 origin보다 앞서 있음 — 푸시는 사용자 결정)
+작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 2026-10-07 비공개 웹사이트 저장소 `../frond-website`로 분리(확인 목록도 그쪽). **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 2026-10-08 origin에 푸시 — 76cha PC 이름 정리 커밋 병합)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
 이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
@@ -26,7 +26,7 @@
 | 단계 6 Phase 5 라이브프리뷰 | **실험 구현 2026-10-06** — `exp/live-preview` `e678bad`(main 미병합). 한글 IME 게이트 §2 I |
 | 단계 5 Phase 4 | **구현 완료 2026-10-06** — 4-3 KaTeX·4-4 HTML 내보내기·4-5 인쇄 손질, 4-6 Shiki 검토 `DEFER`. 사용자 실기 §2 H |
 | 단계 4 Phase 3 (+ 4-1·4-2) | **구현 완료 2026-10-06** — 3-6 AI 훅 받은 목록·3-1 탭·3-5 세션 복원·3-3 분할 뷰·3-4 비교·3-2 폴더 트리, Mermaid·Alerts. `v2` 브랜치에서 작업해 main에 합침. 사용자 실기 §2 G |
-| Store 출시 준비 A-1~A-5 (단계 7) | **구현 2026-10-06** — `feat/store`를 main에 합침(푸시 안 함). 설치 방식 판정·추천 테마 카탈로그·테마 폴더 `문서\Frond\themes`·권리 판정·테마 게이트·정보 탭·구매 권유·개인정보처리방침·Store 문구. 사용자 실기 §2 L, 다음은 R-2 MSIX([`store-launch.md`](store-launch.md)) |
+| Store 출시 준비 A-1~A-5 (단계 7) | **구현 2026-10-06** — `feat/store`를 main에 합침(2026-10-08 푸시). 설치 방식 판정·추천 테마 카탈로그·테마 폴더 `문서\Frond\themes`·권리 판정·테마 게이트·정보 탭·구매 권유·개인정보처리방침·Store 문구. 사용자 실기 §2 L, 다음은 R-2 MSIX([`store-launch.md`](store-launch.md)) |
 | 제품 웹사이트 A-0~A-5 | **구현 2026-10-06** — 2026-10-07 비공개 저장소 `cyKim0115/frond-website`(로컬 `../frond-website`)로 분리. 이 저장소에는 `CHANGELOG.md`(릴리스 노트 원본)·설명서 그림만 남는다. 계획·사용자 확인은 그 저장소 `docs/website-launch.md` §0-2 |
 | AI 훅 설정 탭 (배포용) | **구현 2026-10-06, main 미병합** — 브랜치 `feat/ai-hook-settings`(임시 워크트리 `../MdEditor-ai-hook`). 실기·머지는 **오늘 할 일** §2 K·§3-10 |
 
@@ -297,7 +297,7 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 7. ~~AI 훅 컨테이너 실행~~ — 2026-10-06 `open-new-md.ps1`이 WMI(`Win32_Process.Create`)로 밖에서 띄우게 고침(실패하면 `Start-Process`). 시험 앱으로 확인: WMI로 띄우면 실제 `%LOCALAPPDATA%`에, 예전 방식은 Claude 패키지 LocalCache에 썼다. 원래 메모: AI 훅이 Claude 데스크톱 세션에서 앱을 **새로** 띄우면 그 앱도 MSIX 컨테이너 안에서 돈다 → 테마·초안 쓰기가 Claude 패키지 LocalCache로 가서 사용자가 직접 띄운 앱에는 안 보인다(이미 떠 있는 앱으로 넘길 때는 상관없음). `integrations/open-new-md.ps1`이 `Win32_Process.Create`(WMI)나 탐색기 경유로 밖에서 띄우게 고친다. Codex 등 컨테이너 밖 도구는 지금 그대로. 2026-10-06 Frond 이전 설치 중 발견
 8. ~~**남은 MdEditor 이름 → Frond 정리**~~ — **2026-10-06 완료**(저장소 `cyKim0115/Frond`, 크레이트 `frond-core`·`frond`, localStorage `frond.` — [`frond-rename.md`](frond-rename.md) "결과"). 설치본 재설치만 남음(§2 L 0번). 원래 계획: — 저장소 이름·크레이트·localStorage 접두사는 바꾸고
    ProgId·identifier·exe 이름은 남긴다. 범위·순서·검증: [`frond-rename.md`](frond-rename.md)
-9. ~~**Store 출시·선택 구매 먼저 할 일**~~ — **에이전트 몫 A-1~A-5 2026-10-06 완료**(main 합침, 푸시 안 함, 실기 §2 L). 남은 것: 사용자 U-1·U-2·가격, 그다음 R-2 MSIX. 원래 계획: — 결정: Store MSIX + Durable add-on, 라이선스 MIT 확정(LICENSE·`TRADEMARKS.md` 추가 완료).
+9. ~~**Store 출시·선택 구매 먼저 할 일**~~ — **에이전트 몫 A-1~A-5 2026-10-06 완료**(main 합침, 2026-10-08 푸시, 실기 §2 L). 남은 것: 사용자 U-1·U-2·가격, 그다음 R-2 MSIX. 원래 계획: — 결정: Store MSIX + Durable add-on, 라이선스 MIT 확정(LICENSE·`TRADEMARKS.md` 추가 완료).
    에이전트 A-1 설치 방식 판정 → A-2 추천 테마 카탈로그 분리 → A-3 권리 판정·테마 게이트·정보 탭 → A-4 구매 권유 → A-5 개인정보처리방침·설명문.
    **8번 이름 정리를 먼저** 하고 새 워크트리 `feat/store`에서. 순서·완료 조건: [`store-launch.md`](store-launch.md)
 10. **AI 훅 설정 탭 머지 (2026-10-06 오늘 할 일)** — §2 K 통과 뒤 `git merge feat/ai-hook-settings`(main 폴더, 다른 세션 작업과 겹치면 정리) →
