@@ -22,7 +22,7 @@
 - 날짜가 붙은 기록물(`docs/decisions/`·`docs/qa/`·`docs/research/`·git 커밋)의 본문 — 당시 기록이다. 경로를 옮겨서 **깨지는 링크만** 고친다
 - 로컬 폴더 `C:\Users\cykim\repo\MdEditor`·`MdEditor-v2` — 바꾸면 Claude 훅(`~/.claude/settings.json`)·Codex 훅(`~/.codex/config.toml`)
   경로, 워크트리 연결, 이 프로젝트의 Claude 메모리 폴더가 끊긴다. 하려면 별도 작업으로
-  → 2026-10-07 `MdEditor` 폴더는 `repo\Frond`로 바뀌었다. 위 세 연결(훅 경로·`MdEditor-ai-hook`의 `.git`·메모리 폴더)은 아직 옛 경로를 가리킨다
+  → 2026-10-07 `MdEditor` 폴더는 `repo\Frond`로 바뀌었다. 위 세 연결(훅 경로·`MdEditor-ai-hook`의 `.git`·메모리 폴더)은 2026-10-08 새 경로로 고쳤다(Codex는 훅 신뢰를 다시 물을 수 있다)
 
 ## 시작 전 확인
 
