@@ -80,7 +80,7 @@
 - `cargo test` · `npm test` · `npx tsc --noEmit`
 - `cd crates/frond-core; cargo run --example roundtrip -- ../../samples/raw` → `git status` 깨끗
 - `npm run app:build` → 설치기 안 exe가 `mdeditor.exe`인지 확인
-- 설치본 재설치(MSIX 컨테이너 밖에서 — `Invoke-CimMethod Win32_Process Create`, `/S /NS`) → 설정·최근 파일·세션이 남아 있는지(localStorage 옮기기),
+- 설치본 재설치(MSIX 컨테이너 밖에서 — `Invoke-CimMethod Win32_Process Create`, `/S` 뒤 바탕 화면 바로가기 삭제 — `/NS`는 시작 메뉴도 빠진다) → 설정·최근 파일·세션이 남아 있는지(localStorage 옮기기),
   탐색기 `.md` 더블클릭이 Frond로 열리는지(ProgId 유지). 사용자 문서가 열려 있으면 재설치는 사용자에게 묻는다
 - `git grep -i mdeditor`로 남은 곳을 보고, 위 "하지 않는 것"과 기록물 말고는 없는지 확인
 
@@ -105,3 +105,12 @@
 - 빌드: `npm run app:build` → 설치기 안 exe가 `mdeditor.exe` 그대로(확인). 설치기는 main 폴더 `target\release\bundle\nsis\Frond_0.1.0_x64-setup.exe`
 - 재설치: **건너뜀** — 설치본이 AI 훅이 연 문서를 띄운 채 실행 중이었다(큐 지시: 묻지 말고 건너뛰기). [`next-session.md`](next-session.md) §2 L 0번
 - v2 워크트리: 없음(2026-10-06 정리됨) → 건너뜀. `exp/live-preview`·`feat/ai-hook-settings`는 합칠 때 크레이트 경로(`crates/mdeditor-core` → `crates/frond-core`)·`mdeditor_core` 이름 충돌을 풀어야 한다 — [`next-session.md`](next-session.md) §2 I·K에 적음
+
+### 다른 PC(76cha)에서 같은 정리 (2026-10-06, 2026-10-08 병합)
+
+같은 날 76cha PC 에이전트도 이 문서대로 이름을 정리해 origin에 먼저 푸시했다(7커밋). 2026-10-08 이 PC main에 병합하면서 코드·문서는 이 PC 쪽을 남겼다(뒤 작업·검토 수정이 더 있음). 그쪽에서만 확인한 것:
+
+- 76cha에는 옛 설치본이 없어 새 설치기로 처음 설치 — `cargo test`·`npm test`(148)·`tsc`·roundtrip 통과, 설치(WMI) 뒤 `%LOCALAPPDATA%\Frond\mdeditor.exe`,
+  ProgId `MdEditor.Markdown` 명령·`Applications\mdeditor.exe`·`RegisteredApplications\Frond` 확인. 설치본을 띄우자 옛 `mdeditor.*` 키는 그대로, `frond.navOpen`·`navTab`·`recent`·`settings`가 복사돼 생겼다
+- 주의: 설치기 `/NS`는 바탕 화면뿐 아니라 **시작 메뉴 바로가기도** 만들지 않는다 → `/S`로 설치하고 바탕 화면 `Frond.lnk`만 지운다
+- 다른 PC는 `git remote set-url origin git@github.com:cyKim0115/Frond.git`
