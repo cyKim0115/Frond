@@ -1,6 +1,6 @@
 # Store 출시·선택 구매 — 먼저 할 일 (2026-10-06 할 일)
 
-작성: 2026-10-06 · 상태: **에이전트 몫 A-1~A-5 완료(2026-10-06, `feat/store` → main, 푸시 안 함). 사용자 몫 U-1·U-2·가격 대기. 다음은 R-2 MSIX**
+작성: 2026-10-06 · 상태: **에이전트 몫 A-1~A-5 완료(2026-10-06, `feat/store` → main, 2026-10-08 푸시). 사용자 몫 U-1·U-2·가격 대기. 다음은 R-2 MSIX**
 이름 정리(`frond-rename.md`)는 사용자가 이 작업 뒤로 미뤘다(2026-10-06 큐 지시) — 새 코드는 MdEditor 이름 상태로 썼고, 같은 날 이름 정리가 함께 고쳤다(localStorage `frond.nag`·`frond.entitlement` 등)
 결정: [`decisions/ideas/20261006-store-monetization.md`](decisions/ideas/20261006-store-monetization.md)(Store MSIX + Durable add-on) ·
 [`decisions/ideas/20261006-license.md`](decisions/ideas/20261006-license.md)(MIT 확정)
