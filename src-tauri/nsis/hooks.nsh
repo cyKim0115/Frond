@@ -21,7 +21,8 @@
 ;   제거 (799-804행 → FileAssociation.nsh 108-114행): .md/.markdown 기본값을 _backup 으로 되돌리고
 ;     ProgId 키를 통째로 삭제
 ; 템플릿이 하지 않는 일 (여기서 채운다):
-;   OpenWithProgids, Applications\mdeditor.exe, Software\MdEditor\Capabilities + RegisteredApplications,
+;   오른쪽 클릭 메뉴 동사 아이콘(shell\open Icon), OpenWithProgids, Applications\mdeditor.exe,
+;   Software\MdEditor\Capabilities + RegisteredApplications,
 ;   SHChangeNotify — UPDATEFILEASSOC 매크로는 FileAssociation.nsh 131-135행에 정의만 있고 템플릿 어디에서도
 ;   삽입하지 않는다 (installer.nsi 에 UPDATEFILEASSOC/SHChangeNotify 없음)
 ;
@@ -72,6 +73,8 @@
   ;    리소스가 없고, SHLoadIndirectString 은 리터럴을 그대로 돌려주므로 탐색기 표시는 같다
   WriteRegStr SHCTX "Software\Classes\${MDEDITOR_PROGID}" "FriendlyTypeName" "Markdown 문서"
   WriteRegStr SHCTX "Software\Classes\${MDEDITOR_PROGID}\shell\open\command" "" '"$INSTDIR\${MAINBINARYNAME}.exe" "%1"'
+  ; 오른쪽 클릭 메뉴 'Open with Frond' 왼쪽 아이콘 — 동사 키의 Icon 값(템플릿은 쓰지 않는다)
+  WriteRegStr SHCTX "Software\Classes\${MDEDITOR_PROGID}\shell\open" "Icon" '"$INSTDIR\${MAINBINARYNAME}.exe",0'
 
   ; 2) 확장자 → '연결 프로그램' 추천. .md/.markdown 은 기본값도 템플릿이 걸었고, 나머지는 추천에만 오른다
   !insertmacro MDEDITOR_ADD_EXT "md"
@@ -84,6 +87,7 @@
   ; 3) Applications\mdeditor.exe — '연결 프로그램' 대화상자와 Default Apps 가 실행 파일을 식별하는 키
   WriteRegStr SHCTX "Software\Classes\Applications\${MAINBINARYNAME}.exe" "FriendlyAppName" "${PRODUCTNAME}"
   WriteRegStr SHCTX "Software\Classes\Applications\${MAINBINARYNAME}.exe\DefaultIcon" "" '"$INSTDIR\${MAINBINARYNAME}.exe",0'
+  WriteRegStr SHCTX "Software\Classes\Applications\${MAINBINARYNAME}.exe\shell\open" "Icon" '"$INSTDIR\${MAINBINARYNAME}.exe",0'
   WriteRegStr SHCTX "Software\Classes\Applications\${MAINBINARYNAME}.exe\shell\open\command" "" '"$INSTDIR\${MAINBINARYNAME}.exe" "%1"'
 
   ; 4) 설정 > 앱 > 기본 앱 노출 — ApplicationDescription 이 없으면 목록에 뜨지 않는다
