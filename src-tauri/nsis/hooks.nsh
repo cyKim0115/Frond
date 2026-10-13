@@ -21,7 +21,7 @@
 ;   제거 (799-804행 → FileAssociation.nsh 108-114행): .md/.markdown 기본값을 _backup 으로 되돌리고
 ;     ProgId 키를 통째로 삭제
 ; 템플릿이 하지 않는 일 (여기서 채운다):
-;   오른쪽 클릭 메뉴 동사 아이콘(shell\open Icon), OpenWithProgids, Applications\mdeditor.exe,
+;   오른쪽 클릭 메뉴 동사 아이콘(shell\open Icon)·글자 언어(shell\open 기본값 덮어쓰기), OpenWithProgids, Applications\mdeditor.exe,
 ;   Software\MdEditor\Capabilities + RegisteredApplications,
 ;   SHChangeNotify — UPDATEFILEASSOC 매크로는 FileAssociation.nsh 131-135행에 정의만 있고 템플릿 어디에서도
 ;   삽입하지 않는다 (installer.nsi 에 UPDATEFILEASSOC/SHChangeNotify 없음)
@@ -75,6 +75,18 @@
   WriteRegStr SHCTX "Software\Classes\${MDEDITOR_PROGID}\shell\open\command" "" '"$INSTDIR\${MAINBINARYNAME}.exe" "%1"'
   ; 오른쪽 클릭 메뉴 'Open with Frond' 왼쪽 아이콘 — 동사 키의 Icon 값(템플릿은 쓰지 않는다)
   WriteRegStr SHCTX "Software\Classes\${MDEDITOR_PROGID}\shell\open" "Icon" '"$INSTDIR\${MAINBINARYNAME}.exe",0'
+  ; 메뉴 글자 — 템플릿(649행)은 영어 'Open with ${PRODUCTNAME}' 고정. 설치할 때 사용자 Windows 표시 언어로 고른다.
+  ;   $LANGUAGE 는 쓰지 않는다 — 한국어·영어 밖 언어는 처음 넣은 언어(Korean)로 떨어지기 때문. 주 언어 0x12 = 한국어
+  ;   설치 뒤 Windows 언어를 바꾸면 다음 설치·업데이트 때 다시 맞춰진다
+  Push $0
+  System::Call 'kernel32::GetUserDefaultUILanguage() i .r0'
+  IntOp $0 $0 & 0x3FF
+  ${If} $0 = 0x12
+    WriteRegStr SHCTX "Software\Classes\${MDEDITOR_PROGID}\shell\open" "" "${PRODUCTNAME}로 열기"
+  ${Else}
+    WriteRegStr SHCTX "Software\Classes\${MDEDITOR_PROGID}\shell\open" "" "Open with ${PRODUCTNAME}"
+  ${EndIf}
+  Pop $0
 
   ; 2) 확장자 → '연결 프로그램' 추천. .md/.markdown 은 기본값도 템플릿이 걸었고, 나머지는 추천에만 오른다
   !insertmacro MDEDITOR_ADD_EXT "md"
