@@ -1,11 +1,13 @@
 /**
- * 소스 편집기 (로드맵 2-1) — CodeMirror 6 plain + Markdown(GFM) 문법 색.
+ * 소스 편집기 (로드맵 2-1) — CodeMirror 6 plain + Markdown(GFM) 문법 색. HTML 문서(결정 20261026-html-view)는 HTML 문법 색
+ * (`@codemirror/lang-html` — 안의 CSS·JS 포함)으로 바꾼다(`setLanguage`).
  * 문서 텍스트는 LF 정규화 텍스트(`load_document`의 `text`)를 그대로 받고, 저장도 `getText()`(LF)를 코어에 넘긴다 —
  * 줄바꿈·인코딩 복원은 코어(`save_to`)가 원본 EOL 맵으로 한다. 그래서 편집기의 `lineSeparator`는 LF 고정이다.
  * 색은 테마 토큰(src/theme/themes.ts의 문서 토큰, `.cm-editor`에도 적용됨)을 CSS 변수로 쓴다. 커서·선택 색은 theme/dark.css.
  */
 
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { html } from "@codemirror/lang-html";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { getChunks, unifiedMergeView, updateOriginalDoc } from "@codemirror/merge";
@@ -38,6 +40,28 @@ const markdownHighlight = HighlightStyle.define([
   { tag: [tags.processingInstruction, tags.meta, tags.contentSeparator], color: v("fgColor-muted") },
   { tag: tags.comment, color: v("color-prettylights-syntax-comment") },
 ]);
+
+/** HTML(+ 안의 CSS·JS) 문법 색 — 같은 prettylights 토큰 (GitHub 코드 보기와 같은 짝) */
+const htmlHighlight = HighlightStyle.define([
+  { tag: tags.tagName, color: v("color-prettylights-syntax-entity-tag") },
+  { tag: [tags.attributeName, tags.propertyName], color: v("color-prettylights-syntax-constant") },
+  { tag: [tags.attributeValue, tags.string, tags.special(tags.string)], color: v("color-prettylights-syntax-string") },
+  { tag: [tags.angleBracket, tags.processingInstruction, tags.documentMeta], color: v("fgColor-muted") },
+  { tag: tags.comment, color: v("color-prettylights-syntax-comment") },
+  { tag: [tags.keyword, tags.modifier, tags.operatorKeyword], color: v("color-prettylights-syntax-keyword") },
+  { tag: [tags.number, tags.bool, tags.null, tags.atom, tags.unit], color: v("color-prettylights-syntax-constant") },
+  { tag: [tags.function(tags.variableName), tags.className, tags.typeName], color: v("color-prettylights-syntax-entity") },
+  { tag: [tags.definition(tags.variableName), tags.variableName], color: v("color-prettylights-syntax-variable") },
+  { tag: tags.regexp, color: v("color-prettylights-syntax-string-regexp") },
+  { tag: tags.invalid, color: v("color-prettylights-syntax-brackethighlighter-unmatched") },
+]);
+
+export type SourceLanguage = "markdown" | "html";
+
+const languageExtension = (lang: SourceLanguage): Extension =>
+  lang === "html"
+    ? [html(), syntaxHighlighting(htmlHighlight)]
+    : [markdown({ base: markdownLanguage }), syntaxHighlighting(markdownHighlight)];
 
 /** 검색 패널 등 CM6 문구 — 한국어 */
 const PHRASES = EditorState.phrases.of({
@@ -77,6 +101,8 @@ export interface SourceEditor {
    */
   setState(state: EditorState): void;
   setReadOnly(readOnly: boolean): void;
+  /** 문법 색 언어 — 지금 상태에도, 이후 `setText`로 만드는 상태에도 쓴다. 탭(문서)마다라 호출자가 올릴 때 맞춘다 */
+  setLanguage(lang: SourceLanguage): void;
   setLineWrapping(wrap: boolean): void;
   /** 화면 맨 위에 보이는 줄 (0 기준) */
   topLine(): number;
@@ -105,10 +131,14 @@ export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): Sou
   const wrapping = new Compartment();
   const compare = new Compartment();
   const darkness = new Compartment();
+  const language = new Compartment();
   let darkOn = false;
   // setText가 상태를 새로 만들어도 유지할 값
   let readOnlyOn = false;
   let wrapOn = true;
+  let languageOn: SourceLanguage = "markdown";
+  // 언어 확장은 한 벌씩만 만든다 — 같은 언어면 다시 설정하지 않게(`setLanguage`) 같은 객체로 비교한다
+  const languages: Record<SourceLanguage, Extension> = { markdown: languageExtension("markdown"), html: languageExtension("html") };
 
   const baseExtensions = (): Extension[] => [
     history(),
@@ -116,8 +146,7 @@ export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): Sou
     highlightActiveLine(),
     highlightSelectionMatches(),
     search({ top: true }),
-    markdown({ base: markdownLanguage }),
-    syntaxHighlighting(markdownHighlight),
+    language.of(languages[languageOn]),
     PHRASES,
     placeholder("빈 문서"),
     EditorState.lineSeparator.of("\n"),
@@ -141,7 +170,7 @@ export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): Sou
         return true;
       },
     }),
-    EditorView.contentAttributes.of({ spellcheck: "false", "aria-label": "Markdown 소스" }),
+    EditorView.contentAttributes.of({ spellcheck: "false", "aria-label": "문서 소스" }),
   ];
 
   const view = new EditorView({ parent, state: EditorState.create({ doc: "", extensions: baseExtensions() }) });
@@ -196,6 +225,10 @@ export function createSourceEditor(parent: HTMLElement, hooks: EditorHooks): Sou
     setReadOnly(value) {
       readOnlyOn = value;
       view.dispatch({ effects: readOnly.reconfigure(EditorState.readOnly.of(value)) });
+    },
+    setLanguage(lang) {
+      languageOn = lang;
+      if (language.get(view.state) !== languages[lang]) view.dispatch({ effects: language.reconfigure(languages[lang]) });
     },
     setLineWrapping(wrap) {
       wrapOn = wrap;

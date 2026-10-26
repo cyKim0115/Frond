@@ -113,6 +113,17 @@ export const SETTINGS = {
       { value: "off", label: "표시 안 함" },
     ],
   },
+  htmlScripts: {
+    kind: "select",
+    section: "view",
+    label: "HTML 문서 스크립트",
+    hint: "HTML 문서는 안전 보기(스크립트·외부 리소스를 막고 문서 폴더 파일만)로 엽니다. 막은 것이 있으면 배너에서 문서마다 허용합니다. 허용한 스크립트는 앱과 분리된 화면에서 돌아 파일·앱 기능에 닿지 않습니다",
+    default: "ask",
+    options: [
+      { value: "ask", label: "안전 보기로 열고 문서마다 묻기" },
+      { value: "always", label: "항상 허용 (외부 리소스 포함)" },
+    ],
+  },
   headingScrollOffset: {
     kind: "number",
     section: "nav",
@@ -171,7 +182,7 @@ export const SETTINGS = {
     kind: "select",
     section: "nav",
     label: "AI 훅이 만든 문서",
-    hint: "Claude Code·Codex 훅(integrations/)이 새 md를 만들었을 때. 쌓아 두면 보던 문서·스크롤이 그대로이고 창도 앞으로 오지 않습니다. 탐색기에서 연 파일은 늘 바로 엽니다",
+    hint: "Claude Code·Codex·Cursor 훅(integrations/)이 새 문서(md·html)를 만들었을 때. 쌓아 두면 보던 문서·스크롤이 그대로이고 창도 앞으로 오지 않습니다. 탐색기에서 연 파일은 늘 바로 엽니다",
     default: "inbox",
     options: [
       { value: "inbox", label: "'새 문서' 목록에 쌓기" },

@@ -540,6 +540,11 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
 #app.large-doc #toc > a { content-visibility: auto; contain-intrinsic-size: auto 24px; }
 /* 목차·문서 안 링크로 이동한 제목·각주 위에 남기는 간격 — 설정 '제목 이동 시 위쪽 여백'(main.ts가 변수를 채운다) */
 #viewer > .doc [id] { scroll-margin-top: var(--heading-scroll-offset, 24px); }
+/* HTML 문서(src/html-view.ts, 결정 20261026-html-view) — 본문 판을 frame 하나가 채우고 frame이 스스로 스크롤한다.
+   문서가 바탕색을 정하지 않으면 브라우저처럼 밝은 Canvas — 앱 테마 색이 아니라 HTML 문서의 기본값이다 */
+#viewer:has(> .doc.html-doc:not([hidden])) { overflow: hidden; }
+#viewer > .doc.html-doc { height: 100%; }
+#viewer > .doc.html-doc > .html-frame { display: block; width: 100%; height: 100%; border: 0; color-scheme: light; background: Canvas; }
 
 #banner {
   flex: none;

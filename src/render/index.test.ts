@@ -274,6 +274,15 @@ describe("링크 경로", () => {
     expect(root.textContent).toContain("[h](file:///a.md)");
   });
 
+  it("HTML 문서 링크(.html·.htm, 결정 20261026-html-view)도 앱 안에서 연다 — 다른 확장자 file:은 여전히 거부", () => {
+    const { root } = render(
+      "[a](report.html) [b](<sub/보고서.HTM#표>) [c](file:///C:/r/x.html?q=1) [d](https://example.com/x.html) [e](file:///C:/r/x.exe) [f](page.xhtml)",
+    );
+    expect(localPathsAsShellSees(root)).toEqual(["C:\\docs\\paths\\report.html", "C:\\docs\\paths\\sub\\보고서.HTM", "C:\\r\\x.html", null, null]);
+    expect(root.querySelector("a[href='https://example.com/x.html']")!.getAttribute("target")).toBe("_blank");
+    expect(root.textContent).toContain("[e](file:///C:/r/x.exe)");
+  });
+
   it("파일명 같은 평문은 자동 링크하지 않는다 (GitHub과 동일)", () => {
     const { root } = render("paths.md와 example.com은 링크가 아니고 https://github.com 은 링크다. 메일 a@b.co 도.");
     const hrefs = Array.from(root.querySelectorAll("a")).map((a) => a.getAttribute("href"));

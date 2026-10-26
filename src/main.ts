@@ -10,6 +10,8 @@
  * - 편집기(CM6 view)는 하나다. 탭을 바꾸면 그 탭의 `EditorState`로 갈아 끼운다 — 되돌리기 기록·커서·선택이 탭마다 남는다.
  *   `editorTab`이 지금 view에 올라 있는 탭이고, 나머지 탭의 편집 상태는 `tab.editorState`에 있다
  * - 보기 화면은 탭마다 `<article>`을 두고 활성 탭 것만 보인다 — 탭을 오가도 다시 그리지 않고 하이라이트·그림도 남는다
+ * - HTML 문서(결정 20261026-html-view)는 `<article>` 안에 iframe 하나(html-view.ts)를 둔다. 목차·블록 닻(`data-line`)이 없어
+ *   스크롤 맞추기·분할 동기는 건너뛰고, 링크·단축키·찾기·글자 수·인쇄는 frame을 거친다
  */
 
 import { type EditorState, type StateEffect, Text } from "@codemirror/state";
@@ -21,8 +23,9 @@ import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialo
 import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { showContextMenu } from "./context-menu";
 import { showChoice, showDialog } from "./dialog";
-import { createSourceEditor, type SourceEditor } from "./editor";
+import { createSourceEditor, type SourceEditor, type SourceLanguage } from "./editor";
 import { initFindBar } from "./find";
+import { HtmlView, htmlTitle, isHtmlPath } from "./html-view";
 import { initInboxPanel } from "./inbox-panel";
 import { initTreePanel } from "./tree-panel";
 import { initNav } from "./nav";
@@ -101,6 +104,14 @@ interface BannerState {
 interface Tab {
   id: number;
   doc: DocumentPayload;
+  /** 문서 종류 — 확장자로 정한다(`isHtmlPath`). 편집기 문법 색도 이것을 따른다 */
+  kind: SourceLanguage;
+  /** HTML 문서의 보기 (html-view.ts). Markdown이면 null */
+  html: HtmlView | null;
+  /** 이 HTML 문서의 스크립트 허용 — null이면 설정 `htmlScripts`를 따른다. 세션에 남기지 않는다 */
+  htmlScripts: boolean | null;
+  /** 안전 보기에서 막은 것을 배너로 이미 알렸다 — 편집하며 다시 그릴 때마다 띄우지 않게 */
+  htmlNotified: boolean;
   /** "해석만 바꾸기"로 고른 인코딩 — 같은 문서를 다시 읽을 때도 유지한다 */
   forcedEncoding?: string;
   mode: Mode;
@@ -194,9 +205,11 @@ let zoom = 1;
 /** 브라우저 미리보기(`npm run dev`)에서는 Vite가 서빙하는 프로젝트 파일을 fetch로 읽는다 */
 async function fetchDocument(path: string): Promise<DocumentPayload> {
   const res = await fetch(`/${path}`);
-  // 없는 경로도 Vite SPA 폴백이 index.html(200)을 준다
-  if (!res.ok || res.headers.get("content-type")?.includes("text/html")) throw new Error(`${path}: 찾을 수 없음`);
+  const html = isHtmlPath(path);
+  // 없는 경로도 Vite SPA 폴백이 index.html(200)을 준다 — HTML 문서는 형식이 같으니 앱 셸 표식으로 가린다
+  if (!res.ok || (!html && res.headers.get("content-type")?.includes("text/html"))) throw new Error(`${path}: 찾을 수 없음`);
   const text = await res.text();
+  if (html && text.includes('<section id="welcome">')) throw new Error(`${path}: 찾을 수 없음`);
   const slash = path.lastIndexOf("/");
   return {
     path,
@@ -238,7 +251,7 @@ const inbox = initInboxPanel({
     revealItemInDir(path).catch((e) => void showDialog({ title: "파일 위치를 열 수 없습니다", message: String(e), detail: path })),
   async title(path) {
     try {
-      return titleOf((await loadDocument(path)).text, null);
+      return titleOf((await loadDocument(path)).text, null, path);
     } catch {
       return undefined;
     }
@@ -273,8 +286,10 @@ const findTab = (path: string): Tab | undefined => tabs.find((t) => samePath(t.d
 // ---- 탭 (로드맵 3-1) ---------------------------------------------------------------
 
 function createTab(doc: DocumentPayload, mode: Mode, index = active ? tabs.indexOf(active) + 1 : tabs.length): Tab {
+  const kind: SourceLanguage = isHtmlPath(doc.path) ? "html" : "markdown";
   const article = document.createElement("article");
-  article.className = "markdown-body doc";
+  // HTML 문서는 자기 CSS로 그린다 — 앱 문서 테마(markdown-body)를 입히지 않는다
+  article.className = kind === "html" ? "doc html-doc" : "markdown-body doc";
   article.lang = "ko";
   article.hidden = true;
   viewer.append(article);
@@ -284,6 +299,10 @@ function createTab(doc: DocumentPayload, mode: Mode, index = active ? tabs.index
   const tab: Tab = {
     id: nextTabId++,
     doc,
+    kind,
+    html: null,
+    htmlScripts: null,
+    htmlNotified: false,
     mode,
     editorState: null,
     savedDoc: null,
@@ -313,8 +332,23 @@ function createTab(doc: DocumentPayload, mode: Mode, index = active ? tabs.index
     draftChecked: false,
     comparing: false,
   };
+  if (kind === "html") tab.html = createHtmlView(tab);
   tabs.splice(Math.min(Math.max(0, index), tabs.length), 0, tab);
   return tab;
+}
+
+/** HTML 탭의 보기 (html-view.ts) — frame 안 키·링크·다 읽음을 셸로 잇는다 */
+function createHtmlView(tab: Tab): HtmlView {
+  return new HtmlView(tab.article, {
+    isTauri: IS_TAURI,
+    doc: () => tab.doc,
+    previewBase: () => new URL(`/${tab.doc.dir === "" ? "" : `${toAssetUrl(tab.doc.dir)}/`}`, location.href).href,
+    accent: () => getComputedStyle(document.documentElement).getPropertyValue("--accent").trim(),
+    onKeydown: onShortcutKey,
+    openExternal: (url) => void openUrl(url),
+    openDoc: (path) => void openPath(path),
+    onLoad: () => onHtmlLoad(tab),
+  });
 }
 
 const tabStrip = initTabStrip($("#tabs"), {
@@ -512,6 +546,7 @@ async function closeTab(tab: Tab): Promise<boolean> {
   tabs.splice(i, 1);
   recentTabs = recentTabs.filter((t) => t !== tab);
   articleResize.unobserve(tab.article);
+  tab.html?.dispose();
   tab.article.remove();
   if (editorTab === tab) editorTab = null;
   unwatchDocument(tab.doc.path);
@@ -543,7 +578,8 @@ function tabMenu(tab: Tab, event: MouseEvent): void {
     ...(others.length ? [{ label: "다른 탭 모두 닫기", action: () => void closeTabs(others) }] : []),
     ...(right.length ? [{ label: "오른쪽 탭 모두 닫기", action: () => void closeTabs(right) }] : []),
     { label: "경로 복사", action: () => void navigator.clipboard.writeText(tab.doc.path).then(() => flashStatus("경로를 복사했습니다")) },
-    ...(tab === active && IS_TAURI ? [{ label: "HTML로 내보내기…", action: () => void exportHtml(tab) }] : []),
+    ...(tab === active && IS_TAURI && !tab.html ? [{ label: "HTML로 내보내기…", action: () => void exportHtml(tab) }] : []),
+    ...(tab.html && IS_TAURI ? [{ label: "브라우저로 열기", action: () => openInBrowser(tab) }] : []),
     ...(IS_TAURI
       ? [
           {
@@ -647,15 +683,17 @@ function adopt(tab: Tab, doc: DocumentPayload, nextMode: Mode): void {
   updateDocChrome();
 }
 
-/** 제목(front matter title → 첫 H1) — 큰 문서는 파싱을 아끼고 그린 목차만 쓴다 */
-function titleOf(text: string, tab: Tab | null = active): string | undefined {
+/** 제목(front matter title → 첫 H1, HTML은 `<title>` → 첫 `<h1>`) — 큰 문서는 파싱을 아끼고 그린 목차만 쓴다 */
+function titleOf(text: string, tab: Tab | null = active, path = tab?.doc.path ?? ""): string | undefined {
+  if (isHtmlPath(path)) return htmlTitle(text);
   if (text.length > LARGE_SOFT_LIMIT / 2) return tab?.tocEntries.length ? docTitle(tab.tocEntries) : undefined;
   if (tab && tab.renderedText === text) return docTitle(tab.tocEntries, tab.frontMatter);
   const result = renderMarkdown(text, { baseDir: "", toAssetUrl: (p) => p });
   return docTitle(result.toc, result.frontMatter);
 }
 
-const tabTitle = (tab: Tab): string | undefined => (tab.needsRender ? undefined : docTitle(tab.tocEntries, tab.frontMatter));
+const tabTitle = (tab: Tab): string | undefined =>
+  tab.needsRender ? undefined : tab.html ? htmlTitle(tab.renderedText ?? tab.doc.text) : docTitle(tab.tocEntries, tab.frontMatter);
 
 // ---- 보기 모드 (렌더) --------------------------------------------------------------
 
@@ -664,6 +702,10 @@ function isDarkTheme(): boolean {
 }
 
 function renderView(tab: Tab, text: string): void {
+  if (tab.html) {
+    renderHtml(tab, tab.html, text);
+    return;
+  }
   // 2 MB(스펙 largeSoftLimit)를 넘는 문서는 하이라이트를 생략하고, 이미지는 지연 로드,
   // 큰 문서 모드(블록 묶음 단위로 화면 밖 레이아웃 생략·패널 애니메이션 끔)로 그린다
   const large = tab.doc.info.byte_len > LARGE_SOFT_LIMIT || text.length > LARGE_SOFT_LIMIT;
@@ -711,6 +753,95 @@ function renderView(tab: Tab, text: string): void {
   sidebar.hidden = result.toc.length === 0;
   updateActiveHeading();
   findBar.refresh();
+}
+
+// ---- HTML 문서 보기 (결정 20261026-html-view, html-view.ts) -----------------------------------
+
+/** HTML 문서를 frame에 그린다 — 목차·블록 닻이 없다. 글자 수·찾기·배너는 frame이 다 읽은 뒤(`onHtmlLoad`) */
+function renderHtml(tab: Tab, html: HtmlView, text: string): void {
+  tab.large = false;
+  tab.article.classList.remove("large");
+  tab.renderedText = text;
+  tab.needsRender = false;
+  tab.tocEntries = [];
+  tab.frontMatter = undefined;
+  tab.tocLinks.clear();
+  tab.activeLink = null;
+  tab.tocList.replaceChildren();
+  tab.headings = [];
+  tab.chunks = [];
+  tab.chunkHeadingStart = [];
+  ++tab.renderSeq;
+  void html.render(text, htmlScriptsOn(tab));
+  if (tab !== active) return;
+  app.classList.remove("large-doc");
+  sidebar.hidden = true;
+}
+
+const htmlScriptsOn = (tab: Tab): boolean => tab.htmlScripts ?? getSetting("htmlScripts") === "always";
+
+function onHtmlLoad(tab: Tab): void {
+  recount(tab);
+  if (tab === active) findBar.refresh();
+  noteHtmlBlocked(tab);
+}
+
+/**
+ * 안전 보기에서 막은 것이 있으면 한 번 알린다 — [스크립트 허용]·[브라우저로 열기]. 문서마다 허용했으면 되돌리는 길을 보인다.
+ * 설정 '항상 허용'으로 연 문서는 알리지 않는다
+ */
+function noteHtmlBlocked(tab: Tab): void {
+  const html = tab.html;
+  if (!html || !IS_TAURI) return;
+  if (html.scripts) {
+    if (tab.htmlScripts === true && tab.banner?.kind !== "html") {
+      showBanner(
+        "이 문서의 스크립트·외부 리소스를 허용했습니다. 앱과 분리된 화면에서 돌아 파일·앱 기능에는 닿지 않습니다.",
+        [
+          { label: "안전 보기로", run: () => setHtmlScripts(tab, false) },
+          { label: "닫기", run: () => hideBanner(tab) },
+        ],
+        false,
+        "html",
+        tab,
+      );
+    }
+    return;
+  }
+  const { scripts, handlers, remote } = html.blocked;
+  if (tab.htmlNotified || (scripts + handlers === 0 && !remote)) return;
+  tab.htmlNotified = true;
+  const what = [scripts + handlers > 0 ? "스크립트" : "", remote ? "외부 리소스" : ""].filter(Boolean).join("와 ");
+  showBanner(
+    `안전 보기 — 이 문서의 ${what}를 막았습니다. 일부 내용·그림이 보이지 않을 수 있습니다.`,
+    [
+      { label: "스크립트 허용", run: () => setHtmlScripts(tab, true) },
+      { label: "브라우저로 열기", run: () => openInBrowser(tab) },
+      { label: "닫기", run: () => hideBanner(tab) },
+    ],
+    false,
+    "html",
+    tab,
+  );
+}
+
+/** 이 HTML 문서의 스크립트를 켜고 끈다 (배너·상태바 모드 메뉴). 한 번 고르면 막은 내용 배너는 다시 띄우지 않는다 */
+function setHtmlScripts(tab: Tab, on: boolean): void {
+  if (!tab.html || !IS_TAURI) return;
+  tab.htmlScripts = on;
+  tab.htmlNotified = true;
+  if (tab.banner?.kind === "html") hideBanner(tab);
+  if (tab === active) renderView(tab, workingText(tab));
+  else tab.needsRender = true;
+}
+
+/** HTML 문서를 기본 브라우저로 — 브라우저는 디스크의 파일을 연다 */
+function openInBrowser(tab: Tab): void {
+  if (!IS_TAURI) return;
+  if (tab.dirty) flashStatus("브라우저는 저장된 파일을 엽니다 — 저장하지 않은 편집은 보이지 않습니다");
+  void invoke("open_in_browser", { path: tab.doc.path }).catch(
+    (e) => void showDialog({ title: "브라우저로 열 수 없습니다", message: String(e), detail: tab.doc.path }),
+  );
 }
 
 /** 보기 화면 맨 위 블록의 소스 줄 (0 기준) */
@@ -794,6 +925,7 @@ function attachEditor(tab: Tab): SourceEditor {
   if (editorTab) editorTab.editorState = ed.view.state;
   if (tab.editorState) {
     ed.setState(tab.editorState);
+    ed.setLanguage(tab.kind);
     ed.setReadOnly(tab.doc.info.lossy);
     editorTab = tab;
   } else {
@@ -807,6 +939,7 @@ function loadEditor(tab: Tab, text: string): void {
   const ed = ensureEditor();
   if (editorTab && editorTab !== tab) editorTab.editorState = ed.view.state;
   editorTab = tab;
+  ed.setLanguage(tab.kind);
   ed.setText(tab.doc.text);
   tab.savedDoc = ed.view.state.doc;
   if (text !== tab.doc.text) ed.view.dispatch({ changes: { from: 0, to: ed.view.state.doc.length, insert: text } });
@@ -1015,6 +1148,13 @@ function markdownImage(alt: string, rel: string): string {
   return /[\s()<>]/.test(rel) ? `![${alt}](<${rel}>)` : `![${alt}](${rel})`;
 }
 
+const escapeAttr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+/** 붙여넣거나 놓은 이미지를 넣을 글 — HTML 문서는 `<img>` 태그 */
+function imageMarkup(tab: Tab, alt: string, rel: string): string {
+  return tab.kind === "html" ? `<img src="${escapeAttr(rel)}" alt="${escapeAttr(alt)}">` : markdownImage(alt, rel);
+}
+
 function timestamp(): string {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
@@ -1039,7 +1179,7 @@ async function pasteImages(files: File[]): Promise<string | null> {
       const rel = await invoke<string>("save_pasted_image", bytes, {
         headers: { "x-doc-dir": encodeURIComponent(tab.doc.dir), "x-stem": encodeURIComponent(stem), "x-ext": ext },
       });
-      links.push(markdownImage("", rel));
+      links.push(imageMarkup(tab, "", rel));
     } catch (e) {
       showBanner(`이미지를 저장하지 못했습니다: ${e}`, [], true, "image", tab);
     }
@@ -1065,7 +1205,7 @@ async function dropImages(paths: string[], position: { x: number; y: number }): 
     try {
       const rel = await invoke<string>("copy_image_to_assets", { docDir: tab.doc.dir, source });
       const alt = source.replace(/^.*[\\/]/, "").replace(IMAGE_EXT_RE, "");
-      links.push(markdownImage(alt, rel));
+      links.push(imageMarkup(tab, alt, rel));
     } catch (e) {
       showBanner(`이미지를 복사하지 못했습니다: ${e}`, [], true, "image", tab);
     }
@@ -1217,9 +1357,21 @@ async function saveAsNow(tab: Tab | null): Promise<boolean> {
   await flushComposition();
   const target = await saveDialog({
     defaultPath: tab.doc.path,
-    filters: [{ name: "Markdown", extensions: ["md", "markdown", "mdown", "mkd", "txt"] }],
+    filters:
+      tab.kind === "html"
+        ? [{ name: "HTML", extensions: ["html", "htm"] }]
+        : [{ name: "Markdown", extensions: ["md", "markdown", "mdown", "mkd", "txt"] }],
   });
   if (!target) return false;
+  // 탭의 보기(렌더러·frame)는 문서 종류에 묶여 있다 — 종류가 바뀌는 저장은 막는다
+  if (isHtmlPath(target) !== (tab.kind === "html")) {
+    await showDialog({
+      title: "다른 종류로 저장할 수 없습니다",
+      message: tab.kind === "html" ? "HTML 문서는 .html·.htm으로 저장하세요." : "Markdown 문서는 .md 등 Markdown 확장자로 저장하세요.",
+      detail: target,
+    });
+    return false;
+  }
   const text = workingText(tab);
   const from = tab.doc.path;
   try {
@@ -1242,6 +1394,8 @@ async function saveAsNow(tab: Tab | null): Promise<boolean> {
   tab.forcedEncoding = undefined;
   tab.lastDraftText = null;
   hideBanner(tab);
+  // 문서 폴더가 바뀌었을 수 있다 — HTML 보기는 새 경로로 리소스 범위를 다시 받는다
+  tab.html?.reset();
   adopt(tab, doc, tab.mode);
   watchDocument(tab);
   nav.remember(doc.path, tabTitle(tab));
@@ -1420,11 +1574,11 @@ const COUNT_CYCLE = ["words", "chars", "charsNoSpace"] as const;
 /** 셀 때 빼는 것 — 그림(Mermaid SVG 안 스타일·라벨)과 수식의 MathML 사본(화면 글자와 겹침) */
 const UNCOUNTED = `.${DIAGRAM_CLASS}, .katex-mathml, style`;
 
-/** 보기 화면에 그린 본문 글자 — 그림·수식 사본은 뺀다 */
+/** 보기 화면에 그린 본문 글자 — 그림·수식 사본은 뺀다. HTML 안전 보기는 frame 문서의 본문 */
 function countableText(root: HTMLElement): string {
   if (!root.querySelector(UNCOUNTED)) return root.textContent ?? "";
   let text = "";
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
     acceptNode: (node) =>
       node.nodeType === Node.ELEMENT_NODE && (node as Element).matches(UNCOUNTED) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
   });
@@ -1439,8 +1593,11 @@ function recount(tab: Tab | null = active): void {
   tab.textCount = null;
   if (tab === active) updateCount();
   if (getSetting("statusCount") === "off") return;
+  // 스크립트 허용 HTML은 다른 origin이라 셀 수 없다 — 상태바에 안 보인다
+  const root = tab.html ? tab.html.body() : tab.article;
+  if (!root) return;
   const run = (): void => {
-    tab.textCount = countText(countableText(tab.article));
+    tab.textCount = countText(countableText(root));
     if (tab === active) updateCount();
   };
   if (tab.large) countTimer = window.setTimeout(run, 300);
@@ -1589,13 +1746,23 @@ async function eolMenu(): Promise<void> {
 statusEncoding.addEventListener("click", () => void encodingMenu());
 statusEol.addEventListener("click", () => void eolMenu());
 statusMode.addEventListener("click", (event) => {
-  if (!active) return;
-  const now = active.mode;
+  const tab = active;
+  if (!tab) return;
+  const now = tab.mode;
   const item = (mode: Mode, label: string) => ({ label: `${mode === now ? "✓ " : "　"}${label}`, action: () => setMode(mode) });
+  const check = (on: boolean): string => (on ? "✓ " : "　");
   showContextMenu(event, [
     item("view", "보기 (Ctrl+/)"),
     item("source", "소스 (Ctrl+/)"),
     item("split", "분할 — 소스 | 미리보기 (Ctrl+Shift+/)"),
+    // HTML 문서 — 안전 보기·스크립트 허용 전환과 브라우저 넘기기 (결정 20261026-html-view)
+    ...(tab.html && IS_TAURI
+      ? [
+          { label: `${check(!tab.html.scripts)}안전 보기 (스크립트·외부 리소스 막음)`, action: () => setHtmlScripts(tab, false) },
+          { label: `${check(tab.html.scripts)}스크립트 허용`, action: () => setHtmlScripts(tab, true) },
+          { label: "　브라우저로 열기", action: () => openInBrowser(tab) },
+        ]
+      : []),
   ]);
 });
 
@@ -1709,7 +1876,8 @@ viewer.addEventListener("scroll", () => {
 // ---- 찾기 (보기 모드, 2-5) ----------------------------------------------------------
 
 const findBar = initFindBar(
-  () => active?.article ?? null,
+  // HTML은 안전 보기 frame 문서의 본문 (스크립트 허용이면 다른 origin이라 없다)
+  () => (active?.html ? active.html.body() : (active?.article ?? null)),
   () => viewer.focus({ preventScroll: true }),
 );
 
@@ -1814,6 +1982,13 @@ function applySetting(key: SettingKey): void {
   } else if (key === "statusCount") {
     if (!active || active.textCount) updateCount();
     else recount(active);
+  } else if (key === "htmlScripts") {
+    // 문서마다 고르지 않은 HTML 탭만 새 기본값으로 다시 그린다 (뒤 탭은 앞으로 올 때)
+    for (const tab of tabs) {
+      if (!tab.html || tab.htmlScripts !== null) continue;
+      if (tab === active) renderView(tab, workingText(tab));
+      else tab.needsRender = true;
+    }
   }
 }
 SETTING_KEYS.forEach(applySetting);
@@ -1852,10 +2027,15 @@ onEntitlementChange(() => {
 });
 
 async function pickAndOpen(): Promise<void> {
+  const markdownExts = ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn", "txt"];
   const picked = await openDialog({
     multiple: true,
     directory: false,
-    filters: [{ name: "Markdown", extensions: ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn", "txt"] }],
+    filters: [
+      { name: "문서 (Markdown·HTML)", extensions: [...markdownExts, "html", "htm"] },
+      { name: "Markdown", extensions: markdownExts },
+      { name: "HTML", extensions: ["html", "htm"] },
+    ],
   });
   const paths = typeof picked === "string" ? [picked] : (picked ?? []);
   for (const path of paths) await openPath(path);
@@ -1893,6 +2073,15 @@ async function printNow(): Promise<void> {
     return;
   }
   const text = workingText(tab);
+  if (tab.html) {
+    // HTML 문서는 frame 문서만 찍는다 — 소스·분할에서 고친 내용은 frame에 다시 그려 다 읽은 뒤
+    if (tab.needsRender || text !== tab.renderedText) {
+      renderView(tab, text);
+      await tab.html.loaded();
+    }
+    tab.html.print();
+    return;
+  }
   if (tab.needsRender || text !== tab.renderedText) renderView(tab, text);
   const dark = isDarkTheme();
   if (dark) await renderDiagrams(tab.article, false);
@@ -1910,7 +2099,8 @@ function exportHtml(tab: Tab | null = active): Promise<void> {
 }
 
 async function exportHtmlNow(tab: Tab | null): Promise<void> {
-  if (!tab || tab !== active) return;
+  // HTML 문서는 이미 HTML이다 — 메뉴에도 없다
+  if (!tab || tab !== active || tab.html) return;
   if (!IS_TAURI) {
     showBanner("브라우저 미리보기에서는 내보낼 수 없습니다.");
     return;
@@ -1979,7 +2169,11 @@ $("#doc-menu").addEventListener("click", (event) => {
       : []),
     ...(active
       ? [
-          { label: "HTML로 내보내기…", action: () => void exportHtml() },
+          ...(!active.html
+            ? [{ label: "HTML로 내보내기…", action: () => void exportHtml() }]
+            : IS_TAURI
+              ? [{ label: "브라우저로 열기", action: () => void (active && openInBrowser(active)) }]
+              : []),
           { label: "인쇄 · PDF로 저장… (Ctrl+P)", action: () => void printDocument() },
         ]
       : []),
@@ -2040,7 +2234,8 @@ const syncLocked = (from: "editor" | "viewer"): boolean => syncLock !== null && 
 
 function syncViewerFromEditor(): void {
   const tab = active;
-  if (!tab || tab.mode !== "split" || !editor || editorTab !== tab) return;
+  // HTML 미리보기(frame)에는 블록 닻이 없다 — 따로 스크롤한다
+  if (!tab || tab.mode !== "split" || !editor || editorTab !== tab || tab.html) return;
   syncLock = { from: "editor", until: performance.now() + SYNC_LOCK_MS };
   if (tab.large) {
     scrollViewToLine(editor.topLine());
@@ -2052,7 +2247,7 @@ function syncViewerFromEditor(): void {
 
 function syncEditorFromViewer(): void {
   const tab = active;
-  if (!tab || tab.mode !== "split" || !editor || editorTab !== tab) return;
+  if (!tab || tab.mode !== "split" || !editor || editorTab !== tab || tab.html) return;
   syncLock = { from: "viewer", until: performance.now() + SYNC_LOCK_MS };
   if (tab.large) {
     editor.scrollToLine(viewTopLine());
@@ -2111,102 +2306,102 @@ async function restoreSession(session: Session, activateSaved: boolean): Promise
 // ---- 단축키 ------------------------------------------------------------------------
 // 캡처 단계에서 받는다 — 편집기(CM6)가 먼저 가져가면 안 되는 앱 단축키(Ctrl+/·Ctrl+S 등)가 있다.
 // 찾기(Ctrl+F)·바꾸기(Ctrl+H)는 소스 모드에서 편집기 몫이다.
+// HTML 보기 frame에 포커스가 있으면 키가 앱 창에 오지 않는다 — html-view.ts가 frame 문서의 키(안전 보기)나 도우미가 넘긴 키
+// (스크립트 허용, 보내지 않은 KeyboardEvent)를 이 함수로 다시 넘긴다
 
-window.addEventListener(
-  "keydown",
-  (event) => {
-    if (event.isComposing || event.keyCode === 229) {
-      // 조합 중 Ctrl+S·Ctrl+P — 글자를 먼저 확정하고 저장·인쇄한다. 그냥 두면 Ctrl+P는 웹뷰 기본 인쇄로 가서
-      // 큰 문서 확인(D7)을 건너뛰고, Ctrl+S는 확정만 되고 저장은 안 된다 (fidelity-report Priority fix 1·4)
-      if ((event.ctrlKey || event.metaKey) && (event.code === "KeyS" || event.code === "KeyP") && !document.querySelector("dialog[open]")) {
-        event.preventDefault();
-        event.stopPropagation();
-        const isSave = event.code === "KeyS";
-        const shift = event.shiftKey;
-        void flushComposition(isSave).then(() => {
-          if (isSave) void (shift ? saveAs() : save());
-          else void printDocument();
-        });
-      }
-      return;
-    }
-    if (document.querySelector("dialog[open]")) return; // 팝업이 열려 있으면 팝업 몫
-    const ctrl = event.ctrlKey || event.metaKey;
-    const key = event.key.toLowerCase();
-    const take = (): void => {
+function onShortcutKey(event: KeyboardEvent): void {
+  if (event.isComposing || event.keyCode === 229) {
+    // 조합 중 Ctrl+S·Ctrl+P — 글자를 먼저 확정하고 저장·인쇄한다. 그냥 두면 Ctrl+P는 웹뷰 기본 인쇄로 가서
+    // 큰 문서 확인(D7)을 건너뛰고, Ctrl+S는 확정만 되고 저장은 안 된다 (fidelity-report Priority fix 1·4)
+    if ((event.ctrlKey || event.metaKey) && (event.code === "KeyS" || event.code === "KeyP") && !document.querySelector("dialog[open]")) {
       event.preventDefault();
       event.stopPropagation();
-    };
-    const mode = active?.mode ?? "view";
-    if (ctrl && key === "s") {
-      take();
-      void (event.shiftKey ? saveAs() : save());
-    } else if (ctrl && event.shiftKey && (event.code === "Slash" || event.key === "?")) {
-      take();
-      setMode(mode === "split" ? "source" : "split");
-    } else if (ctrl && (event.key === "/" || event.code === "Slash")) {
-      take();
-      setMode(mode === "view" ? "source" : "view");
-    } else if (ctrl && !event.shiftKey && key === "f" && mode === "view" && active) {
-      take();
-      findBar.open();
-    } else if (ctrl && (key === "f" || key === "h") && mode === "split" && editor) {
-      // 분할 뷰의 찾기·바꾸기는 소스 편집기 몫 — 포커스가 미리보기에 있어도
-      take();
-      editor.focus();
-      editor.openSearch();
-    } else if (ctrl && key === "h" && mode === "view" && active) {
-      take();
-      setMode("source");
-      editor?.openSearch();
-    } else if (ctrl && key === "o") {
-      take();
-      void pickAndOpen();
-    } else if (ctrl && key === "p") {
-      take();
-      void printDocument();
-    } else if (ctrl && key === "w") {
-      take();
-      if (active) void closeTab(active);
-    } else if (ctrl && event.shiftKey && key === "t") {
-      take();
-      void reopenClosedTab();
-    } else if (ctrl && (key === "tab" || key === "pagedown" || key === "pageup")) {
-      take();
-      cycleTab(key === "pageup" || (key === "tab" && event.shiftKey) ? -1 : 1);
-    } else if (ctrl && !event.shiftKey && !event.altKey && /^Digit[1-9]$/.test(event.code)) {
-      take();
-      const n = Number(event.code.slice(5));
-      const tab = n === 9 ? tabs[tabs.length - 1] : tabs[n - 1];
-      if (tab) activate(tab);
-    } else if (ctrl && (event.key === "=" || event.key === "+")) {
-      take();
-      applyZoom(zoom + 0.1);
-    } else if (ctrl && event.key === "-") {
-      take();
-      applyZoom(zoom - 0.1);
-    } else if (ctrl && event.key === "0") {
-      take();
-      applyZoom(1);
-    } else if (ctrl && event.shiftKey && key === "d") {
-      take();
-      toggleTheme();
-    } else if (ctrl && event.key === "\\") {
-      take();
-      if (active?.tocEntries.length) sidebar.hidden = !sidebar.hidden;
-    } else if (ctrl && event.shiftKey && key === "e") {
-      take();
-      nav.toggle();
-    } else if (ctrl && event.key === ",") {
-      take();
-      settingsDialog.open();
-    } else if (key === "f5" && active) {
-      take();
-      void reload();
+      const isSave = event.code === "KeyS";
+      const shift = event.shiftKey;
+      void flushComposition(isSave).then(() => {
+        if (isSave) void (shift ? saveAs() : save());
+        else void printDocument();
+      });
     }
-  },
-  { capture: true },
-);
+    return;
+  }
+  if (document.querySelector("dialog[open]")) return; // 팝업이 열려 있으면 팝업 몫
+  const ctrl = event.ctrlKey || event.metaKey;
+  const key = event.key.toLowerCase();
+  const take = (): void => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  const mode = active?.mode ?? "view";
+  if (ctrl && key === "s") {
+    take();
+    void (event.shiftKey ? saveAs() : save());
+  } else if (ctrl && event.shiftKey && (event.code === "Slash" || event.key === "?")) {
+    take();
+    setMode(mode === "split" ? "source" : "split");
+  } else if (ctrl && (event.key === "/" || event.code === "Slash")) {
+    take();
+    setMode(mode === "view" ? "source" : "view");
+  } else if (ctrl && !event.shiftKey && key === "f" && mode === "view" && active) {
+    take();
+    if (active.html?.scripts) flashStatus("스크립트 허용 보기에서는 찾기를 쓸 수 없습니다 — 소스(Ctrl+/)나 안전 보기에서 찾으세요");
+    else findBar.open();
+  } else if (ctrl && (key === "f" || key === "h") && mode === "split" && editor) {
+    // 분할 뷰의 찾기·바꾸기는 소스 편집기 몫 — 포커스가 미리보기에 있어도
+    take();
+    editor.focus();
+    editor.openSearch();
+  } else if (ctrl && key === "h" && mode === "view" && active) {
+    take();
+    setMode("source");
+    editor?.openSearch();
+  } else if (ctrl && key === "o") {
+    take();
+    void pickAndOpen();
+  } else if (ctrl && key === "p") {
+    take();
+    void printDocument();
+  } else if (ctrl && key === "w") {
+    take();
+    if (active) void closeTab(active);
+  } else if (ctrl && event.shiftKey && key === "t") {
+    take();
+    void reopenClosedTab();
+  } else if (ctrl && (key === "tab" || key === "pagedown" || key === "pageup")) {
+    take();
+    cycleTab(key === "pageup" || (key === "tab" && event.shiftKey) ? -1 : 1);
+  } else if (ctrl && !event.shiftKey && !event.altKey && /^Digit[1-9]$/.test(event.code)) {
+    take();
+    const n = Number(event.code.slice(5));
+    const tab = n === 9 ? tabs[tabs.length - 1] : tabs[n - 1];
+    if (tab) activate(tab);
+  } else if (ctrl && (event.key === "=" || event.key === "+")) {
+    take();
+    applyZoom(zoom + 0.1);
+  } else if (ctrl && event.key === "-") {
+    take();
+    applyZoom(zoom - 0.1);
+  } else if (ctrl && event.key === "0") {
+    take();
+    applyZoom(1);
+  } else if (ctrl && event.shiftKey && key === "d") {
+    take();
+    toggleTheme();
+  } else if (ctrl && event.key === "\\") {
+    take();
+    if (active?.tocEntries.length) sidebar.hidden = !sidebar.hidden;
+  } else if (ctrl && event.shiftKey && key === "e") {
+    take();
+    nav.toggle();
+  } else if (ctrl && event.key === ",") {
+    take();
+    settingsDialog.open();
+  } else if (key === "f5" && active) {
+    take();
+    void reload();
+  }
+}
+window.addEventListener("keydown", onShortcutKey, { capture: true });
 
 // ---- 기본 앱 (1-6) -----------------------------------------------------------
 
