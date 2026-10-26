@@ -15,12 +15,13 @@
 | `20261001-v1-open-decisions` D6 | RAG 캡처 — MVP 닫을 때 묻지 않고 실행 | `ADOPT` | 2026-10-01 | `20261001-v1-open-decisions.md` |
 | `20261001-v1-open-decisions` D7 | 큰 문서(1 MB 이상, 2026-10-02 사용자 지정) `Ctrl+P` — 확인 팝업 후 인쇄 | `ADOPT` | 2026-10-01 | `20261001-v1-open-decisions.md` |
 | `20261001-ai-app-open` A1·A2 | AI 앱 오른쪽 창에 MdEditor 넣기 / 화면 오른쪽 사이드 모드 — 폐기 | `REJECT` | 2026-10-01 | `20261001-ai-app-open.md` |
-| `20261001-ai-app-open` A3·A4 | Claude Code·Codex PostToolUse 훅으로 **새로 만든 md만** MdEditor로 열기 (`integrations/`) | `ADOPT` | 2026-10-01 | `20261001-ai-app-open.md` |
+| `20261001-ai-app-open` A3·A4 | Claude Code·Codex PostToolUse 훅으로 **새로 만든 md만** MdEditor로 열기 (`integrations/`). 2026-10-26 `.html`·`.htm`과 Cursor `afterFileEdit` 추가(사용자 지시) | `ADOPT` | 2026-10-01 | `20261001-ai-app-open.md` |
 | `20261006-shiki` | 코드 강조 highlight.js → Shiki 교체 — 300줄 강조 81.7 ms vs 3.2 ms, 번들 886 KB vs 67 KB, 테마 토큰과 분리 → 유지 | `DEFER` | 2026-10-06 | `20261006-shiki.md` |
 | `20261006-license` | 소스 라이선스 — MIT를 LICENSE 파일로 확정, "Frond" 이름·앱 아이콘은 별도 보유(`TRADEMARKS.md`), 구매자 전용 테마도 공개 | `ADOPT` | 2026-10-06 | `20261006-license.md` |
 | `20261006-store-monetization` | Microsoft Store(MSIX) 배포 + Durable add-on 선택 구매 — 사용자 테마 만들기·전용 테마 해금, 드문 구매 권유. 문서 기능·다크·추천 테마는 무료. 계정 유형·가격은 사용자 결정 | `ADOPT_WITH_CHANGES` | 2026-10-06 | `20261006-store-monetization.md` |
 | `20261006-website` | 웹사이트 — Astro 정적 제품 페이지(`website/`, Cloudflare Workers 정적 자산) + GitBook 설명서(`docs/site/`), 설명서는 `<도메인>/docs` 302, 도메인 전엔 로컬만(무료 도메인 REJECT), Starlight `/docs`는 DEFER, 버전·SHA256은 빌드 때 GitHub API, 사용 장면은 CDP 스크립트 캡처 | 항목별 (`ADOPT`·`DEFER`·`REJECT`) | 2026-10-06 | 2026-10-07 비공개 웹사이트 저장소로 옮김 |
 | `20261006-live-preview` | 인라인 라이브프리뷰 실험 — CM6 데코레이션만(텍스트 불변), 캐럿 줄 원문, 조합 중 재빌드 안 함. `exp/live-preview`에만, IME ①–⑧ 사용자 확인 대기 | `(pending)` | 2026-10-06 | `20261006-live-preview.md` |
+| `20261026-html-view` | HTML 문서 열기 — 크로미움 탑재는 REJECT(WebView2가 이미 Chromium, +55~180 MB·패치 책임). 기존 WebView2로 안전 보기(같은 origin·스크립트 없는 iframe, 외부 리소스 차단, 문서 폴더만) + 문서별 스크립트 허용(불투명 origin) + 브라우저로 열기, `.html` 기본 앱은 안 가져옴 | `ADOPT_WITH_CHANGES` | 2026-10-26 | `20261026-html-view.md` |
 
 ## How to add
 
