@@ -1,4 +1,4 @@
-//! 폴더 트리 (로드맵 3-2) — 탐색 영역 '폴더' 탭. 폴더 하나의 목록(하위 폴더·마크다운 문서만)과 트리 감시.
+//! 폴더 트리 (로드맵 3-2) — 탐색 영역 '폴더' 탭. 폴더 하나의 목록(하위 폴더·마크다운·HTML 문서만)과 트리 감시.
 //!
 //! 목록은 펼친 폴더만 그때그때 읽는다(지연). 감시는 루트를 **재귀로** 걸고, 이름이 생기거나 사라진 폴더만
 //! `tree-changed`로 알린다 — 문서 내용 변경은 문서 감시(watch.rs)가 따로 맡는다. 큰 폴더(사용자 폴더 전체 등)를
@@ -15,8 +15,8 @@ use notify_debouncer_full::{new_debouncer_opt, DebounceEventResult, Debouncer, N
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
-/// 트리에 보이는 문서 확장자 (파일 연결과 같은 것 + 흔한 변형)
-const DOC_EXTS: [&str; 6] = ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn"];
+/// 트리에 보이는 문서 확장자 (파일 연결과 같은 것 + 흔한 변형 + HTML 문서, 결정 20261026-html-view)
+const DOC_EXTS: [&str; 8] = ["md", "markdown", "mdown", "mkd", "mkdn", "mdwn", "html", "htm"];
 /// 열어도 마크다운이 거의 없고 아주 큰 폴더
 const SKIP_DIRS: [&str; 1] = ["node_modules"];
 
@@ -152,7 +152,10 @@ mod tests {
         assert!(is_doc("a.md"));
         assert!(is_doc("노트.MARKDOWN"));
         assert!(is_doc("x.mkd"));
+        assert!(is_doc("보고서.HTML"));
+        assert!(is_doc("a.htm"));
         assert!(!is_doc("a.txt"));
+        assert!(!is_doc("a.xhtml"));
         assert!(!is_doc("md"));
     }
 

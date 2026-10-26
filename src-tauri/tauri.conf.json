@@ -17,9 +17,11 @@
       "csp": {
         "default-src": "'self'",
         "script-src": "'self'",
-        "style-src": "'self' 'unsafe-inline'",
-        "font-src": "'self' data:",
-        "img-src": "'self' asset: http://asset.localhost data: https:",
+        "style-src": "'self' 'unsafe-inline' htmlview: http://htmlview.localhost",
+        "font-src": "'self' data: htmlview: http://htmlview.localhost",
+        "img-src": "'self' asset: http://asset.localhost data: https: htmlview: http://htmlview.localhost",
+        "media-src": "'self' data: htmlview: http://htmlview.localhost",
+        "frame-src": "'self' htmlview: http://htmlview.localhost",
         "connect-src": "'self' ipc: http://ipc.localhost"
       },
       "assetProtocol": {

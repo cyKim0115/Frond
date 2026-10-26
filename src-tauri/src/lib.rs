@@ -15,6 +15,7 @@ mod assoc;
 mod drafts;
 mod elevation;
 mod export;
+mod htmlview;
 mod install;
 mod license;
 mod print_menu;
@@ -176,6 +177,12 @@ pub fn run() {
         .manage(watch::WatchState(Mutex::new(Default::default())))
         .manage(tree::TreeWatch(Mutex::new(None)))
         .manage(license::LicenseState(Mutex::new(None)))
+        .manage(htmlview::HtmlViews::default())
+        // HTML 문서 보기 — 문서 폴더만 내는 프로토콜. 파일 읽기가 UI 스레드를 막지 않게 따로 돈다
+        .register_asynchronous_uri_scheme_protocol(htmlview::SCHEME, |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
+            std::thread::spawn(move || responder.respond(htmlview::respond(&app, &request)));
+        })
         .setup(|app| {
             // 창은 코드로 만든다 — on_navigation 훅은 빌더에만 있다.
             // 웹뷰 안에서의 이동은 앱 자체 URL만 허용. 외부 링크는 프런트가 opener로 연다 (스택 판정 조건 5)
@@ -195,6 +202,7 @@ pub fn run() {
                 })
                 .build()?;
             print_menu::route_print_to_app(&window);
+            htmlview::guard_frames(&window);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -206,6 +214,10 @@ pub fn run() {
             watch::unwatch_document,
             export::write_export,
             export::read_image_bytes,
+            htmlview::html_view_open,
+            htmlview::html_view_set,
+            htmlview::html_view_close,
+            htmlview::open_in_browser,
             tree::list_dir,
             tree::watch_tree,
             tree::unwatch_tree,
