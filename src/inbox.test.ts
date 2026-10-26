@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { addInbox, INBOX_LIMIT, type InboxEntry, loadInbox, markInboxRead, removeInbox, retitleInbox, saveInbox, unreadCount } from "./inbox";
+import { addInbox, INBOX_LIMIT, type InboxEntry, loadInbox, markInboxRead, removeInbox, retitleInbox, saveInbox, sourceLabel, unreadCount } from "./inbox";
 
 const entry = (path: string, at = 1, read = false): InboxEntry => ({ path, source: "claude", at, read });
 
 describe("AI 훅 받은 목록 (로드맵 3-6)", () => {
+  it("출처 표시 이름 — 훅 표식(claude·codex·cursor), 모르는 것은 AI", () => {
+    expect(["claude", "codex", "cursor", "ai", "gemini"].map(sourceLabel)).toEqual(["Claude Code", "Codex", "Cursor", "AI", "AI"]);
+  });
+
   it("새것을 앞에 넣고, 같은 경로(대소문자 무시)가 다시 오면 맨 앞으로 옮겨 안 읽음이 된다", () => {
     let list = addInbox([], entry("C:\\a.md", 1));
     list = addInbox(list, entry("C:\\b.md", 2));

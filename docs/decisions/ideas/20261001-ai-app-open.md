@@ -25,7 +25,7 @@
 | A1 | AI 앱 오른쪽 창 안에 MdEditor 띄우기 | `REJECT` | 하지 않는다 | Claude·ChatGPT 모두 외부 앱을 오른쪽 창에 넣는 확장 지점이 없다. 사용자가 "내장이어야 하면 폐기"로 정함 |
 | A2 | MdEditor 창을 화면 오른쪽에 붙이는 사이드 모드 | `REJECT` | 하지 않는다 | A1을 대신하려던 안. 사용자가 사이드 부분 전체를 폐기 |
 | A3 | AI 도구 → MdEditor 열기 | `ADOPT` | PostToolUse 훅 스크립트 하나(`integrations/open-new-md.ps1`)가 Claude Code `Write`(create)와 Codex `apply_patch`(`*** Add File:`)를 둘 다 처리한다. exe는 설치기 ProgId 열기 명령에서 찾는다. 앱 코드는 바꾸지 않는다 — argv·single-instance 경로를 그대로 쓴다 | 앱 쪽 변경 없이 이미 있는 열기 경로(1-2)를 재사용한다. 훅은 사용자 설정이라 끄고 켜기 쉽다 |
-| A4 | 여는 시점 | `ADOPT` | **새로 만든 md만**. 덮어쓰기·수정은 열지 않는다(열려 있으면 외부 변경 감지가 갱신). AI 작업용 폴더(`~\.claude`, `~\.codex`, `%TEMP%`)는 제외. 여러 개면 마지막 하나 | 사용자 선택. 이 저장소처럼 docs를 자주 고치는 작업에서 창이 계속 바뀌지 않게 |
+| A4 | 여는 시점 | `ADOPT` | **새로 만든 md만**. 덮어쓰기·수정은 열지 않는다(열려 있으면 외부 변경 감지가 갱신). AI 작업용 폴더(`~\.claude`, `~\.codex`, `%TEMP%`)는 제외. 여러 개면 마지막 하나 (2026-10-06부터 전부). **2026-10-26 사용자 지시로 `.html`·`.htm`도, Cursor `afterFileEdit` 훅 추가** | 사용자 선택. 이 저장소처럼 docs를 자주 고치는 작업에서 창이 계속 바뀌지 않게 |
 
 ## Scores
 

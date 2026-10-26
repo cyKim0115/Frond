@@ -1,15 +1,20 @@
-﻿# AI 코딩 도구가 새 .md 파일을 만들면 Frond(옛 이름 MdEditor)로 연다 — PostToolUse 훅 (integrations/README.md)
+﻿# AI 코딩 도구가 새 문서(.md·.markdown·.html·.htm)를 만들면 Frond(옛 이름 MdEditor)로 연다 — PostToolUse 훅 (integrations/README.md)
 #
 # 입력: 훅 stdin JSON
 #   Claude Code  Write 도구 → tool_input.file_path, tool_response.type ("create" | "update")
 #   Codex        apply_patch → tool_input.command 안의 "*** Add File: <경로>" 줄 (상대 경로는 cwd 기준)
-# 동작: 열 파일을 `--from-hook=<claude|codex>` 표식과 함께 Frond(mdeditor.exe)에 넘긴다. 이미 떠 있으면 single-instance가 기존 창에 넘기고,
+#   Cursor       afterFileEdit → file_path. 새 파일·수정을 가르는 값이 없어 '막 생긴 파일'(생성 시각 2분 안)만 받고,
+#                같은 파일은 10분에 한 번만 넘긴다(새로 만든 뒤 이어지는 편집마다 넘기지 않게)
+# 동작: 열 파일을 `--from-hook=<claude|codex|cursor>` 표식과 함께 Frond(mdeditor.exe)에 넘긴다. 이미 떠 있으면 single-instance가 기존 창에 넘기고,
 #       앱은 표식을 보고 보던 문서를 바꾸지 않은 채 탐색 영역 '새 문서' 목록에 쌓는다(설정 'AI 훅이 만든 문서', 로드맵 3-6).
 #       꺼져 있으면 그 문서로 바로 뜬다. 표식을 모르는 예전 설치본은 `-` 인수를 건너뛰어 예전처럼 연다.
 # AI 작업을 막지 않도록 무슨 일이 있어도 exit 0. 판단 결과는 %TEMP%\mdeditor-open-hook.log에 한 줄씩 남긴다.
+# 시험: 환경 변수 FROND_HOOK_DRYRUN=1이면 앱을 띄우지 않고 넘길 파일만 로그에 남긴다.
 
 $ErrorActionPreference = 'Stop'
 $LogPath = Join-Path ([System.IO.Path]::GetTempPath()) 'mdeditor-open-hook.log'
+# Cursor 중복 막기 — 최근에 넘긴 파일 ("<ticks>`t<경로>" 한 줄씩)
+$SentPath = Join-Path ([System.IO.Path]::GetTempPath()) 'mdeditor-open-hook-sent.txt'
 
 function Write-HookLog([string]$Message) {
     try {
@@ -24,8 +29,45 @@ function Read-HookInput {
     try { return $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
 }
 
+# Cursor afterFileEdit — 이 편집이 파일을 새로 만든 것인지. 생성 시각이 2분 안이면 새 파일로 본다
+function Test-JustCreated([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    return [System.IO.File]::GetCreationTime($Path) -gt (Get-Date).AddMinutes(-2)
+}
+
+# 같은 파일을 10분 안에 이미 넘겼는지 (Cursor). 넘긴 기록은 마지막 200줄만 남긴다
+function Test-RecentlySent([string]$Path) {
+    if (-not (Test-Path -LiteralPath $SentPath)) { return $false }
+    $since = (Get-Date).AddMinutes(-10).Ticks
+    foreach ($line in [System.IO.File]::ReadAllLines($SentPath, [System.Text.Encoding]::UTF8)) {
+        $parts = $line -split "`t", 2
+        $ticks = [int64]0
+        if ($parts.Count -eq 2 -and [int64]::TryParse($parts[0], [ref]$ticks) -and $ticks -gt $since -and $parts[1] -ieq $Path) { return $true }
+    }
+    return $false
+}
+
+function Add-Sent([string[]]$Paths) {
+    try {
+        $lines = @()
+        if (Test-Path -LiteralPath $SentPath) { $lines = @([System.IO.File]::ReadAllLines($SentPath, [System.Text.Encoding]::UTF8)) }
+        $now = (Get-Date).Ticks
+        $lines = @($lines + @($Paths | ForEach-Object { "$now`t$_" })) | Select-Object -Last 200
+        [System.IO.File]::WriteAllLines($SentPath, [string[]]$lines, [System.Text.Encoding]::UTF8)
+    } catch { }
+}
+
 # 이번 도구 호출로 새로 생긴 파일 경로들 (절대 경로)
 function Get-CreatedPaths($Payload) {
+    if ($Payload.hook_event_name -eq 'afterFileEdit') {
+        # Cursor — 경로는 슬래시·소문자 드라이브(`d:/…`)로 올 수 있어 정규화한다
+        $path = [System.IO.Path]::GetFullPath([string]$Payload.file_path)
+        if ($path -match '^[a-z]:') { $path = $path.Substring(0, 1).ToUpperInvariant() + $path.Substring(1) }
+        # Cursor는 모든 편집마다 부른다 — 문서가 아니면 파일을 더 보지 않고 바로 끝낸다
+        if ($path -notmatch '\.(md|markdown|html?)$') { return @() }
+        if ((Test-JustCreated $path) -and -not (Test-RecentlySent $path)) { return @($path) }
+        return @()
+    }
     switch ($Payload.tool_name) {
         'Write' {
             # 덮어쓰기(update)는 열지 않는다 — 이미 열려 있으면 Frond의 외부 변경 감지가 다시 읽는다
@@ -44,9 +86,9 @@ function Get-CreatedPaths($Payload) {
     }
 }
 
-# 이 파일을 Frond로 열지. AI가 자기 작업용으로 쓰는 md(메모리·계획·스크래치)는 열지 않는다
+# 이 파일을 Frond로 열지. Frond가 여는 문서(Markdown·HTML)만, AI가 자기 작업용으로 쓰는 것(메모리·계획·스크래치)은 빼고
 function Test-ShouldOpen([string]$Path) {
-    if ($Path -notmatch '\.(md|markdown)$') { return $false }
+    if ($Path -notmatch '\.(md|markdown|html?)$') { return $false }
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
 
     # TODO(사용자): 열지 않을 폴더 — 아래는 기본값이다. 필요하면 더하거나 뺀다
@@ -83,7 +125,14 @@ try {
         exit 0
     }
     # 출처 표식 — 앱이 탐색기에서 연 것과 구별해 보던 문서를 밀어내지 않는다. 받은 목록이 있어 전부 넘긴다
-    $source = if ($payload.tool_name -eq 'apply_patch') { 'codex' } else { 'claude' }
+    $source = if ($payload.hook_event_name -eq 'afterFileEdit') { 'cursor' }
+              elseif ($payload.tool_name -eq 'apply_patch') { 'codex' }
+              else { 'claude' }
+    if ($source -eq 'cursor') { Add-Sent $targets }
+    if ($env:FROND_HOOK_DRYRUN -eq '1') {
+        Write-HookLog "드라이런 ($source): $($targets -join ', ')"
+        exit 0
+    }
     $arguments = @("--from-hook=$source") + @($targets | ForEach-Object { '"{0}"' -f $_ })
     # Claude 데스크톱 세션은 MSIX 컨테이너다 — 그 안에서 Start-Process로 앱을 새로 띄우면 앱의 AppData 쓰기(설정·탭·테마·초안)가
     # Claude 패키지 LocalCache로 가상화돼 사용자가 띄운 앱과 따로 논다. WMI(Win32_Process.Create)로 컨테이너 밖에서 띄운다.
@@ -95,7 +144,8 @@ try {
         if ($result.ReturnValue -eq 0) { $how = 'WMI' }
     } catch { }
     if ($how -ne 'WMI') { Start-Process -FilePath $exe -ArgumentList $arguments }
-    Write-HookLog "넘김 ($($payload.tool_name), $source, $how): $($targets -join ', ')"
+    $tool = if ($payload.tool_name) { $payload.tool_name } else { $payload.hook_event_name }
+    Write-HookLog "넘김 ($tool, $source, $how): $($targets -join ', ')"
 } catch {
     Write-HookLog "오류: $($_.Exception.Message)"
 }

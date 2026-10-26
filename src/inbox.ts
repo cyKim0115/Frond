@@ -47,6 +47,7 @@ export const unreadCount = (list: readonly InboxEntry[]): number => list.filter(
 export function sourceLabel(source: string): string {
   if (source === "claude") return "Claude Code";
   if (source === "codex") return "Codex";
+  if (source === "cursor") return "Cursor";
   return "AI";
 }
 
