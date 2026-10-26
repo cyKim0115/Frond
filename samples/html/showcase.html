@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>HTML 보기 샘플</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR&display=swap">
+</head>
+<body>
+<header>
+  <h1>HTML 보기 샘플</h1>
+  <p class="lead">Frond가 HTML 문서를 여는 방식을 확인하는 파일입니다. 안전 보기에서는 스크립트와 외부 리소스를 막고, 문서 폴더 안의 파일만 보입니다.</p>
+</header>
+<nav><a href="#static">정적 내용</a> · <a href="#links">링크</a> · <a href="#blocked">막는 것</a></nav>
+
+<section id="static">
+  <h2>정적 내용</h2>
+  <p>문단, <strong>굵게</strong>, <em>기울임</em>, <code>코드</code>. 한국어 문장은 단어 중간에서 줄이 끊기지 않아야 합니다.</p>
+  <figure>
+    <img src="images/leaf.svg" alt="잎 그림 — 문서 폴더 안 이미지" width="96" height="96">
+    <figcaption>문서 폴더 안 이미지(<code>images/leaf.svg</code>)는 보입니다</figcaption>
+  </figure>
+  <table>
+    <thead><tr><th>항목</th><th>안전 보기</th><th>스크립트 허용</th></tr></thead>
+    <tbody>
+      <tr><td>문서 폴더 이미지·CSS</td><td>보임</td><td>보임</td></tr>
+      <tr><td>외부 이미지·CSS·글꼴</td><td>막음</td><td>보임</td></tr>
+      <tr><td>스크립트</td><td>실행 안 함</td><td>실행</td></tr>
+      <tr><td>찾기(Ctrl+F)</td><td>됨</td><td>소스 모드에서</td></tr>
+    </tbody>
+  </table>
+  <details><summary>접은 내용</summary><p>펼친 내용입니다. 스크립트 없이도 열고 닫힙니다.</p></details>
+</section>
+
+<section id="links">
+  <h2>링크</h2>
+  <ul>
+    <li><a href="../showcase.md">Markdown 샘플</a> — Frond 탭으로 엽니다</li>
+    <li><a href="https://example.com/">example.com</a> — 기본 브라우저로 엽니다</li>
+    <li><a href="#static">정적 내용으로</a> — 문서 안에서 이동합니다</li>
+  </ul>
+</section>
+
+<section id="blocked">
+  <h2>안전 보기에서 막는 것</h2>
+  <p>외부 이미지: <img src="https://github.githubassets.com/favicons/favicon.svg" alt="(외부 이미지 — 안전 보기에서는 안 보임)" height="24"></p>
+  <p id="script-out">이 줄은 안전 보기에서 그대로입니다. 스크립트를 허용하면 바뀝니다.</p>
+  <button type="button" onclick="this.textContent = '눌렀습니다 — 스크립트 실행 중'">스크립트 버튼</button>
+  <script>
+    document.getElementById("script-out").textContent = "스크립트가 실행됐습니다 — " + new Date().toLocaleString("ko-KR");
+  </script>
+</section>
+</body>
+</html>

@@ -4,6 +4,7 @@ Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 
 
 **현재 단계: [docs/roadmap.md](docs/roadmap.md) Phase 1 뷰어 + Phase 2 편집·저장 + 셸 트랙 S-1~S-4 구현 완료 (2026-09-30), 1-7 실기 통과 (2026-10-01, 8번 제외). 셸 트랙·AI 연동 실기는 2026-10-01 사용자 확인으로 닫음. Phase 2 실기는 에이전트 몫 끝(2026-10-01, B-1 실패 고침) — 남은 것은 사용자 확인 B-2 한글 IME·B-9 탐색기 드래그([docs/next-session.md](docs/next-session.md) §2 B)이다. 에이전트 §3 2~4(인쇄 확인·원문 HTML 허용 목록·`www.` 자동 링크)는 2026-10-02 완료, 남은 §3-5는 B-2·B-9 통과 뒤. 통과하면 MVP(V1) 완료.
 [docs/plan.md](docs/plan.md) 단계 2(V1.1 다듬기)는 2026-10-06 구현·재설치 완료. 단계 1 에이전트 몫(V1 검수 [fidelity-report](docs/references/assets/20260929-typora-md-editors/fidelity-report.md) SHIPPABLE 조건부·스펙 동기화·RAG 캡처)도 2026-10-06 완료 — V1은 B-2·B-9만 남았다. 단계 3은 B(쓰임새 순)로 진행, 이후 단계는 사용자 확인을 기다리지 않고 진행하며 실기 목록은 next-session §2에 모은다(사용자 지시 2026-10-06). **단계 4(Phase 3 탭·세션·분할 뷰·비교·폴더 트리·AI 훅 받은 목록)·단계 5(Phase 4 Mermaid·Alerts·KaTeX·HTML 내보내기·인쇄, Shiki DEFER) 2026-10-06 구현 완료** — 기능 작업은 기능 브랜치 + 임시 워크트리(`../MdEditor-<이름>`)에서 하고 머지 뒤 워크트리를 지운다(main 폴더는 다른 세션과 같이 쓰므로 전환하지 않는다, 상시 `v2` 워크트리는 2026-10-06 정리). 단계 6 라이브프리뷰는 `exp/live-preview`에만(2026-10-06 실험 구현, 사용자 IME 확인 전에는 main에 합치지 않는다).**
+**HTML 문서 보기는 2026-10-26 구현** — 크로미움 탑재 없이 WebView2로, 안전 보기(같은 origin·스크립트 없는 iframe) + 문서별 스크립트 허용(불투명 origin) + 브라우저로 열기([결정](docs/decisions/ideas/20261026-html-view.md)). Tauri·wry를 올리면 HTML 보기 E2E 공격 시험을 다시 돈다(Windows wry는 invoke 키 든 초기화 스크립트를 모든 frame에 넣는다).
 **배포(단계 7)는 2026-10-06 Microsoft Store MSIX + Durable add-on 선택 구매로 결정, 라이선스 MIT 확정(LICENSE·TRADEMARKS.md)** — 에이전트 몫 R-1(A-1~A-5)은 2026-10-06 구현(실기 next-session §2 L), 다음은 R-2 MSIX([docs/store-launch.md](docs/store-launch.md)). 같은 날 GitBook 설명서(게시 전)·제품 웹사이트 A-0~A-5(배포 전)도 끝냈다. **제품 웹사이트는 2026-10-07 비공개 저장소 `cyKim0115/frond-website`(로컬 `../frond-website`)로 분리했다.**
 할 일·열린 결정은 [docs/next-session.md](docs/next-session.md) §2·§3, 계획은 [docs/roadmap.md](docs/roadmap.md)를 먼저 본다.
 
@@ -62,6 +63,7 @@ Cargo.toml             루트 워크스페이스 (crates/frond-core + src-tauri)
 crates/frond-core      바이트 보존 파일 코어 (Rust). 파일 I/O는 전부 여기를 거친다 — fs 플러그인 금지
 src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·AI 훅 표식 --from-hook·load_document), watch.rs(외부 변경, 문서마다),
                        tree.rs(폴더 트리 목록·재귀 감시), export.rs(HTML 내보내기 쓰기·이미지 바이트),
+                       htmlview.rs(HTML 문서 보기 프로토콜 `htmlview` — 문서 폴더만, 모든 응답 CSP `sandbox`, 스크립트 허용 문서에 htmlview_helper.js 주입),
                        assoc.rs(파일 연결·기본 앱), elevation.rs(관리자 권한 감지), save.rs(저장·etag 충돌·인코딩·줄바꿈 변환),
                        print_menu.rs(WebView2 기본 메뉴 '인쇄' → 앱 인쇄 확인), drafts.rs(초안 백업), appdata.rs(데이터 폴더 %APPDATA%\Frond·옛 MdEditor 폴더 이전), assets.rs(붙여넣은 이미지), themes.rs(사용자 테마 폴더 문서\Frond\themes·옛 %APPDATA% 폴더 이전),
                        install.rs(설치 방식 판정 — MSIX·Scoop·설치기·개발), license.rs(권리 판정 — Store 밖은 모두 열림, Store 공급자 자리),
@@ -69,6 +71,7 @@ src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·AI 
 src/                   프런트(vanilla TS). main.ts 셸(탭별 문서 상태·열기·보기/소스/분할 모드·저장·초안·외부 변경·비교·세션·목차·상태바·줌·설정 적용),
                        tabs.ts(제목 표시줄 탭 띠), session.ts(세션 복원 저장값), split.ts(분할 뷰 손잡이·스크롤 동기 계산),
                        tree-panel.ts(탐색 영역 폴더 트리), inbox.ts·inbox-panel.ts(AI 훅 문서 받은 목록), export-html.ts(HTML 내보내기, 지연 import),
+                       html-view.ts(HTML 문서 보기 — 안전 보기 srcdoc·스크립트 허용 frame, 결정 20261026-html-view),
                        editor.ts(CM6 소스 편집기), find.ts(보기 모드 찾기), render/(markdown-it 파이프라인, types.ts가 계약, html.ts 원문 HTML 허용 목록,
                        chunks.ts 큰 문서 블록 묶음, alerts.ts GitHub Alerts, mermaid.ts 다이어그램 지연 로드, math.ts·math-render.ts KaTeX 수식,
                        morph.ts 미리보기 부분 갱신),
