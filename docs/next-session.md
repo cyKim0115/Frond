@@ -1,6 +1,6 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 2026-10-07 비공개 웹사이트 저장소 `../frond-website`로 분리(확인 목록도 그쪽). **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 2026-10-08 origin에 푸시 — 76cha PC 이름 정리 커밋 병합)
+작성: 2026-09-28 · 갱신: 2026-10-26 (**HTML 문서 보기 구현·main 합침** — 크로미움 탑재 없이 WebView2로, 사용자 실기 §2 N, 후속 §3-13) · 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 2026-10-07 비공개 웹사이트 저장소 `../frond-website`로 분리(확인 목록도 그쪽). **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 2026-10-08 origin에 푸시 — 76cha PC 이름 정리 커밋 병합)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
 이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
@@ -29,6 +29,14 @@
 | Store 출시 준비 A-1~A-5 (단계 7) | **구현 2026-10-06** — `feat/store`를 main에 합침(2026-10-08 푸시). 설치 방식 판정·추천 테마 카탈로그·테마 폴더 `문서\Frond\themes`·권리 판정·테마 게이트·정보 탭·구매 권유·개인정보처리방침·Store 문구. 사용자 실기 §2 L, 다음은 R-2 MSIX([`store-launch.md`](store-launch.md)) |
 | 제품 웹사이트 A-0~A-5 | **구현 2026-10-06** — 2026-10-07 비공개 저장소 `cyKim0115/frond-website`(로컬 `../frond-website`)로 분리. 이 저장소에는 `CHANGELOG.md`(릴리스 노트 원본)·설명서 그림만 남는다. 계획·사용자 확인은 그 저장소 `docs/website-launch.md` §0-2 |
 | AI 훅 설정 탭 (배포용) | **구현 2026-10-06, main 미병합** — 브랜치 `feat/ai-hook-settings`(임시 워크트리 `../MdEditor-ai-hook`). 실기·머지는 **오늘 할 일** §2 K·§3-10 |
+| HTML 문서 보기 | **구현·main 합침 2026-10-26** — 크로미움 탑재 REJECT, WebView2로 안전 보기 + 문서별 스크립트 허용 + 브라우저로 열기([결정](decisions/ideas/20261026-html-view.md)·[조사](research/reports/Frond%20HTML%20문서%20열기.md)). E2E 개발 57·릴리스 59 통과. 설치본 재설치 2026-10-26 완료. AI 훅도 새 `.html`·`.htm`을 넘기고 Cursor `afterFileEdit` 훅을 더함(같은 날, 사용자 지시). 사용자 실기 §2 N |
+
+### 2026-10-26 작업 — HTML 문서 보기 (`feat/html-view`, 사용자 요청: "크로미움 탑재로 HTML도 열면 비효율적일까" → 퍼플렉시티 딥리서치로 사례 조사·진행)
+
+- 조사: Perplexity 딥리서치(소스 537) + 원문 확인 4건 → 크로미움 탑재는 +55~180 MB·패치 책임에 격리 문제는 그대로라 REJECT. 선례(PowerToys Peek·Readest·Foliate·메일)는 "스크립트 끔·외부 차단·문서 폴더만"
+- 구현: Rust 프로토콜 `htmlview`(문서마다 토큰, 모든 응답 CSP `sandbox`, CORS 헤더 없음, frame 이동 가드) + `src/html-view.ts`(안전 보기 = 같은 origin·스크립트 없는 `srcdoc`, 스크립트 허용 = 불투명 origin). 탭·소스·분할·저장·찾기·줌·인쇄·링크·폴더 트리·최근 파일에 붙였다
+- 실측으로 고친 것: Windows wry는 invoke 키 든 초기화 스크립트를 **모든 frame**에 넣는다(조사 노트 정정) — 방어선은 Tauri의 `Origin: null` 거부·frame postMessage 미전달. 앱 CSP `frame-src`는 frame 스스로의 이동을 못 막아 WebView2 가드를 더함. 가짜 링크 메시지(앱 버튼 클릭 뒤 5초)·`../` 링크 손실도 고침
+- 시험 중 사고: 감시 함수가 쓰기 금지 속성에 막혀 실제 `open_url`이 돌아 **사용자 기본 브라우저에 example.com 탭이 몇 개 열렸다**(같은 날 알림). CDP Fetch 가로채기로 바꿈 — 함정은 조사 노트 §4
 
 ### 2026-10-06 작업 — AI 훅 설정 탭 (`feat/ai-hook-settings`, 사용자 요청: 배포용, 개인 경로 없이)
 
@@ -276,6 +284,18 @@ B-2 조합 중 `Ctrl+S`: 2026-10-06부터 조합 중에 눌러도 앱이 받아 
 4. (선택) 무료 화면 — `$env:FROND_ENTITLEMENT='free'; npm run app:dev`: 사용자 테마를 고르면 같은 쪽 내장 테마로 보이고 '구매자 기능' 표시, 가져오기·복제는 구매 안내, 권유 배너는 유예(7일·5회) 뒤에만. 브라우저 미리보기는 `?entitlement=free&nag=now`. 이때 `app:dev`가 exe 이름 고정(`mainBinaryName` mdeditor) 뒤에도 뜨는지, 권유 배너가 저장 충돌·다른 팝업과 겹치지 않는지(A-4 완료 조건 — 미리보기에서는 못 봄)도 같이 본다
 5. 에이전트가 확인한 것: vitest·cargo test·tsc, 미리보기에서 잠금 표시·구매 안내·정보 탭·추천 팝업 잠금 배지, 헤드리스 Chrome으로 권유 배너. 실제 Store 구매(R-3)는 Private audience 게시 뒤
 
+### N. HTML 문서 보기 (2026-10-26) — 재설치 뒤 확인
+
+예제: [`samples/html/showcase.html`](../samples/html/showcase.html). 평소 쓰는 AI 보고서 HTML(다른 프로젝트 `docs/` 아래의 보고서·클릭형 아키텍처 다이어그램)도 같이.
+1. `Ctrl+O`(필터 '문서 (Markdown·HTML)')·끌어다 놓기·폴더 트리로 `.html`이 탭으로 열리는지. 탐색기 `.html` 더블클릭은 **그대로 브라우저**인지(기본 앱을 가져가지 않음)
+2. **안전 보기**: 배너 "스크립트와 외부 리소스를 막았습니다"가 뜨고, 문서 폴더 이미지·CSS는 보이며 외부 이미지·글꼴은 안 보이는지. 링크: `http(s)`는 기본 브라우저, `.md`·`.html`은 Frond 탭, `#목차`는 문서 안 이동
+3. 배너 **[스크립트 허용]** → 다이어그램·이미지 보고서처럼 스크립트가 그리는 내용이 보이는지, 상태바 모드 버튼 메뉴의 **안전 보기 / 스크립트 허용 / 브라우저로 열기**가 되는지. 설정 → 보기 → **HTML 문서 스크립트 = 항상 허용**이면 배너 없이 바로 그려지는지
+4. **인쇄**(`Ctrl+P`·문서 메뉴·오른쪽 클릭 '인쇄'): 안전 보기·스크립트 허용 둘 다 **HTML 문서만** 찍히는지(앱 화면이 아니라), 미리보기가 멈추지 않는지 — 시험 자동화로는 대화상자를 못 봤다
+5. frame 안을 클릭한 채로 `Ctrl+W`·`Ctrl+Tab`·`Ctrl+/`·`Ctrl+F`(안전 보기)·`Ctrl+±`가 앱 단축키로 듣는지
+6. 소스(`Ctrl+/`)·분할(`Ctrl+Shift+/`)에서 HTML 색이 보이고, 고쳐 저장하면 브라우저로 열어도 같은지. 한글 IME로 HTML 소스를 고칠 때 이상이 없는지
+7. 다크 테마에서 바탕색을 안 정한 HTML이 흰 바탕으로 읽히는지
+8. **AI 훅의 HTML**(2026-10-26 추가): Claude Code·Codex·Cursor에게 새 `.html` 보고서를 만들게 하면 '새 문서' 목록에 쌓이고 출처가 맞게(Claude Code·Codex·Cursor) 보이는지. Claude Code는 새 세션부터(설정을 읽는 때), Cursor는 다시 켠 뒤. Cursor는 새 파일 구분값이 없어 '생성 2분 안' 파일만 넘긴다 — 기존 문서를 고쳤는데 목록에 뜨거나, 새로 만든 문서가 안 뜨면 알려 주기(`%TEMP%\mdeditor-open-hook.log`)
+
 ### M. 제품 웹사이트 — 비공개 저장소로 옮김 (2026-10-07)
 
 확인 목록(히어로 제목·만든 사람 문구·기능·받기 카드·도메인)은 비공개 웹사이트 저장소 `../frond-website`의 `docs/website-launch.md` §0-2로 옮겼다.
@@ -309,6 +329,9 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
     임시 워크트리 `docs/gitbook`에서 쓰고 한 번에 푸시(main 푸시 = 공개). 설정 페이지는 10번 머지 뒤 모습으로. 사용자 결정 U-2 블록 방침. 순서·완료 조건: [`gitbook-site.md`](gitbook-site.md)
 12. ~~**웹사이트(제품 페이지) 만들기**~~ — 에이전트 몫 A-0~A-5 2026-10-06 완료. **2026-10-07 비공개 저장소 `cyKim0115/frond-website`(로컬 `../frond-website`)로 분리** —
     남은 A-6·사용자 U-1~U-3·사용자 확인은 그 저장소 `docs/website-launch.md`
+13. **HTML 문서 보기 후속 (2026-10-26)** — §2 N 결과 대응. AI 훅의 HTML은 같은 날 사용자 지시로 켰다(`integrations/open-new-md.ps1`이 `.html`·`.htm`도, Claude Code `Write(*.html)`·`Write(*.htm)` 처리기, Cursor `afterFileEdit` 훅 — 설정 파일 백업 `*.frond.bak`).
+    **10번 `feat/ai-hook-settings`를 머지할 때** 그 exe 훅 모드(`ai_hook_setup.rs`)도 md만 다루므로 HTML·Cursor를 같이 옮긴다. 사용자 결정 대기(§5): 탐색기 '연결 프로그램' 목록에 Frond를 올릴지(`.html` 기본 앱은 안 가져옴).
+    에이전트 몫: GitBook 설명서에 'HTML 문서' 쪽 더하기(게시 전), Tauri·wry를 올릴 때 HTML 보기 E2E 공격 시험 다시 돌리기(조사 노트 `Frond HTML 문서 열기/codebase_and_measurements.md` §4, 시험 스크립트는 그 절을 보고 다시 만든다)
 
 ## 4. 보강할 실측
 
@@ -316,6 +339,8 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 - ~~10 MB에서 어느 조작이 2초 넘게 걸리는지~~ — 2026-10-06 헤드리스 Edge로 측정: 전부(스크롤 1.2 s까지). 블록 묶음으로 해결 (§1 2026-10-06). 남은 것: 목차 다시 열기 ~0.3 s·테마 전환 ~0.5 s
 
 ## 5. 보류 중인 사용자 결정
+
+**HTML 문서 보기 (2026-10-26)**: 탐색기 '연결 프로그램' 목록 등록 여부. (AI 훅의 HTML 넘기기는 같은 날 사용자 지시로 켬)
 
 **Store 출시 (2026-10-06, [`store-launch.md`](store-launch.md) 사용자 몫)**: U-1 계정 유형(개인 / 사업자등록 + 회사 계정 — 개인 → 회사 전환 불가, 첫 공개 제출 전), U-2 세무사 상담(첫 유료 판매 전), U-3 테마 폴더 위치(말이 없으면 `Documents\Frond\themes`), 가격(add-on 만들 때).
 
