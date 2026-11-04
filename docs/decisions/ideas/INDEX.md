@@ -22,6 +22,7 @@
 | `20261006-website` | 웹사이트 — Astro 정적 제품 페이지(`website/`, Cloudflare Workers 정적 자산) + GitBook 설명서(`docs/site/`), 설명서는 `<도메인>/docs` 302, 도메인 전엔 로컬만(무료 도메인 REJECT), Starlight `/docs`는 DEFER, 버전·SHA256은 빌드 때 GitHub API, 사용 장면은 CDP 스크립트 캡처 | 항목별 (`ADOPT`·`DEFER`·`REJECT`) | 2026-10-06 | 2026-10-07 비공개 웹사이트 저장소로 옮김 |
 | `20261006-live-preview` | 인라인 라이브프리뷰 실험 — CM6 데코레이션만(텍스트 불변), 캐럿 줄 원문, 조합 중 재빌드 안 함. `exp/live-preview`에만, IME ①–⑧ 사용자 확인 대기 | `(pending)` | 2026-10-06 | `20261006-live-preview.md` |
 | `20261026-html-view` | HTML 문서 열기 — 크로미움 탑재는 REJECT(WebView2가 이미 Chromium, +55~180 MB·패치 책임). 기존 WebView2로 안전 보기(같은 origin·스크립트 없는 iframe, 외부 리소스 차단, 문서 폴더만) + 문서별 스크립트 허용(불투명 origin) + 브라우저로 열기, `.html` 기본 앱은 안 가져옴 | `ADOPT_WITH_CHANGES` | 2026-10-26 | `20261026-html-view.md` |
+| `20261104-json-view` | JSON 파일 열기 — 소스 우선 ADOPT_WITH_CHANGES(문서 종류 `doc-kind.ts`로 모음, 읽기 전용 CM6 보기·소스, jsonc-parser `visit` 검사, 누를 때만 서식 맞추기, 20MB 읽기 전용·200MB 거절, 폴더 트리 문서형만). 트리 보기·JSONL 목록·표·`.json5`는 DEFER(써 본 뒤 관문 G). 자동 서식·vanilla-jsoneditor·AI 훅 기본 넘기기·`.json` 기본 앱은 REJECT. 사용자 결정 6건 대기 | `(pending)` | 2026-11-04 | `20261104-json-view.md` |
 
 ## How to add
 

@@ -1,6 +1,6 @@
 # 다음 세션 인계
 
-작성: 2026-09-28 · 갱신: 2026-10-26 (**HTML 문서 보기 구현·main 합침** — 크로미움 탑재 없이 WebView2로, 사용자 실기 §2 N, 후속 §3-13) · 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 2026-10-07 비공개 웹사이트 저장소 `../frond-website`로 분리(확인 목록도 그쪽). **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 2026-10-08 origin에 푸시 — 76cha PC 이름 정리 커밋 병합)
+작성: 2026-09-28 · 갱신: 2026-11-04 (**JSON 파일 열기 검토·계획** — [결정 기록](decisions/ideas/20261104-json-view.md) draft, 사용자 결정 6건 §5, 구현은 §3-14) · 2026-10-26 (**HTML 문서 보기 구현·main 합침** — 크로미움 탑재 없이 WebView2로, 사용자 실기 §2 N, 후속 §3-13) · 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 2026-10-07 비공개 웹사이트 저장소 `../frond-website`로 분리(확인 목록도 그쪽). **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 2026-10-08 origin에 푸시 — 76cha PC 이름 정리 커밋 병합)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
 이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
@@ -30,6 +30,7 @@
 | 제품 웹사이트 A-0~A-5 | **구현 2026-10-06** — 2026-10-07 비공개 저장소 `cyKim0115/frond-website`(로컬 `../frond-website`)로 분리. 이 저장소에는 `CHANGELOG.md`(릴리스 노트 원본)·설명서 그림만 남는다. 계획·사용자 확인은 그 저장소 `docs/website-launch.md` §0-2 |
 | AI 훅 설정 탭 (배포용) | **구현 2026-10-06, main 미병합** — 브랜치 `feat/ai-hook-settings`(임시 워크트리 `../MdEditor-ai-hook`). 실기·머지는 **오늘 할 일** §2 K·§3-10 |
 | HTML 문서 보기 | **구현·main 합침 2026-10-26** — 크로미움 탑재 REJECT, WebView2로 안전 보기 + 문서별 스크립트 허용 + 브라우저로 열기([결정](decisions/ideas/20261026-html-view.md)·[조사](research/reports/Frond%20HTML%20문서%20열기.md)). E2E 개발 57·릴리스 59 통과. 설치본 재설치 2026-10-26 완료. AI 훅도 새 `.html`·`.htm`을 넘기고 Cursor `afterFileEdit` 훅을 더함(같은 날, 사용자 지시). 사용자 실기 §2 N |
+| JSON 파일 열기 | **검토·계획 2026-11-04** — [결정 기록](decisions/ideas/20261104-json-view.md) draft. 소스 우선: J-1 JSON 종류로 열기·읽기 전용 보기·검사·크기 방어, J-2 서식 맞추기·커서 경로·저장 보강, J-3 폴더 트리·설정. 트리(구조) 보기는 써 본 뒤 관문 G. 사용자 결정 6건(§5) 뒤 구현(§3-14). 측정 스크립트는 로컬 브랜치 `archived-exp/json-bench`(푸시 안 함) |
 
 ### 2026-10-26 작업 — HTML 문서 보기 (`feat/html-view`, 사용자 요청: "크로미움 탑재로 HTML도 열면 비효율적일까" → 퍼플렉시티 딥리서치로 사례 조사·진행)
 
@@ -332,6 +333,9 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 13. **HTML 문서 보기 후속 (2026-10-26)** — §2 N 결과 대응. AI 훅의 HTML은 같은 날 사용자 지시로 켰다(`integrations/open-new-md.ps1`이 `.html`·`.htm`도, Claude Code `Write(*.html)`·`Write(*.htm)` 처리기, Cursor `afterFileEdit` 훅 — 설정 파일 백업 `*.frond.bak`).
     **10번 `feat/ai-hook-settings`를 머지할 때** 그 exe 훅 모드(`ai_hook_setup.rs`)도 md만 다루므로 HTML·Cursor를 같이 옮긴다. 사용자 결정 대기(§5): 탐색기 '연결 프로그램' 목록에 Frond를 올릴지(`.html` 기본 앱은 안 가져옴).
     에이전트 몫: GitBook 설명서에 'HTML 문서' 쪽 더하기(게시 전), Tauri·wry를 올릴 때 HTML 보기 E2E 공격 시험 다시 돌리기(조사 노트 `Frond HTML 문서 열기/codebase_and_measurements.md` §4, 시험 스크립트는 그 절을 보고 다시 만든다)
+14. **JSON 파일 열기 구현 (2026-11-04 계획)** — §5 결정을 받은 뒤 [결정 기록](decisions/ideas/20261104-json-view.md) '구현 계획' 순서대로. 브랜치 `feat/json-view`, 임시 워크트리 `../MdEditor-json-view`.
+    J-1(열기·보기·검사·크기 방어, §2 N을 기다리지 않음) → J-2(서식 맞추기·커서 경로·`eol.rs` remap 단축은 `코어 -` 커밋 따로) → J-3(폴더 트리·설정, **10번 머지 뒤**). J-1 안에서 WebView2 CDP로 1·10·50MB를 재 20MB·200MB 경계를 확정한다.
+    `exp/live-preview`는 J-1 머지 뒤 그 위로 다시 올린다. 실기 목록은 구현 때 §2 O로 옮긴다. 트리 보기(J-4)는 사용자가 1~2주 써 본 뒤 묻는다(관문 G, Store R-2가 먼저)
 
 ## 4. 보강할 실측
 
@@ -341,6 +345,14 @@ B 결과(에이전트 몫은 2026-10-01 끝 — 남은 것은 사용자 B-2·B-9
 ## 5. 보류 중인 사용자 결정
 
 **HTML 문서 보기 (2026-10-26)**: 탐색기 '연결 프로그램' 목록 등록 여부. (AI 훅의 HTML 넘기기는 같은 날 사용자 지시로 켬)
+
+**JSON 파일 열기 (2026-11-04, [결정 기록](decisions/ideas/20261104-json-view.md) '사용자 결정')**: 권장안은 굵게.
+1. 첫판 범위: **읽기 전용 소스 보기 + 검사 + 서식 맞추기, 트리는 써 본 뒤** — 주로 여는 JSON 종류(보고서·QA / 세션 JSONL / 설정·테마)도 함께
+2. `.jsonl`·`.ndjson`을 J-1에 넣을지: **넣는다**
+3. 폴더 트리 JSON 기본값: **문서형만** / 모두 / 숨김
+4. 큰 JSON 경계: **20MB 넘으면 읽기 전용, 200MB 넘으면 거절**(CDP 실측으로 조정)
+5. 서식 맞춰 줄바꿈이 처음 생길 때: **LF** / CRLF
+6. '연결 프로그램' 등록(위 HTML 결정과 묶음, R-2 전): **둘 다 안 함**
 
 **Store 출시 (2026-10-06, [`store-launch.md`](store-launch.md) 사용자 몫)**: U-1 계정 유형(개인 / 사업자등록 + 회사 계정 — 개인 → 회사 전환 불가, 첫 공개 제출 전), U-2 세무사 상담(첫 유료 판매 전), U-3 테마 폴더 위치(말이 없으면 `Documents\Frond\themes`), 가격(add-on 만들 때).
 
