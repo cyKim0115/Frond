@@ -11,7 +11,7 @@ Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 
 ## 상시 규칙
 
 - 스택은 `ADOPT`, 엔진은 `ADOPT_WITH_CHANGES`로 [docs/decisions/ideas/](docs/decisions/ideas/INDEX.md)에 기록됐다. Phase 0 IME 스파이크는 2026-09-29 통과(Win10 새 IME). 이전 IME·Win11 실측은 Phase 1-7에서 보강한다. 실험·측정 코드는 `archived-exp/*` 브랜치에만 있고 main에 올리지 않는다
-- 확정된 결정은 system-crew 형식으로 `docs/decisions/` 아래에 남긴다 (아래 표). 대화로만 정한 것은 다음 세션에 사라진다
+- 확정된 결정은 `docs/decisions/` 아래에 결정 기록으로 남긴다 (아래 표, 양식은 `docs/templates/`). 대화로만 정한 것은 다음 세션에 사라진다
 - `samples/raw/`는 바이트 단위 테스트 픽스처다. 편집기로 열어 저장하거나 줄바꿈을 정규화하지 않는다
 - 커밋은 전역 `korean-git-commit` 룰을 따른다
 - 제품 웹사이트의 소스·계획·검수 캡처는 비공개 저장소 `../frond-website`에만 둔다(2026-10-07 사용자 지시 — 소스 비공개). 이 공개 저장소에 `website/`를 다시 만들거나 그쪽 문서를 복사하지 않는다(`.gitignore`가 `/website/`를 막는다).
@@ -19,33 +19,17 @@ Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱. 
 - `docs/site/`(GitBook 사용 설명서)를 고쳐 푸시한 작업은 웹훅 보고에 GitBook 링크를 붙인다 ([docs/gitbook-site.md](docs/gitbook-site.md) 머리)
 - Phase 1 스캐폴딩 시 이 파일의 `구조`·`빌드` 절을 채우고 `.gitignore`에 `node_modules/`·`dist/`·`src-tauri/target/`을 추가한다
 
-## system-crew (호출형)
+## 결정·참고 기록
 
-`.cursor/system-crew` 서브모듈, **OnDemand** 모드. 평소 작업에는 적용하지 않는다.
-전역 `role-producer` 룰도 이 프로젝트에서는 호출됐을 때만 따른다.
-
-- 호출: `system-crew`, `시스템 크루`, `Producer로`, `아이디어 평가해줘`, `ideation`, `quick으로: …`
-- 호출되면 [.cursor/skills/system-crew/SKILL.md](.cursor/skills/system-crew/SKILL.md)를 읽고 따른다
-- 게임용 팩이라 `tuning`(지표)·`feedback`(플레이테스트)·충실도 QA는 거의 해당이 없다. 주로 쓰는 것:
-
-| 요청 유형 | 쓰임 | 기록 위치 |
-|---|---|---|
-| `idea` | 스택·설계 선택 판정 (ADOPT / DEFER / REJECT) | `docs/decisions/ideas/` |
-| `ideation` | 대안 N개 제시 → 사용자가 선택 (MVP 범위·UI 배치) | `docs/decisions/ideation/` |
-| `reference` | 다른 에디터(Typora·Obsidian 등)를 참고한 재현 | `docs/references/` |
-
-업데이트:
-
-```powershell
-git submodule update --remote .cursor/system-crew
-powershell -File .cursor/system-crew/scripts/sync-to-project.ps1 -Mode OnDemand
-```
+| 종류 | 쓰임 | 기록 위치 | 양식 |
+|---|---|---|---|
+| `idea` | 스택·설계 선택 판정 (`ADOPT` / `ADOPT_WITH_CHANGES` / `DEFER` / `REJECT` / `(pending)`) | `docs/decisions/ideas/YYYYMMDD-slug.md` + `INDEX.md` 한 줄 | `docs/templates/idea-evaluation.md` |
+| `ideation` | 대안 N개 제시 → 사용자가 선택 (MVP 범위·UI 배치). 고른 안은 `ideas/`로 승격 | `docs/decisions/ideation/` + `INDEX.md` | `docs/templates/ideation-space.md` |
+| `reference` | 다른 에디터(Typora·Obsidian 등)를 참고한 재현 | `docs/references/assets/<YYYYMMDD-slug>/` (`ASSET.md` + `reference-brief.md`) + `INDEX.md` | `docs/templates/reference-asset.md`·`reference-brief.md` |
 
 ## 구조
 
 ```
-.cursor/system-crew/   system-crew 서브모듈 (직접 고치지 않는다)
-.cursor/rules|skills/  sync 산출물 (Cursor용). 로컬 오버라이드는 .cursor/rules/local/
 docs/next-session.md   지금 열려 있는 것 (결정 대기·다음 할 일)
 docs/plan.md           한 장 계획표·로드맵 (단계 1~7, 날짜는 제안)
 docs/store-launch.md   Store 출시·선택 구매 먼저 할 일 (단계 7, 사용자 몫 U·에이전트 몫 A — A-1~A-5 2026-10-06 완료)
@@ -53,7 +37,8 @@ docs/store-listing.md  Store 제출 문구 초안 (한·영 설명·기능 목�
 docs/gitbook-site.md   GitBook 사용 설명서 꾸밀 계획 (A-1~A-4 완료, A-5·A-6 일부·게시는 사용자 확인 뒤, 꾸밈 값·목차·완료 조건)
 CHANGELOG.md           릴리스 노트 원본 — 사이트 /releases/·GitHub 릴리스가 같이 쓴다
 docs/roadmap.md        Phase 0~5 개발 계획 (어느 MVP 안이든 Phase 0~2 공통)
-docs/decisions/        결정 기록 (system-crew 형식) — ideas/ 판정, ideation/ 대안·선택
+docs/decisions/        결정 기록 — ideas/ 판정, ideation/ 대안·선택 (양식 docs/templates/)
+docs/templates/        결정·참고 기록 양식 (예전 system-crew 0.9 템플릿에서 옮김)
 docs/references/       참고 자산 — assets/<id>/ASSET.md + reference-brief.md (증거 원장 Ev#)
 docs/qa/               실기 증거 — <날짜>-<범위>/ 캡처·바이트 로그 (판정 표는 next-session.md)
 docs/research/         조사 보고서 — reports/<제목>.md + research_notes/<제목>/ 근거 노트 (배포 채널·유료 해금 조사 2026-10-06)

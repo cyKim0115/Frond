@@ -26,6 +26,6 @@
 
 ## How to add
 
-1. `.cursor/system-crew/templates/idea-evaluation.md`로 `docs/decisions/ideas/YYYYMMDD-slug.md` 작성
+1. `docs/templates/idea-evaluation.md`로 `docs/decisions/ideas/YYYYMMDD-slug.md` 작성
 2. 이 INDEX에 한 줄 추가
 3. `ADOPT*`면 관련 스펙·reference asset Decisions에도 링크

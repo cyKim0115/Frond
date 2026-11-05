@@ -9,7 +9,7 @@
 ## How to add
 
 1. `assets/(YYYYMMDD)-(slug)/` 폴더 생성
-2. `ASSET.md`를 `.cursor/system-crew/templates/reference-asset.md`로 작성
+2. `ASSET.md`를 `docs/templates/reference-asset.md`로 작성
 3. 상세 분석은 같은 폴더에 `reference-brief.md` / `system-spec.md` 등 저장
 4. 이 INDEX에 한 줄 추가
 5. 태그로 검색 가능하게 유지 (`editor`, `ui`, `file-io`, `windows-shell` 등)

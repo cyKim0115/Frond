@@ -3,7 +3,7 @@
 작성: 2026-09-28 · 갱신: 2026-11-04 (**JSON 파일 열기 검토·계획** — [결정 기록](decisions/ideas/20261104-json-view.md) draft, 사용자 결정 6건 §5, 구현은 §3-14) · 2026-10-26 (**HTML 문서 보기 구현·main 합침** — 크로미움 탑재 없이 WebView2로, 사용자 실기 §2 N, 후속 §3-13) · 2026-10-06 ([`plan.md`](plan.md) 단계 4·5 구현 완료, 단계 6 라이브프리뷰 실험, 기본 테마 세이지 차콜·탭 모양 — 사용자 실기 §2 G·H·I·J. 단계 7 Store R-1(A-1~A-5) 구현 — 실기 §2 L, 다음 R-2 MSIX. 이름 정리(Frond) 완료 — 설치본 재설치만 §2 L-0. GitBook 설명서 푸시(게시 전, §3-11). 제품 웹사이트 A-0~A-5 — 2026-10-07 비공개 웹사이트 저장소 `../frond-website`로 분리(확인 목록도 그쪽). **AI 훅 설정 탭 `feat/ai-hook-settings`는 사용자 실기 §2 K 뒤 머지**. main은 2026-10-08 origin에 푸시 — 76cha PC 이름 정리 커밋 병합)
 읽는 순서: [`CLAUDE.md`](../CLAUDE.md) → 이 문서 → [`roadmap.md`](roadmap.md) → [`decisions/ideas/INDEX.md`](decisions/ideas/INDEX.md)
 
-이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 system-crew 형식으로 `decisions/`에 남기고 여기서 지운다.
+이 문서는 **지금 열려 있는 것**을 담는다. 확정된 결정은 `decisions/`에 결정 기록으로 남기고 여기서 지운다.
 
 ---
 

@@ -10,6 +10,6 @@
 
 ## How to add
 
-1. `.cursor/system-crew/templates/ideation-space.md`로 `docs/decisions/ideation/YYYYMMDD-slug.md` 작성
+1. `docs/templates/ideation-space.md`로 `docs/decisions/ideation/YYYYMMDD-slug.md` 작성
 2. 이 INDEX에 한 줄 추가
 3. 선택 안은 `docs/decisions/ideas/`에서 idea-evaluation으로 승격
