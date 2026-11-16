@@ -1,5 +1,11 @@
 # Frond
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-567e65)](LICENSE)
+![Windows 10 · 11](https://img.shields.io/badge/Windows-10%20%C2%B7%2011-3f6150)
+![Tauri 2](https://img.shields.io/badge/Tauri-2-3f6150)
+![CodeMirror 6](https://img.shields.io/badge/CodeMirror-6-3f6150)
+![V2 in progress](https://img.shields.io/badge/stage-V2%20in%20progress-96bea1)
+
 Markdown(`.md`) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱입니다. Tauri 2 기반이라 설치기가 작고(약 5 MB) 빨리 뜹니다.
 이름 Frond는 고사리 잎이라는 뜻입니다(2026-10-06까지는 MdEditor).
 
