@@ -186,10 +186,15 @@ pub fn run() {
         .setup(|app| {
             // 창은 코드로 만든다 — on_navigation 훅은 빌더에만 있다.
             // 웹뷰 안에서의 이동은 앱 자체 URL만 허용. 외부 링크는 프런트가 opener로 연다 (스택 판정 조건 5)
-            // 제목 표시줄은 프런트가 그린다(src/titlebar.ts) — 테두리 없는 창도 가장자리 리사이즈·그림자는 런타임이 준다
+            // 제목 표시줄은 프런트가 그린다(src/titlebar.ts).
+            // 둥근 모서리: 창은 투명·OS 그림자 없음, 페이지가 8px 여백 안에 둥근 불투명 카드와 그림자를 그린다
+            // (src/style.css 창 틀, src/frame.ts). Win10에는 DWM 둥근 모서리가 없고, SetWindowRgn은 계단 모서리에
+            // 그림자가 사라진다. shadow(true)는 투명 모서리 뒤로 사각 그림자·1px 흰 테두리를 그려서 끈다
             let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("Frond")
                 .decorations(false)
+                .transparent(true)
+                .shadow(false)
                 .inner_size(1100.0, 800.0)
                 .min_inner_size(400.0, 300.0)
                 .center()

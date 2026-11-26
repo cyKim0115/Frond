@@ -5,6 +5,7 @@
  */
 
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { setFlat } from "./frame";
 
 const GLYPH_MAXIMIZE = "";
 const GLYPH_RESTORE = "";
@@ -30,6 +31,8 @@ export function initTitlebar(): void {
 
   const syncMaximized = async (): Promise<void> => {
     const maximized = await win.isMaximized();
+    // 최대화: 각지고 여백 없음(frame.ts) — 안 하면 모니터 가장자리에 투명 여백이 남는다
+    setFlat(maximized);
     maxButton.textContent = maximized ? GLYPH_RESTORE : GLYPH_MAXIMIZE;
     maxButton.title = maximized ? "이전 크기로 복원" : "최대화";
     maxButton.setAttribute("aria-label", maxButton.title);

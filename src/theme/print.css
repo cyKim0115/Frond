@@ -21,9 +21,16 @@
     overflow: visible;
     background: #fff;
   }
+  /* 창 틀(style.css)의 여백·둥근 모서리·그림자·잘라내기를 푼다 */
+  body {
+    padding: 0;
+  }
   #app {
     display: block;
     height: auto;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
   }
   /* 큰 문서 모드(style.css large-doc)의 건너뛰기를 풀어 모든 블록을 인쇄한다 */
   #viewer > .doc.large > * {

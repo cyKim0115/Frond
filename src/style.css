@@ -66,13 +66,36 @@ html, body { height: 100%; margin: 0; }
 body {
   font-family: var(--font-ui);
   color: var(--fg);
-  background: var(--bg);
   overflow: hidden;
 }
+
+/* ---- 창 틀: 둥근 모서리 카드 -------------------------------------------------------
+   창은 투명·OS 그림자 없음(lib.rs). 페이지가 여백(--frame-m) 안에 둥근 불투명 카드(#app)와 1px 선·옅은 그림자를 그린다.
+   Win10에는 창 둥근 모서리가 없고, SetWindowRgn은 계단 모서리에 그림자가 사라져서 이 방식을 쓴다.
+   투명한 것은 여백과 카드 바깥 모서리뿐 — 카드는 완전 불투명. 여백은 크기 조절 테두리(src/frame.ts).
+   최대화하면 여백·모서리·그림자를 없앤다(:root[data-frame="flat"], titlebar.ts). 인쇄는 print.css가 푼다.
+   .modal::backdrop은 변수 상속에 기대지 않고 같은 값을 직접 적었다 — 바꿀 때 같이 바꾼다 */
+:root {
+  --frame-m: 8px;
+  --frame-r: 8px;
+  --frame-shadow: 0 0 0 1px var(--line), 0 1px 6px rgb(0 0 0 / 0.24);
+}
+:root[data-frame="flat"] {
+  --frame-m: 0px;
+  --frame-r: 0px;
+  --frame-shadow: none;
+}
+html, body { background: transparent; }
+body { padding: var(--frame-m); }
 
 #app {
   position: relative;
   height: 100%;
+  background: var(--bg);
+  border-radius: var(--frame-r);
+  box-shadow: var(--frame-shadow);
+  /* 캡션 버튼·열 배경이 모서리 밖으로 나가지 않게 */
+  overflow: hidden;
   display: grid;
   grid-template-columns: auto auto auto minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) var(--statusbar-h);
@@ -706,7 +729,9 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
   overflow-wrap: anywhere;
 }
 .modal[open] { animation: modal-in 160ms var(--panel-ease); }
-.modal::backdrop { background: rgb(0 0 0 / 0.32); }
+/* 팝업 뒤 어둡게 하기는 카드 안만 — 창 틀 여백·모서리(위 '창 틀'의 --frame-m·--frame-r와 같은 값) */
+.modal::backdrop { background: rgb(0 0 0 / 0.32); inset: 8px; border-radius: 8px; }
+:root[data-frame="flat"] .modal::backdrop { inset: 0; border-radius: 0; }
 .modal[open]::backdrop { animation: backdrop-in 160ms ease-out; }
 @keyframes modal-in {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
@@ -940,8 +965,9 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
 /* ---- 구매 권유 배너 (src/purchase.ts, store-launch A-4) — 모달 아님, 상태바 위 오른쪽 ---- */
 .nag-banner {
   position: fixed;
-  right: 16px;
-  bottom: 36px;
+  /* 화면 기준이라 창 틀 여백을 더한다 */
+  right: calc(16px + var(--frame-m));
+  bottom: calc(36px + var(--frame-m));
   z-index: 50;
   width: min(380px, calc(100vw - 32px));
   padding: 12px 36px 12px 14px;

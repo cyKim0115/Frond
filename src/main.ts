@@ -45,6 +45,7 @@ import { createAboutPanel, noteSaved, showPurchaseInfo, startNagScheduler } from
 import { visibleTheme } from "./theme/catalog";
 import { applyTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTransitionCss } from "./theme/themes";
 import { createThemePanel } from "./theme-panel";
+import { initFrame } from "./frame";
 import { initTitlebar } from "./titlebar";
 import { countText, type TextCount } from "./wordcount";
 import "./style.css";
@@ -2583,6 +2584,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => app.classList.remove("no
 
 if (IS_TAURI) {
   initTitlebar();
+  initFrame();
   void init();
 } else {
   // Tauri 밖(브라우저에서 `npm run dev`)에서는 샘플을 직접 불러 렌더·테마를 눈으로 확인한다.
