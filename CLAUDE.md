@@ -68,7 +68,7 @@ src/                   프런트(vanilla TS). main.ts 셸(탭별 문서 상태·
                        theme/supporter.ts(구매자 전용 테마 — docs/themes/supporter/*.json),
                        license.ts(권리 상태·canUseTheme·구매 권유 순수 함수), purchase.ts(설정 정보 탭·구매 안내·권유 배너),
                        style.css(셸 CSS·대체 색 토큰)
-                       titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), nav.ts(왼쪽 탐색 영역 탭·최근 파일),
+                       titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), frame.ts(둥근 창 틀 — 여백 크기 조절·최대화 때 각지게), nav.ts(왼쪽 탐색 영역 탭·최근 파일),
                        recent.ts(최근 목록 순수 함수·문서 제목 추출),
                        resize.ts(목차 폭), settings.ts(설정 스키마 — 항목을 더하면 팝업에 자동 표시), settings-dialog.ts,
                        dialog.ts(알림·확인 팝업), context-menu.ts(오른쪽 클릭 메뉴), prefs.ts(UI 상태 localStorage)
@@ -98,6 +98,8 @@ cd crates/frond-core; cargo run --example roundtrip -- ../../samples/raw   # 제
   안에서 돌리면 AppData 새 파일(설치 폴더·시작 메뉴·`%APPDATA%\Frond`)이 Claude 패키지 LocalCache에만 생겨 사용자 쪽에 안 보인다
 - 창은 `lib.rs`에서 코드로 만든다 (`on_navigation` 훅 때문). `tauri.conf.json`의 `app.windows`는 비워 둔다
 - 창은 `decorations(false)`. 제목 표시줄 버튼·드래그는 프런트가 그리고, 창 API를 새로 쓰면 `capabilities/default.json`에 권한을 더한다
+- 둥근 모서리: 창은 `transparent(true)`·`shadow(false)`이고 페이지가 여백 8px 안에 둥근 카드(`#app`)를 그린다(`style.css` '창 틀', `src/frame.ts` 여백 크기 조절·최대화 때 각지게).
+  창 배경색 칠하기·`shadow(true)`를 되살리지 않는다(투명 모서리 뒤로 사각 그림자). 화면 기준 `position: fixed` 요소는 `--frame-m`을 더한다
 - 색은 테마 토큰(`src/theme/themes.ts` 셸 8·문서 48)만 쓴다. 새 색이 필요하면 토큰을 늘리고 내장 라이트·다크 둘 다 채운다
 - 사용자 조절 값은 `src/settings.ts`의 `SETTINGS`에 추가하고 `main.ts` `applySetting`에서 적용한다 (하드코딩 금지).
   설정 팝업은 왼쪽 카테고리 탭 구조 — 항목·기능을 더할 때는 `add-setting` 스킬(`.claude/skills/add-setting/`)을 따른다

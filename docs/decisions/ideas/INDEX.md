@@ -23,6 +23,7 @@
 | `20261006-live-preview` | 인라인 라이브프리뷰 실험 — CM6 데코레이션만(텍스트 불변), 캐럿 줄 원문, 조합 중 재빌드 안 함. `exp/live-preview`에만, IME ①–⑧ 사용자 확인 대기 | `(pending)` | 2026-10-06 | `20261006-live-preview.md` |
 | `20261026-html-view` | HTML 문서 열기 — 크로미움 탑재는 REJECT(WebView2가 이미 Chromium, +55~180 MB·패치 책임). 기존 WebView2로 안전 보기(같은 origin·스크립트 없는 iframe, 외부 리소스 차단, 문서 폴더만) + 문서별 스크립트 허용(불투명 origin) + 브라우저로 열기, `.html` 기본 앱은 안 가져옴 | `ADOPT_WITH_CHANGES` | 2026-10-26 | `20261026-html-view.md` |
 | `20261104-json-view` | JSON 파일 열기 — 소스 우선 ADOPT_WITH_CHANGES(문서 종류 `doc-kind.ts`로 모음, 읽기 전용 CM6 보기·소스, jsonc-parser `visit` 검사, 누를 때만 서식 맞추기, 20MB 읽기 전용·200MB 거절, 폴더 트리 문서형만). 트리 보기·JSONL 목록·표·`.json5`는 DEFER(써 본 뒤 관문 G). 자동 서식·vanilla-jsoneditor·AI 훅 기본 넘기기·`.json` 기본 앱은 REJECT. 사용자 결정 6건 대기 | `(pending)` | 2026-11-04 | `20261104-json-view.md` |
+| `20261126-rounded-window-corners` | 창 둥근 모서리 — 투명 창 + `shadow(false)` + 페이지가 그리는 둥근 불투명 카드(여백 8px·반지름 8px), 최대화 때 각지게, 여백은 크기 조절 테두리. DWM(Win10 무효)·`SetWindowRgn`(계단·그림자 없음)은 안 씀. unity-slot-widget에서 가져옴 | `ADOPT` | 2026-11-26 | `20261126-rounded-window-corners.md` |
 
 ## How to add
 
