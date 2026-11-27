@@ -97,7 +97,7 @@
 | `tauri.conf.json` | `bundle.createUpdaterArtifacts: true`, `plugins.updater.pubkey`(키 **내용**), `plugins.updater.endpoints: ["https://github.com/cyKim0115/Frond/releases/latest/download/latest.json"]`, `plugins.updater.windows.installMode: "passive"` | 같음 |
 | installMode 셋 | `passive`(기본, 작은 진행 창, 입력 없음) · `basicUi`(사용자가 설치를 끝내야 함) · `quiet`(표시 없음, 관리자 권한 요청 불가. currentUser에서는 되지만 권장하지 않음) | 같음 |
 | NSIS 설치 모드 | `bundle.windows.nsis.installMode` 기본 `currentUser` → `%LOCALAPPDATA%`, 관리자 불필요(updater의 installMode와 **다른 키**) | [Windows Installer](https://v2.tauri.app/distribute/windows-installer/) |
-| 서명 키 | `npm run tauri signer generate -- -w "$env:USERPROFILE\.tauri\frond-updater.key"`. 빌드 때 환경 변수 `TAURI_SIGNING_PRIVATE_KEY`(내용이나 경로) + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. **`.env`는 안 먹는다**. 키를 잃으면 기존 설치본에 업데이트를 못 보낸다 | [Updater](https://v2.tauri.app/plugin/updater/) |
+| 서명 키 | `npm run tauri signer generate -- -w <키 파일>`(Frond의 키 위치·비밀번호는 결정 기록). 빌드 때 환경 변수 `TAURI_SIGNING_PRIVATE_KEY`(내용이나 경로) + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. **`.env`는 안 먹는다**. 키를 잃으면 기존 설치본에 업데이트를 못 보낸다 | [Updater](https://v2.tauri.app/plugin/updater/) |
 | 산출물 | `Frond_x.y.z_x64-setup.exe` + `.sig` (MSI를 만들면 `.msi` + `.sig`) | 같음 |
 | `latest.json` | `version`(semver, `v` 허용) · `notes` · `pub_date`(RFC 3339) · `platforms."windows-x86_64".{url, signature}`. `signature`는 `.sig` **파일 내용**. 파일 전체를 검증하므로 모든 플랫폼 항목이 완전해야 한다 | 같음 |
 | tauri-action | `tauri-apps/tauri-action`이 빌드·릴리스 올리기·`latest.json` 생성을 함께 한다(`includeUpdaterJson`) | [tauri-action](https://github.com/tauri-apps/tauri-action) |
