@@ -119,7 +119,7 @@ Mermaid는 tiny 지연 로드·strict·테마 따라 다시 그림, KaTeX는 수
 ## 배포 트랙 — Store·선택 구매 (2026-10-06 결정)
 
 Phase와 따로 가는 배포 작업이다. 결정은 [`decisions/ideas/20261006-store-monetization.md`](decisions/ideas/20261006-store-monetization.md), 먼저 할 일과 순서는 [`store-launch.md`](store-launch.md).
-**상태: R-0 완료, R-1 구현 2026-10-06(실제 앱 확인 [`next-session.md`](next-session.md) §2 L), 다음은 R-2 MSIX.** 근거 조사: [`research/reports/`](research/reports/)(배포 방법·유료 해금 방식).
+**상태: R-0 완료, R-1 구현 2026-10-06(실제 앱 확인 [`next-session.md`](next-session.md) §2 L), 다음은 R-2 MSIX. R-5 중 앱 안 업데이트는 2026-11-27 계획 확정·구현 대기(사용자 요청으로 앞당김).** 근거 조사: [`research/reports/`](research/reports/)(배포 방법·유료 해금 방식).
 
 | 작업 | 내용 | 완료 조건 |
 |------|------|-----------|
@@ -128,7 +128,7 @@ Phase와 따로 가는 배포 작업이다. 결정은 [`decisions/ideas/20261006
 | R-2 MSIX 로컬 패키지 | `tauri-windows-bundle`/winapp CLI, 매니페스트(파일 연결 + `MigrationProgId MdEditor.Markdown`, 실행 별칭), `assoc.rs` 3곳·데이터 폴더·WebView2 검사·AI 훅 별칭 경로 분기. Store판에는 updater를 넣지 않는다 | 로컬 MSIX 설치본에서 `.md` 연결·기본 앱 판정·테마 폴더 열기·AI 훅 열기·single-instance 동작 |
 | R-3 Store 제출·결제 실기 | Partner Center(계정 유형은 사용자 결정), Private audience 첫 제출, 숨긴 Durable add-on, Store 공급자(`StoreContext`) | Store 설치본에서 프로모션 코드로 해금·복원, 오프라인 재실행 시 유지 |
 | R-4 공개 | 가격·add-on 공개·앱 Public | V1 닫기(B-2·B-9), 세무 확인 |
-| R-5 Store 밖 (뒤쪽) | GitHub Releases + `tauri-action` + Tauri updater(NSIS판) → winget `cyKim.Frond` → 코드 서명(SignPath 등). NSIS판은 해금을 모두 연다 | — |
+| R-5 Store 밖 (뒤쪽) | GitHub Releases + `tauri-action` + Tauri updater(NSIS판) → winget `cyKim.Frond` → 코드 서명(SignPath 등). NSIS판은 해금을 모두 연다. **2026-11-27 앱 안 업데이트 계획 확정**([결정](decisions/ideas/20261127-app-update.md)·[조사](research/reports/Frond%20앱%20안%20업데이트.md)) — 구현 U-1~U-5(0.2.0), 릴리스는 로컬 서명 빌드 스크립트로 시작하고 `tauri-action`은 DEFER, 첫 GitHub 릴리스는 사용자 지시 뒤 | NSIS 설치본이 새 버전을 받아 재시작 뒤 탭·초안이 그대로(발행 없는 E2E 먼저) |
 
 ## 가로지르는 규칙
 
