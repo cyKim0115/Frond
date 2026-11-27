@@ -76,6 +76,9 @@
       <div id="main">
         <header id="titlebar" class="col-header drag-region">
           <div id="tabs" role="tablist" aria-label="열린 문서"></div>
+          <button id="toc-toggle" class="icon-btn" type="button" aria-controls="sidebar" aria-expanded="false" title="목차 접기 (Ctrl+\)" aria-label="목차" disabled>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2" /><path d="M9.75 2.75v10.5" /></svg>
+          </button>
           <button id="doc-menu" class="icon-btn" type="button" title="문서 메뉴 — 열기·내보내기·인쇄" aria-label="문서 메뉴" aria-haspopup="menu">
             <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.15" fill="currentColor" stroke="none" /><circle cx="8" cy="8" r="1.15" fill="currentColor" stroke="none" /><circle cx="12.5" cy="8" r="1.15" fill="currentColor" stroke="none" /></svg>
           </button>
@@ -92,30 +95,35 @@
             <button id="win-close" type="button" title="닫기" aria-label="닫기">&#xE8BB;</button>
           </div>
         </header>
-        <div id="banner" role="status" hidden><span id="banner-text"></span><span id="banner-actions"></span></div>
-        <div id="find-bar" role="search" hidden>
-          <input id="find-input" type="search" placeholder="문서에서 찾기" aria-label="찾을 내용" autocomplete="off" spellcheck="false" />
-          <span id="find-count" aria-live="polite"></span>
-          <button id="find-prev" class="icon-btn small" type="button" title="이전 (Shift+Enter)" aria-label="이전 찾기">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 10l4-4 4 4" /></svg>
-          </button>
-          <button id="find-next" class="icon-btn small" type="button" title="다음 (Enter)" aria-label="다음 찾기">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
-          </button>
-          <button id="find-close" class="icon-btn small" type="button" title="닫기 (Esc)" aria-label="찾기 닫기">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
-          </button>
-        </div>
-        <div id="panes" data-mode="view">
-        <div id="editor" lang="ko" hidden></div>
-        <div id="split-resizer" role="separator" aria-orientation="vertical" aria-label="소스·미리보기 폭" tabindex="0" title="끌어서 폭 조절 · 두 번 클릭하면 반반"></div>
-        <main id="viewer">
-          <section id="welcome">
-            <h1>Frond</h1>
-            <p>Markdown·HTML 파일을 여기에 끌어다 놓거나 <kbd>Ctrl</kbd>+<kbd>O</kbd>로 여세요.</p>
-            <p class="welcome-hint">닫은 탭 다시 열기 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd></p>
-          </section>
-        </main>
+        <!-- 목차가 오른쪽(설정 '목차 위치', toc-panel.ts)이면 #sidebar-resizer·#sidebar가 #doc-col 뒤로 옮겨 온다 -->
+        <div id="main-body">
+          <div id="doc-col">
+            <div id="banner" role="status" hidden><span id="banner-text"></span><span id="banner-actions"></span></div>
+            <div id="find-bar" role="search" hidden>
+              <input id="find-input" type="search" placeholder="문서에서 찾기" aria-label="찾을 내용" autocomplete="off" spellcheck="false" />
+              <span id="find-count" aria-live="polite"></span>
+              <button id="find-prev" class="icon-btn small" type="button" title="이전 (Shift+Enter)" aria-label="이전 찾기">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 10l4-4 4 4" /></svg>
+              </button>
+              <button id="find-next" class="icon-btn small" type="button" title="다음 (Enter)" aria-label="다음 찾기">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
+              </button>
+              <button id="find-close" class="icon-btn small" type="button" title="닫기 (Esc)" aria-label="찾기 닫기">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
+              </button>
+            </div>
+            <div id="panes" data-mode="view">
+            <div id="editor" lang="ko" hidden></div>
+            <div id="split-resizer" role="separator" aria-orientation="vertical" aria-label="소스·미리보기 폭" tabindex="0" title="끌어서 폭 조절 · 두 번 클릭하면 반반"></div>
+            <main id="viewer">
+              <section id="welcome">
+                <h1>Frond</h1>
+                <p>Markdown·HTML 파일을 여기에 끌어다 놓거나 <kbd>Ctrl</kbd>+<kbd>O</kbd>로 여세요.</p>
+                <p class="welcome-hint">닫은 탭 다시 열기 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd></p>
+              </section>
+            </main>
+            </div>
+          </div>
         </div>
       </div>
 

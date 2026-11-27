@@ -1,5 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { resolveSidebarWidth, SIDEBAR_MIN_W } from "./resize";
+import { resolveSidebarWidth, SIDEBAR_MIN_W, sidebarDragWidth } from "./resize";
+import { tocShown, tocSideOf } from "./toc-panel";
+
+describe("sidebarDragWidth", () => {
+  it("왼쪽 목차는 오른쪽으로 끌수록 넓어진다", () => {
+    expect(sidebarDragWidth(260, 40, "left")).toBe(300);
+    expect(sidebarDragWidth(260, -40, "left")).toBe(220);
+  });
+
+  it("오른쪽 목차는 왼쪽으로 끌수록 넓어진다", () => {
+    expect(sidebarDragWidth(260, -40, "right")).toBe(300);
+    expect(sidebarDragWidth(260, 40, "right")).toBe(220);
+  });
+});
+
+describe("목차 자리·보이기", () => {
+  it("설정값을 자리로 — 모르는 값은 오른쪽", () => {
+    expect(tocSideOf("left")).toBe("left");
+    expect(tocSideOf("right")).toBe("right");
+    expect(tocSideOf("middle")).toBe("right");
+  });
+
+  it("목차 줄이 있고 접지 않았을 때만 보인다", () => {
+    expect(tocShown(true, true)).toBe(true);
+    expect(tocShown(true, false)).toBe(false);
+    expect(tocShown(false, true)).toBe(false);
+  });
+});
 
 describe("resolveSidebarWidth", () => {
   it("범위 안의 폭은 그대로 쓴다", () => {

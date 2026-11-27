@@ -114,3 +114,24 @@ describe("업데이트 자동 확인 (결정 20261127-app-update)", () => {
     expect(available()).toBe(true);
   });
 });
+
+describe("목차 위치 (결정 20261127-toc-side)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    reloadSettings();
+  });
+
+  it("'보기' 탭에 있고 기본은 오른쪽 — 저장값이 없던 기존 사용자도 오른쪽", () => {
+    expect(SETTINGS.tocSide.section).toBe("view");
+    expect(getSetting("tocSide")).toBe("right");
+  });
+
+  it("왼쪽을 고르면 남고, 모르는 값은 오른쪽", () => {
+    localStorage.setItem("frond.settings", JSON.stringify({ tocSide: "left" }));
+    reloadSettings();
+    expect(getSetting("tocSide")).toBe("left");
+    localStorage.setItem("frond.settings", JSON.stringify({ tocSide: "top" }));
+    reloadSettings();
+    expect(getSetting("tocSide")).toBe("right");
+  });
+});

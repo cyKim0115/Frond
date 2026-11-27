@@ -1,7 +1,7 @@
 /**
  * 앱 셸 — 파일 열기 경로(argv·두 번째 인스턴스·드롭·Ctrl+O·최근 파일), 탭, 보기(렌더)·소스(CM6) 모드, 저장·초안,
  * 목차·상태바·줌·테마, 외부 변경, 세션 복원. 파일 읽기·쓰기는 전부 Rust 커맨드(frond-core)로 간다 — fs 플러그인 금지.
- * 제목 표시줄은 titlebar.ts, 탭 띠는 tabs.ts, 탐색 영역은 nav.ts, 목차 폭은 resize.ts, 설정은 settings.ts(+ settings-dialog.ts),
+ * 제목 표시줄은 titlebar.ts, 탭 띠는 tabs.ts, 탐색 영역은 nav.ts, 목차 자리·접기는 toc-panel.ts, 목차 폭은 resize.ts, 설정은 settings.ts(+ settings-dialog.ts),
  * 소스 편집기는 editor.ts, 보기 모드 찾기는 find.ts, 테마는 theme/themes.ts, 세션 저장은 session.ts.
  *
  * 문서 상태는 탭(로드맵 3-1)마다 `Tab`에 있다. `tab.doc`은 디스크 기준(연 때·마지막 저장 때의 텍스트·해시·메타)이고,
@@ -41,6 +41,7 @@ import { getSetting, onSettingChange, setSetting, SETTING_KEYS, type SettingKey 
 import { initSettingsDialog } from "./settings-dialog";
 import { buildSyncMap, initSplitResize, lineForY, type SyncMap, yForLine } from "./split";
 import { initTabStrip } from "./tabs";
+import { initTocPanel, tocSideOf } from "./toc-panel";
 import { canUseTheme, type Entitlement, onEntitlementChange, setEntitlement, writeNagState } from "./license";
 import { createAboutPanel, noteSaved, showPurchaseInfo, startNagScheduler } from "./purchase";
 import { visibleTheme } from "./theme/catalog";
@@ -185,8 +186,9 @@ const editorHost = $("#editor");
 const panes = $("#panes");
 const welcome = $("#welcome");
 const banner = $("#banner");
-const sidebar = $("#sidebar");
 const toc = $("#toc");
+/** 목차 자리(설정 '목차 위치')와 접기·펴기 — 보일지는 여기에만 묻는다 (#sidebar.hidden을 직접 쓰지 않는다) */
+const tocPanel = initTocPanel();
 const statusPath = $("#status-path");
 const statusDefault = $<HTMLButtonElement>("#status-default");
 const statusMode = $<HTMLButtonElement>("#status-mode");
@@ -428,7 +430,7 @@ function activate(tab: Tab): void {
   tab.restoreLine = null;
   if (tab.needsRender) renderView(tab, workingText(tab));
   app.classList.toggle("large-doc", tab.large);
-  sidebar.hidden = tab.tocEntries.length === 0;
+  tocPanel.setAvailable(tab.tocEntries.length > 0);
   showMode(tab.mode);
   if (tab.mode !== "view") {
     const ed = attachEditor(tab);
@@ -491,7 +493,7 @@ function showWelcome(): void {
   editorHost.hidden = true;
   viewer.scrollTop = 0;
   toc.replaceChildren();
-  sidebar.hidden = true;
+  tocPanel.setAvailable(false);
   app.classList.remove("large-doc");
   findBar.close();
   paintBanner(null);
@@ -768,7 +770,7 @@ function renderView(tab: Tab, text: string): void {
   recount(tab);
   if (tab !== active) return;
   app.classList.toggle("large-doc", large);
-  sidebar.hidden = result.toc.length === 0;
+  tocPanel.setAvailable(result.toc.length > 0);
   updateActiveHeading();
   findBar.refresh();
 }
@@ -793,7 +795,7 @@ function renderHtml(tab: Tab, html: HtmlView, text: string): void {
   void html.render(text, htmlScriptsOn(tab));
   if (tab !== active) return;
   app.classList.remove("large-doc");
-  sidebar.hidden = true;
+  tocPanel.setAvailable(false);
 }
 
 const htmlScriptsOn = (tab: Tab): boolean => tab.htmlScripts ?? getSetting("htmlScripts") === "always";
@@ -2011,6 +2013,8 @@ function applySetting(key: SettingKey): void {
   } else if (key === "statusCount") {
     if (!active || active.textCount) updateCount();
     else recount(active);
+  } else if (key === "tocSide") {
+    tocPanel.setSide(tocSideOf(getSetting("tocSide")));
   } else if (key === "updateCheck") {
     syncUpdateSchedule();
   } else if (key === "htmlScripts") {
@@ -2429,7 +2433,7 @@ function onShortcutKey(event: KeyboardEvent): void {
     toggleTheme();
   } else if (ctrl && event.key === "\\") {
     take();
-    if (active?.tocEntries.length) sidebar.hidden = !sidebar.hidden;
+    tocPanel.toggle();
   } else if (ctrl && event.shiftKey && key === "e") {
     take();
     nav.toggle();
@@ -2746,7 +2750,7 @@ async function checkWebviewVersion(): Promise<void> {
   else flashStatus(message);
 }
 
-initSidebarResize();
+initSidebarResize(() => tocPanel.setOpen(false));
 initSplitResize(() => {
   syncCache = null;
   editor?.view.requestMeasure();

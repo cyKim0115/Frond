@@ -321,8 +321,11 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
 
 /* ---- 목차 --------------------------------------------------------------------- */
 
+/* 자리는 설정 '목차 위치'(src/toc-panel.ts) — 왼쪽은 #app 격자의 sidebar 칸, 오른쪽은 #main-body(제목 표시줄 아래) 끝.
+   보일지(목차 줄 있음 + 접지 않음)도 toc-panel.ts가 hidden으로 정한다 */
 #sidebar {
   grid-area: sidebar;
+  flex: none;
   width: var(--sidebar-w);
   min-width: 120px;
   max-width: 60vw;
@@ -381,7 +384,16 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
 #sidebar-resizer:hover::after { opacity: 1; transition-delay: 0.15s; }
 #app.resizing #sidebar-resizer::after,
 #sidebar-resizer:focus-visible::after { opacity: 1; }
-#sidebar[hidden] + #sidebar-resizer { display: none; }
+#sidebar[hidden] + #sidebar-resizer,
+#sidebar-resizer:has(+ #sidebar[hidden]) { display: none; }
+
+/* 오른쪽 목차 — 제목 표시줄 아래 본문 옆. 머리 띠 없이 제목 표시줄을 본문과 같이 쓰고, 경계선은 왼쪽.
+   손잡이 잡는 자리는 목차 쪽으로 치우쳐 본문 세로 스크롤 막대를 덜 가린다 */
+#app[data-toc-side="right"] #sidebar { border-right: 0; border-left: 1px solid var(--line); }
+#app[data-toc-side="right"] #sidebar > .col-header { display: none; }
+#app[data-toc-side="right"] #toc { padding-top: 8px; }
+#app[data-toc-side="right"] #sidebar-resizer::before { inset: 0 -6px 0 -2px; }
+#app[data-toc-side="right"] #sidebar-resizer::after { inset: 0 -2px 0 -1px; }
 
 /* ---- 본문 열: 제목 표시줄 + 뷰어 ------------------------------------------------ */
 
@@ -393,9 +405,27 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
   flex-direction: column;
   background: var(--bg);
 }
+/* 제목 표시줄 아래 — [#doc-col: 배너·찾기·본문 판] (+ 오른쪽 목차면 [손잡이][목차]) */
+#main-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+#doc-col {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 #titlebar { transition: padding-left var(--panel-dur) var(--panel-ease); }
-/* 탐색 영역이 닫혀 있고 목차도 없으면 토글이 이 띠 위에 얹힌다 */
-#app[data-nav="closed"] #sidebar[hidden] ~ #main #titlebar { padding-left: var(--toggle-w); }
+/* 탐색 영역이 닫혀 있고 왼쪽 목차도 없으면(오른쪽 목차면 늘) 토글이 이 띠 위에 얹힌다 */
+#app[data-nav="closed"] #sidebar[hidden] ~ #main #titlebar,
+#app[data-nav="closed"][data-toc-side="right"] #titlebar { padding-left: var(--toggle-w); }
+/* 목차 접기·펴기 (src/toc-panel.ts) — 오른쪽 목차일 때만. 왼쪽은 Ctrl+\만 */
+#toc-toggle { margin-right: 2px; }
+#app:not([data-toc-side="right"]) #toc-toggle { display: none; }
+#toc-toggle[aria-expanded="true"] { color: var(--fg); }
 /* ---- 탭 띠 (src/tabs.ts, 로드맵 3-1) — 제목 표시줄 가운데. 탭 사이·뒤 빈 곳은 창 이동 영역.
    안 고른 탭은 어두운 면(뒤에 꽂힌 갈피), 고른 탭은 본문 색 + 테두리로 아래 문서와 이어진다.
    띠 아래 1px 선을 고른 탭만 끊는다 ---- */
@@ -740,7 +770,7 @@ svg.tree-chevron { color: var(--muted); transition: transform 0.12s; }
 #statusbar .warn { color: #d1242f; }
 
 @media (max-width: 720px) {
-  #sidebar, #sidebar-resizer { display: none; }
+  #sidebar, #sidebar-resizer, #toc-toggle { display: none; }
   /* 좁은 창의 분할 뷰는 위(소스)·아래(미리보기)로 */
   #panes[data-mode="split"] { flex-direction: column; }
   #panes[data-mode="split"] > #editor { flex: 1 1 0; border-bottom: 1px solid var(--line); }

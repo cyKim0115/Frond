@@ -50,6 +50,8 @@
     display: none !important;
   }
   #main,
+  #main-body,
+  #doc-col,
   #panes {
     display: block;
   }

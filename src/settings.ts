@@ -104,6 +104,17 @@ export const SETTINGS = {
     step: 20,
     unit: "px",
   },
+  tocSide: {
+    kind: "select",
+    section: "view",
+    label: "목차 위치",
+    hint: "오른쪽은 본문 옆에 두고 제목 표시줄의 목차 버튼으로 접고 폅니다. 왼쪽은 탐색 영역 옆에 둡니다. 어느 쪽이든 Ctrl+\\로 접고 폅니다",
+    default: "right",
+    options: [
+      { value: "right", label: "오른쪽 (본문 옆)" },
+      { value: "left", label: "왼쪽 (탐색 영역 옆)" },
+    ],
+  },
   statusCount: {
     kind: "select",
     section: "view",
