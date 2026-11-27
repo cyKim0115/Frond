@@ -129,6 +129,14 @@ describe("recordSeen", () => {
 describe("failureMessage", () => {
   it("서명 오류는 따로", () => {
     expect(failureMessage("minisign: Signature verification failed", "download")).toContain("서명이 맞지 않아");
+    // updater 2.14 실제 오류 글(E2E S8·S3)
+    expect(failureMessage("The signature verification failed", "download")).toContain("서명이 맞지 않아");
+    expect(
+      failureMessage(
+        "The update was signed for version 0.9.1 but the update endpoint announced version 0.9.2. The endpoint response may have been tampered with to force installing a different release.",
+        "download",
+      ),
+    ).toContain("서명이 맞지 않아");
     expect(failureMessage("error sending request", "check")).toContain("인터넷 연결");
     expect(failureMessage("io error", "install")).toContain("설치하지 못했습니다");
   });

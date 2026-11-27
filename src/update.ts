@@ -207,9 +207,12 @@ export function withJosa(version: string, josa: Josa): string {
   return version + (final === "none" ? without : withBatchim);
 }
 
-/** 사용자에게 보일 실패 문구 — 서명 오류는 따로 */
+/**
+ * 사용자에게 보일 실패 문구 — 서명 오류는 따로. updater 2.14는 설치기 바이트가 다르면 `The signature verification failed`,
+ * 서명에 든 버전과 latest.json 버전이 다르면 `The update was signed for version X but the update endpoint announced version Y`를 낸다(E2E S8·S3)
+ */
 export function failureMessage(detail: string, stage: "check" | "download" | "install"): string {
-  if (/signature|minisign|서명/i.test(detail)) return "받은 업데이트 파일의 서명이 맞지 않아 설치하지 않았습니다.";
+  if (/signature|signed for version|minisign|서명/i.test(detail)) return "받은 업데이트 파일의 서명이 맞지 않아 설치하지 않았습니다.";
   if (stage === "install") return "업데이트를 설치하지 못했습니다. 문서와 탭은 그대로입니다.";
   return "업데이트를 확인하지 못했습니다. 인터넷 연결을 확인해 주세요.";
 }
