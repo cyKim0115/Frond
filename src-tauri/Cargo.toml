@@ -1,6 +1,6 @@
 [package]
 name = "frond"
-version = "0.1.0"
+version = "0.2.0"
 description = "Markdown(.md) 파일을 보고 편집하는 개인용 Windows 데스크톱 앱"
 edition.workspace = true
 authors.workspace = true

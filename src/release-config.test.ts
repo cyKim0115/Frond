@@ -38,9 +38,18 @@ describe("기본 tauri.conf.json — updater", () => {
     expect(updater.windows).toEqual({ installMode: "passive" });
   });
 
-  it("공개 키는 비었거나(U-5 전) minisign 형식", () => {
+  it("공개 키가 있고 minisign 형식 — 진짜 키와의 일치는 release-build.ps1이 .key.pub와 비교한다", () => {
     expect(typeof updater.pubkey).toBe("string");
-    if (updater.pubkey !== "") expect(isMinisignPubkey(updater.pubkey)).toBe(true);
+    expect(updater.pubkey).not.toBe("");
+    expect(isMinisignPubkey(updater.pubkey)).toBe(true);
+  });
+});
+
+describe("릴리스 덧설정 tauri.release.conf.json", () => {
+  const release = JSON.parse(readFileSync("src-tauri/tauri.release.conf.json", "utf8"));
+
+  it("서명 산출물만 켠다 — 엔드포인트·식별자·키를 바꾸지 않는다", () => {
+    expect(release).toEqual({ bundle: { createUpdaterArtifacts: true } });
   });
 
   it("서명 산출물 설정은 기본 설정에 없다 — 키 없는 app:build가 깨지지 않게(릴리스 덧설정에만)", () => {
