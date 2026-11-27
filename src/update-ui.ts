@@ -21,6 +21,7 @@ import {
   type UpdateState,
   type UpdateSupport,
   Updater,
+  withJosa,
   writeUpdatePrefs,
   EMPTY_PREFS,
 } from "./update";
@@ -63,9 +64,9 @@ export function statusText(state: UpdateState, current: string, lastCheckAt: num
       return `${state.version} 받는 중…${pct}`;
     }
     case "ready":
-      return `Frond ${state.version}이 준비됐습니다. 재시작하면 적용됩니다.`;
+      return `Frond ${withJosa(state.version, "이/가")} 준비됐습니다. 재시작하면 적용됩니다.`;
     case "skipped":
-      return `${state.version}은 건너뛰기로 했습니다.`;
+      return `${withJosa(state.version, "은/는")} 건너뛰기로 했습니다.`;
     case "latest":
       return `최신 버전입니다 (${current})${last}`;
     case "error":
@@ -73,7 +74,7 @@ export function statusText(state: UpdateState, current: string, lastCheckAt: num
     case "installing":
       return "업데이트를 설치하고 다시 엽니다…";
     case "updated":
-      return `${state.to}로 업데이트했습니다.`;
+      return `${withJosa(state.to, "으로/로")} 업데이트했습니다.`;
   }
 }
 
@@ -143,7 +144,7 @@ export function createUpdateUi(hooks: UpdateUiHooks): UpdateUi {
       pill.hidden = false;
       pill.dataset.level = pillLevel(state.seenAt, Date.now(), updater.later);
       pillText.textContent = "업데이트";
-      pill.title = `Frond ${state.version}이 준비됐습니다 — 눌러서 재시작해 업데이트합니다`;
+      pill.title = `Frond ${withJosa(state.version, "이/가")} 준비됐습니다 — 눌러서 재시작해 업데이트합니다`;
     } else if (state.kind === "installing") {
       pill.hidden = false;
       pill.dataset.level = "normal";
@@ -154,7 +155,7 @@ export function createUpdateUi(hooks: UpdateUiHooks): UpdateUi {
       pill.hidden = false;
       pill.dataset.level = "normal";
       pillText.textContent = "업데이트됨";
-      pill.title = `${state.to}로 업데이트했습니다 — 눌러서 바뀐 점 보기`;
+      pill.title = `${withJosa(state.to, "으로/로")} 업데이트했습니다 — 눌러서 바뀐 점 보기`;
     } else {
       pill.hidden = true;
     }
@@ -191,7 +192,7 @@ export function createUpdateUi(hooks: UpdateUiHooks): UpdateUi {
   async function showUpdatedNotes(state: Extract<UpdateState, { kind: "updated" }>): Promise<void> {
     const { lines, more } = notesPreview(state.notes);
     const picked = await showChoice({
-      title: `${state.to}로 업데이트했습니다`,
+      title: `${withJosa(state.to, "으로/로")} 업데이트했습니다`,
       message: lines.length ? lines.join("\n") + (more ? `\n외 ${more}개` : "") : "바뀐 점은 GitHub 릴리스에서 볼 수 있습니다.",
       choices: [{ value: "github", label: "GitHub에서 보기" }],
       cancelLabel: "닫기",
@@ -206,7 +207,7 @@ export function createUpdateUi(hooks: UpdateUiHooks): UpdateUi {
     if (state.kind !== "ready") return;
     const { lines, more } = notesPreview(state.notes);
     const picked = await showChoice({
-      title: `Frond ${state.version}로 업데이트할까요?`,
+      title: `Frond ${withJosa(state.version, "으로/로")} 업데이트할까요?`,
       message: lines.length ? lines.join("\n") + (more ? `\n외 ${more}개` : "") : "새 버전이 준비됐습니다.",
       detail: "재시작하면 열린 탭이 그대로 돌아옵니다. 저장하지 않은 문서는 다음 단계에서 고릅니다.",
       choices: [

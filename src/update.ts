@@ -191,6 +191,22 @@ export function recordSeen(seen: UpdatePrefs["seen"], version: string, now: numb
   return seen && seen.version === version ? seen : { version, at: now };
 }
 
+export type Josa = "으로/로" | "은/는" | "이/가";
+
+/**
+ * 버전 뒤에 조사를 붙인다 — 끝 숫자를 한국어로 읽은 받침에 맞춘다(0.1.0 → 「0.1.0으로」, 0.2.1 → 「0.2.1로」).
+ * 끝이 0(영·십·백…)·3(삼)·6(육)이면 받침, 1(일)·7(칠)·8(팔)이면 ㄹ 받침(「로」), 2·4·5·9면 받침 없음.
+ * 끝이 숫자가 아니면(프리릴리스 글자) 읽는 법을 모르니 「(으)로」처럼 둘 다 적는다
+ */
+export function withJosa(version: string, josa: Josa): string {
+  const last = version.trim().slice(-1);
+  const [withBatchim, without] = josa.split("/") as [string, string];
+  if (!/\d/.test(last)) return version + (josa === "으로/로" ? "(으)로" : josa === "은/는" ? "은(는)" : "이(가)");
+  const final = "036".includes(last) ? "batchim" : "178".includes(last) ? "rieul" : "none";
+  if (josa === "으로/로") return version + (final === "batchim" ? withBatchim : without);
+  return version + (final === "none" ? without : withBatchim);
+}
+
 /** 사용자에게 보일 실패 문구 — 서명 오류는 따로 */
 export function failureMessage(detail: string, stage: "check" | "download" | "install"): string {
   if (/signature|minisign|서명/i.test(detail)) return "받은 업데이트 파일의 서명이 맞지 않아 설치하지 않았습니다.";

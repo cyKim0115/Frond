@@ -21,6 +21,7 @@ import {
   Updater,
   type UpdaterApi,
   type UpdatePrefs,
+  withJosa,
   writeUpdatePrefs,
 } from "./update";
 
@@ -130,6 +131,36 @@ describe("failureMessage", () => {
     expect(failureMessage("minisign: Signature verification failed", "download")).toContain("서명이 맞지 않아");
     expect(failureMessage("error sending request", "check")).toContain("인터넷 연결");
     expect(failureMessage("io error", "install")).toContain("설치하지 못했습니다");
+  });
+});
+
+describe("withJosa", () => {
+  it("끝 숫자를 읽은 받침에 맞춘다", () => {
+    // 0 영·3 삼·6 육 → 받침
+    expect(withJosa("0.1.0", "으로/로")).toBe("0.1.0으로");
+    expect(withJosa("0.1.0", "은/는")).toBe("0.1.0은");
+    expect(withJosa("0.1.0", "이/가")).toBe("0.1.0이");
+    expect(withJosa("0.2.3", "으로/로")).toBe("0.2.3으로");
+    expect(withJosa("0.2.6", "이/가")).toBe("0.2.6이");
+    // 1 일·7 칠·8 팔 → ㄹ 받침이라 「로」, 은·이는 받침대로
+    expect(withJosa("0.2.1", "으로/로")).toBe("0.2.1로");
+    expect(withJosa("0.2.1", "은/는")).toBe("0.2.1은");
+    expect(withJosa("0.2.7", "이/가")).toBe("0.2.7이");
+    expect(withJosa("0.2.8", "으로/로")).toBe("0.2.8로");
+    // 2 이·4 사·5 오·9 구 → 받침 없음
+    expect(withJosa("0.2.2", "으로/로")).toBe("0.2.2로");
+    expect(withJosa("0.2.4", "은/는")).toBe("0.2.4는");
+    expect(withJosa("0.2.5", "이/가")).toBe("0.2.5가");
+    expect(withJosa("0.9.9", "은/는")).toBe("0.9.9는");
+    // 10(십)·20(이십)도 끝 0이라 받침
+    expect(withJosa("0.2.10", "으로/로")).toBe("0.2.10으로");
+  });
+
+  it("끝이 글자면 둘 다 적는다", () => {
+    expect(withJosa("0.3.0-beta", "으로/로")).toBe("0.3.0-beta(으)로");
+    expect(withJosa("0.3.0-beta", "은/는")).toBe("0.3.0-beta은(는)");
+    expect(withJosa("0.3.0-beta", "이/가")).toBe("0.3.0-beta이(가)");
+    expect(withJosa("0.3.0-beta.2", "이/가")).toBe("0.3.0-beta.2가");
   });
 });
 
