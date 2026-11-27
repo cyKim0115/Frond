@@ -209,11 +209,16 @@ export function withJosa(version: string, josa: Josa): string {
 
 /**
  * 사용자에게 보일 실패 문구 — 서명 오류는 따로. updater 2.14는 설치기 바이트가 다르면 `The signature verification failed`,
- * 서명에 든 버전과 latest.json 버전이 다르면 `The update was signed for version X but the update endpoint announced version Y`를 낸다(E2E S8·S3)
+ * 서명에 든 버전과 latest.json 버전이 다르면 `The update was signed for version X but the update endpoint announced version Y`를 낸다(E2E S8·S3).
+ * 확인 단계에서 엔드포인트가 성공 코드가 아니면(GitHub 릴리스가 하나도 없어 latest.json이 404) 오류 없이 `Error::ReleaseNotFound`
+ * `Could not fetch a valid release JSON from the remote`로 끝난다 — 연결 실패(`error sending request …`)와 문구를 나눈다
  */
 export function failureMessage(detail: string, stage: "check" | "download" | "install"): string {
   if (/signature|signed for version|minisign|서명/i.test(detail)) return "받은 업데이트 파일의 서명이 맞지 않아 설치하지 않았습니다.";
   if (stage === "install") return "업데이트를 설치하지 못했습니다. 문서와 탭은 그대로입니다.";
+  if (stage === "check" && /valid release JSON|status code|\b404\b|not found/i.test(detail)) {
+    return "아직 공개된 업데이트가 없습니다. 나중에 다시 확인해 주세요.";
+  }
   return "업데이트를 확인하지 못했습니다. 인터넷 연결을 확인해 주세요.";
 }
 

@@ -140,6 +140,19 @@ describe("failureMessage", () => {
     expect(failureMessage("error sending request", "check")).toContain("인터넷 연결");
     expect(failureMessage("io error", "install")).toContain("설치하지 못했습니다");
   });
+
+  it("릴리스 없음(404)과 연결 실패를 나눈다", () => {
+    // updater 2.14: 엔드포인트가 404면 Error::ReleaseNotFound
+    expect(failureMessage("Could not fetch a valid release JSON from the remote", "check")).toBe(
+      "아직 공개된 업데이트가 없습니다. 나중에 다시 확인해 주세요.",
+    );
+    expect(failureMessage("Download request failed with status: 404 Not Found", "check")).toContain("아직 공개된 업데이트가 없습니다");
+    expect(
+      failureMessage("error sending request for url (https://github.com/cyKim0115/Frond/releases/latest/download/latest.json)", "check"),
+    ).toContain("인터넷 연결");
+    // 받기 단계의 404는 확인 실패 문구 그대로(설치기 파일이 빠진 릴리스)
+    expect(failureMessage("Download request failed with status: 404 Not Found", "download")).toContain("인터넷 연결");
+  });
 });
 
 describe("withJosa", () => {
@@ -282,6 +295,15 @@ describe("Updater", () => {
     expect(readUpdatePrefs().lastResult).toBe("error");
     await updater.checkNow();
     expect(updater.current).toMatchObject({ kind: "error", manual: true, message: expect.stringContaining("인터넷 연결") });
+  });
+
+  it("릴리스 없음(404)은 자동이면 조용히, 수동이면 「아직 없음」", async () => {
+    const notFound = () => new Error("Could not fetch a valid release JSON from the remote");
+    const { updater } = makeUpdater([notFound(), notFound()]);
+    await updater.auto();
+    expect(updater.current).toEqual({ kind: "idle" });
+    await updater.checkNow();
+    expect(updater.current).toMatchObject({ kind: "error", manual: true, message: expect.stringContaining("아직 공개된 업데이트가 없습니다") });
   });
 
   it("서명이 틀린 설치기는 받기에서 거절 — 알약 없음, 수동은 서명 문구", async () => {
