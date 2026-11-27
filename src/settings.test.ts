@@ -10,6 +10,7 @@ import {
   setSetting,
   SETTINGS,
 } from "./settings";
+import { setUpdateSupport } from "./update";
 
 describe("카테고리", () => {
   it("모든 항목의 section이 SETTING_CATEGORIES에 있는 id다", () => {
@@ -75,5 +76,41 @@ describe("저장·알림", () => {
     resetSettings();
     expect(getSetting("recentMax")).toBe(SETTINGS.recentMax.default);
     expect(getSetting("theme")).toBe(SETTINGS.theme.default);
+  });
+});
+
+describe("업데이트 자동 확인 (결정 20261127-app-update)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    reloadSettings();
+    setUpdateSupport(null);
+  });
+
+  it("'업데이트' 탭이 있고 항목은 그 탭에", () => {
+    expect(SETTING_CATEGORIES.map((c) => c.id)).toContain("update");
+    expect(SETTINGS.updateCheck.section).toBe("update");
+  });
+
+  it("기본은 켬 — 저장값 없음·이상한 값도 켬 (꺼진 채로 굳지 않게)", () => {
+    expect(getSetting("updateCheck")).toBe("auto");
+    for (const bad of ["", "on", "false", 0, null, true]) {
+      localStorage.setItem("frond.settings", JSON.stringify({ updateCheck: bad }));
+      reloadSettings();
+      expect(getSetting("updateCheck"), String(bad)).toBe("auto");
+    }
+    localStorage.setItem("frond.settings", JSON.stringify({ updateCheck: "off" }));
+    reloadSettings();
+    expect(getSetting("updateCheck")).toBe("off");
+  });
+
+  it("설치기판(enabled)에서만 행을 보인다", () => {
+    const available = SETTINGS.updateCheck.available;
+    expect(available()).toBe(false);
+    for (const s of ["store", "scoop", "dev", "nokey"] as const) {
+      setUpdateSupport(s);
+      expect(available(), s).toBe(false);
+    }
+    setUpdateSupport("enabled");
+    expect(available()).toBe(true);
   });
 });

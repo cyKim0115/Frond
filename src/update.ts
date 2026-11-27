@@ -43,6 +43,15 @@ export function isUpdateSupport(value: unknown): value is UpdateSupport {
   return typeof value === "string" && SUPPORTS.includes(value);
 }
 
+/** 시작 때 백엔드 판정을 받아 둔다 — 설정 팝업이 '업데이트 자동 확인' 행을 보일지 묻는다(settings.ts `available`). 모르면 null */
+let knownSupport: UpdateSupport | null = null;
+export function updateSupport(): UpdateSupport | null {
+  return knownSupport;
+}
+export function setUpdateSupport(support: UpdateSupport | null): void {
+  knownSupport = support;
+}
+
 export type UpdateState =
   | { kind: "unsupported"; reason: Exclude<UpdateSupport, "enabled"> }
   | { kind: "idle" }

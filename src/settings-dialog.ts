@@ -25,6 +25,7 @@ const dialog = document.querySelector<HTMLDialogElement>("#settings-dialog")!;
 const body = dialog.querySelector<HTMLElement>("#settings-body")!;
 const controls = new Map<SettingKey, HTMLInputElement | HTMLSelectElement>();
 const resetButtons = new Map<SettingKey, HTMLButtonElement>();
+const rows = new Map<SettingKey, HTMLElement>();
 const tabs = new Map<CategoryId, HTMLButtonElement>();
 const panels = new Map<CategoryId, HTMLElement>();
 
@@ -103,6 +104,7 @@ function buildRow(key: SettingKey, def: SettingDef): HTMLElement {
   row.append(label, wrap);
   controls.set(key, control);
   resetButtons.set(key, reset);
+  rows.set(key, row);
   return row;
 }
 
@@ -178,6 +180,14 @@ function selectTab(id: CategoryId): void {
   writePref("settingsTab", selected);
 }
 
+/** `available`이 false인 항목(예: 설치기판에서만 쓰는 '업데이트 자동 확인')은 행을 숨긴다 — 팝업을 열 때마다 다시 본다 */
+function syncAvailability(): void {
+  for (const [key, row] of rows) {
+    const def: SettingDef = SETTINGS[key];
+    row.hidden = def.available ? !def.available() : false;
+  }
+}
+
 /** 컨트롤을 현재 값으로 맞춘다. 단축키(Ctrl+Shift+D)처럼 팝업 밖에서 바뀐 값도 따라온다 */
 function sync(key: SettingKey): void {
   const value = getSetting(key);
@@ -197,6 +207,7 @@ export interface SettingsDialog {
 
 export function initSettingsDialog(): SettingsDialog {
   build();
+  syncAvailability();
   for (const key of SETTING_KEYS) sync(key);
   onSettingChange(sync);
   const saved = readPref("settingsTab", SETTING_CATEGORIES[0].id as string, isString);
@@ -210,6 +221,7 @@ export function initSettingsDialog(): SettingsDialog {
 
   return {
     open(category) {
+      syncAvailability();
       if (category) selectTab(category);
       if (!dialog.open) dialog.showModal();
       tabs.get(selected)!.focus();

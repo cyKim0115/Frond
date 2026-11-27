@@ -7,6 +7,7 @@
 import { canUseTheme } from "./license";
 import { readPref, writePref } from "./prefs";
 import { catalogEntries } from "./theme/catalog";
+import { updateSupport } from "./update";
 import type { ThemeBase } from "./theme/themes";
 
 /** 설정 팝업 왼쪽 탭 — id·라벨·순서는 여기 한 곳에서만 정한다. 자주 쓰는 것을 위에 둔다 */
@@ -16,6 +17,7 @@ export const SETTING_CATEGORIES = [
   { id: "theme", label: "테마" },
   { id: "nav", label: "탐색" },
   { id: "file", label: "파일" },
+  { id: "update", label: "업데이트" },
   { id: "about", label: "정보" },
 ] as const;
 export type CategoryId = (typeof SETTING_CATEGORIES)[number]["id"];
@@ -25,6 +27,8 @@ interface BaseDef {
   section: CategoryId;
   label: string;
   hint?: string;
+  /** 있으면 false일 때 팝업에서 행을 숨긴다(값·기본값은 그대로). 팝업을 열 때마다 다시 묻는다 — 예: 설치 방식 */
+  available?: () => boolean;
 }
 export interface NumberDef extends BaseDef {
   kind: "number";
@@ -200,6 +204,19 @@ export const SETTINGS = {
       { value: "restore", label: "지난번 탭 다시 열기" },
       { value: "none", label: "빈 창으로 시작" },
     ],
+  },
+  updateCheck: {
+    kind: "select",
+    section: "update",
+    label: "업데이트 자동 확인",
+    hint: "끄면 GitHub에 확인 요청을 보내지 않습니다. '지금 확인'은 그대로 됩니다.",
+    default: "auto",
+    options: [
+      { value: "auto", label: "자동으로 확인하고 받기" },
+      { value: "off", label: "끔" },
+    ],
+    // 설치기판(update.rs `enabled`)에서만 — Store·Scoop·개발 빌드는 패널이 사유를 보인다
+    available: () => updateSupport() === "enabled",
   },
   recentMax: {
     kind: "number",

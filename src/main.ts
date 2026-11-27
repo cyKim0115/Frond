@@ -15,6 +15,7 @@
  */
 
 import { type EditorState, type StateEffect, Text } from "@codemirror/state";
+import { getVersion } from "@tauri-apps/api/app";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -47,6 +48,8 @@ import { applyTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTran
 import { createThemePanel } from "./theme-panel";
 import { initFrame } from "./frame";
 import { initTitlebar } from "./titlebar";
+import { isUpdateSupport, pluginApi, setUpdateSupport, Updater, type UpdateSupport } from "./update";
+import { createUpdateUi, PREVIEW_CURRENT, PREVIEW_KINDS, type PreviewKind, previewUpdater } from "./update-ui";
 import { countText, type TextCount } from "./wordcount";
 import "./style.css";
 import "./theme/index.css";
@@ -1961,6 +1964,17 @@ function toggleTheme(): void {
 
 // ---- 설정 적용 -------------------------------------------------------------------
 
+/** 앱 안 업데이트(결정 20261127-app-update) — 지원 판정이 끝난 뒤 init에서 만든다. 그 전의 설정 적용은 기다린다 */
+let updater: Updater | null = null;
+let updateScheduleReady = false;
+
+/** '업데이트 자동 확인' — 켜면 10초 뒤부터 6시간마다, 끄면 새 확인을 멈춘다(받는 중인 것은 끝까지) */
+function syncUpdateSchedule(): void {
+  if (!updater || !updateScheduleReady) return;
+  if (getSetting("updateCheck") === "auto") updater.start();
+  else updater.stop();
+}
+
 function applySetting(key: SettingKey): void {
   const root = document.documentElement;
   if (key === "theme" || key === "themeLight" || key === "themeDark") {
@@ -1983,6 +1997,8 @@ function applySetting(key: SettingKey): void {
   } else if (key === "statusCount") {
     if (!active || active.textCount) updateCount();
     else recount(active);
+  } else if (key === "updateCheck") {
+    syncUpdateSchedule();
   } else if (key === "htmlScripts") {
     // 문서마다 고르지 않은 HTML 탭만 새 기본값으로 다시 그린다 (뒤 탭은 앞으로 올 때)
     for (const tab of tabs) {
@@ -2020,6 +2036,10 @@ function openAboutTab(): void {
 // 권리(store-launch A-3) — 설정 '정보' 탭, 바뀌면 테마 게이트·선택지 표시를 다시
 const aboutPanel = createAboutPanel({ isTauri: IS_TAURI });
 settingsDialog.addPanel("about", aboutPanel.element);
+// 앱 안 업데이트 — 제목 표시줄 알약·설정 '업데이트' 탭. 업데이터는 지원 판정 뒤에 붙는다(startUpdater, 미리보기 ?update=)
+const updateUi = createUpdateUi({ isTauri: IS_TAURI, restart: () => void restartToUpdate() });
+settingsDialog.addPanel("update", updateUi.panel);
+
 onEntitlementChange(() => {
   for (const key of ["theme", "themeLight", "themeDark"] as const) settingsDialog.refreshOptions(key);
   applyEffectiveTheme();
@@ -2549,6 +2569,26 @@ async function init(): Promise<void> {
   $("#status-elevated").hidden = !(await invoke<boolean>("is_elevated").catch(() => false));
   void checkWebviewVersion();
   startNag();
+  void startUpdater();
+}
+
+/** 지원 판정(update.rs) → 업데이터를 만들고 자동 확인을 예약한다. Store·Scoop·개발 빌드는 패널에 사유만 */
+async function startUpdater(): Promise<void> {
+  const support: UpdateSupport = await invoke<unknown>("get_update_support").then(
+    (s) => (isUpdateSupport(s) ? s : "dev"),
+    () => "dev",
+  );
+  setUpdateSupport(support);
+  const version = await getVersion().catch(() => "—");
+  updater = new Updater({ support, api: pluginApi, autoEnabled: () => getSetting("updateCheck") === "auto" });
+  updateUi.attach(updater, version);
+  updateScheduleReady = true;
+  syncUpdateSchedule();
+}
+
+/** '재시작해 업데이트' — 확인 팝업 뒤. 문서 보존·설치는 다음 단계에서 잇는다 */
+async function restartToUpdate(): Promise<void> {
+  flashStatus("업데이트 설치는 아직 연결하지 않았습니다.");
 }
 
 /** 구매 권유(store-launch A-4) — Store판 비구매자에게만 뜬다. 미리보기는 ?entitlement=free&nag=now 로 곧바로 시험 */
@@ -2599,6 +2639,12 @@ if (IS_TAURI) {
     writeNagState({ firstRunAt: long, launches: 5, saves: 0, lastShownAt: null, snoozes: 0, nextAt: null });
     startNag(11_000);
   }
+  // ?update=ready|downloading|later|strong|updated|error|latest|skipped|store|scoop|dev|nokey — 가짜 업데이터로 알약·설정 탭을 본다
+  const updateKind = params.get("update") ?? "dev";
+  const previewKind: PreviewKind = (PREVIEW_KINDS as readonly string[]).includes(updateKind) ? (updateKind as PreviewKind) : "dev";
+  updater = previewUpdater(previewKind, () => getSetting("updateCheck") === "auto");
+  setUpdateSupport(updater.support);
+  updateUi.attach(updater, PREVIEW_CURRENT);
   void (async () => {
     for (const sample of (params.get("sample") ?? "samples/showcase.md").split(",")) await openPath(sample);
     if (params.get("mode") === "source") setMode("source");
