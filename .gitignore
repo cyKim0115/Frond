@@ -12,9 +12,10 @@ desktop.ini
 .claude/worktrees/
 .mcp.json
 
-# 시크릿
+# 시크릿 — 업데이트 서명 키는 저장소 밖에 두지만 실수로 복사해도 올라가지 않게
 .env
 .env.*
+*.key
 
 # Node / Vite
 node_modules/
