@@ -212,6 +212,7 @@ pub fn run() {
             // 앱 안 업데이트 — 설치기판 + 공개 키일 때만 플러그인을 등록한다(update.rs). 나머지는 명령 자체가 없다
             if update::current_support(app.handle()) == update::Support::Enabled {
                 app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+                update::spawn_temp_cleanup(app.handle());
             }
             Ok(())
         })

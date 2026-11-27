@@ -119,6 +119,63 @@ pub fn update_handoff_take(app: AppHandle) -> Result<Option<String>, String> {
     take_handoff(&handoff_dir(&app)?)
 }
 
+// ---- 지난 업데이트 임시 폴더 정리 ---------------------------------------------------------
+//
+// updater 2.14는 받은 설치기를 `%TEMP%\<productName>-<새 버전>-updater-XXXX\`에 두고(`make_temp_dir`의 `keep()`)
+// 설치 뒤에도 지우지 않는다(약 7 MB). 새 앱이 시작하고 몇 초 뒤, 자기 productName의 **지금 버전보다 낮은** 폴더만 지운다.
+// 지금 버전 폴더는 방금 끝난 설치기가 아직 붙잡고 있을 수 있어 다음 업데이트 때 지운다. 더 높은 버전(설치를 취소한 받기)·
+// 다른 앱·이름이 안 맞는 폴더·링크는 건드리지 않는다.
+
+/// 시작 뒤 기다리는 시간 — 설치기가 끝나고 인계 파일을 읽은 다음
+const CLEANUP_DELAY: std::time::Duration = std::time::Duration::from_secs(10);
+
+/// `<app>-<버전>-updater-XXXX`에서 버전을 꺼낸다. 이름이 안 맞으면 `None`
+fn updater_dir_version(dir_name: &str, app_name: &str) -> Option<semver::Version> {
+    let rest = dir_name.strip_prefix(app_name)?.strip_prefix('-')?;
+    let (version, suffix) = rest.rsplit_once("-updater-")?;
+    if suffix.is_empty() || !suffix.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return None;
+    }
+    semver::Version::parse(version).ok()
+}
+
+/// `temp` 바로 아래에서 지울 폴더 — 실제 폴더(링크 아님)이고 버전이 `current`보다 낮은 것
+fn stale_updater_dirs(temp: &Path, app_name: &str, current: &semver::Version) -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(temp) else { return Vec::new() };
+    let mut out: Vec<PathBuf> = entries
+        .flatten()
+        .filter(|e| e.file_type().is_ok_and(|t| t.is_dir() && !t.is_symlink()))
+        .filter(|e| {
+            e.file_name()
+                .to_str()
+                .and_then(|n| updater_dir_version(n, app_name))
+                .is_some_and(|v| &v < current)
+        })
+        .map(|e| e.path())
+        .collect();
+    out.sort();
+    out
+}
+
+/// 지운 개수. 하나가 실패해도(잠김 등) 나머지는 지운다
+fn remove_stale_updater_dirs(temp: &Path, app_name: &str, current: &semver::Version) -> usize {
+    stale_updater_dirs(temp, app_name, current)
+        .into_iter()
+        .filter(|dir| std::fs::remove_dir_all(dir).is_ok())
+        .count()
+}
+
+/// 설치기판(updater 등록)일 때만 `lib.rs`가 부른다
+pub fn spawn_temp_cleanup(app: &AppHandle) {
+    let info = app.package_info();
+    let app_name = info.name.clone();
+    let Ok(current) = semver::Version::parse(&info.version.to_string()) else { return };
+    std::thread::spawn(move || {
+        std::thread::sleep(CLEANUP_DELAY);
+        remove_stale_updater_dirs(&std::env::temp_dir(), &app_name, &current);
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -173,5 +230,51 @@ mod tests {
         std::fs::write(dir.path().join(HANDOFF), big.as_bytes()).unwrap();
         assert_eq!(take_handoff(dir.path()).unwrap(), None);
         assert!(!dir.path().join(HANDOFF).exists());
+    }
+
+    #[test]
+    fn updater_dir_name_parsing() {
+        let v = |s: &str| semver::Version::parse(s).unwrap();
+        assert_eq!(updater_dir_version("Frond-0.2.0-updater-AbC123", "Frond"), Some(v("0.2.0")));
+        assert_eq!(updater_dir_version("Frond-0.3.0-beta.1-updater-x1", "Frond"), Some(v("0.3.0-beta.1")));
+        // 이름에 하이픈이 든 앱
+        assert_eq!(updater_dir_version("Frond-E2E-0.9.1-updater-q", "Frond-E2E"), Some(v("0.9.1")));
+        assert_eq!(updater_dir_version("Frond-E2E-0.9.1-updater-q", "Frond"), None);
+        assert_eq!(updater_dir_version("Frondx-0.2.0-updater-a", "Frond"), None);
+        assert_eq!(updater_dir_version("Frond-0.2.0-updater-", "Frond"), None);
+        assert_eq!(updater_dir_version("Frond-0.2.0-updater-a.b", "Frond"), None);
+        assert_eq!(updater_dir_version("Frond-latest-updater-a", "Frond"), None);
+        assert_eq!(updater_dir_version("Frond-0.2.0", "Frond"), None);
+    }
+
+    #[test]
+    fn removes_only_older_own_dirs() {
+        let temp = tempfile::tempdir().unwrap();
+        let t = temp.path();
+        let make = |name: &str| {
+            let d = t.join(name);
+            std::fs::create_dir(&d).unwrap();
+            std::fs::write(d.join("Frond-x-installer.exe"), b"MZ").unwrap();
+            d
+        };
+        let old1 = make("Frond-0.1.0-updater-a1");
+        let old2 = make("Frond-0.2.0-beta.1-updater-b2");
+        let current = make("Frond-0.2.0-updater-c3");
+        let newer = make("Frond-0.2.1-updater-d4");
+        let other = make("Other-0.1.0-updater-e5");
+        let e2e = make("Frond-E2E-0.1.0-updater-f6");
+        let odd = make("Frond-0.1.0-installer");
+        std::fs::write(t.join("Frond-0.0.1-updater-file"), b"not a dir").unwrap();
+
+        let cur = semver::Version::parse("0.2.0").unwrap();
+        assert_eq!(stale_updater_dirs(t, "Frond", &cur), vec![old1.clone(), old2.clone()]);
+        assert_eq!(remove_stale_updater_dirs(t, "Frond", &cur), 2);
+        assert!(!old1.exists() && !old2.exists());
+        for kept in [&current, &newer, &other, &e2e, &odd] {
+            assert!(kept.exists(), "{kept:?}");
+        }
+        assert!(t.join("Frond-0.0.1-updater-file").exists());
+        // 없는 temp는 조용히 0
+        assert_eq!(remove_stale_updater_dirs(&t.join("none"), "Frond", &cur), 0);
     }
 }
