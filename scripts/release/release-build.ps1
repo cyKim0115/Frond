@@ -49,7 +49,8 @@ try {
     if ($DryRun) { Warn $m } else { Fail $m }
   }
 
-  $releaseConf = Get-Content -Raw (Join-Path $repo 'src-tauri\tauri.release.conf.json') | ConvertFrom-Json
+  # 5.1의 Get-Content는 BOM 없는 UTF-8을 ANSI로 읽어 한글이 깨진다 — .NET으로 읽는다
+  $releaseConf = [IO.File]::ReadAllText((Join-Path $repo 'src-tauri\tauri.release.conf.json')) | ConvertFrom-Json
   if ($releaseConf.bundle.createUpdaterArtifacts -ne $true) { Fail 'src-tauri/tauri.release.conf.json에 createUpdaterArtifacts: true가 없습니다' }
 
   if (-not $KeyFile -and -not $DryRun) { $KeyFile = Read-SecretLine 'FROND_UPDATER_KEY_PATH' }
@@ -58,7 +59,7 @@ try {
   if ($KeyFile.StartsWith($repo, [StringComparison]::OrdinalIgnoreCase)) { Fail '서명 키가 저장소 안에 있습니다 — 저장소 밖으로 옮깁니다' }
   if (-not (Test-Path -LiteralPath $KeyFile)) { Fail "서명 키가 없습니다: $KeyFile" }
   $pubFile = "$KeyFile.pub"
-  $conf = Get-Content -Raw (Join-Path $repo 'src-tauri\tauri.conf.json') | ConvertFrom-Json
+  $conf = [IO.File]::ReadAllText((Join-Path $repo 'src-tauri\tauri.conf.json')) | ConvertFrom-Json
   if (-not (Test-Path -LiteralPath $pubFile)) {
     Fail "공개 키 파일이 없습니다: $pubFile"
   } elseif (([IO.File]::ReadAllText($pubFile)).Trim() -ne "$($conf.plugins.updater.pubkey)".Trim()) {
