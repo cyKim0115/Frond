@@ -22,6 +22,7 @@ mod print_menu;
 mod save;
 mod themes;
 mod tree;
+mod update;
 mod watch;
 
 /// 앱이 뜨기 전에 argv로 받은 파일들. 프런트가 준비되면 `take_pending_paths`로 가져간다.
@@ -208,6 +209,10 @@ pub fn run() {
                 .build()?;
             print_menu::route_print_to_app(&window);
             htmlview::guard_frames(&window);
+            // 앱 안 업데이트 — 설치기판 + 공개 키일 때만 플러그인을 등록한다(update.rs). 나머지는 명령 자체가 없다
+            if update::current_support(app.handle()) == update::Support::Enabled {
+                app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -231,6 +236,9 @@ pub fn run() {
             assoc::is_registered,
             elevation::is_elevated,
             install::get_install_info,
+            update::get_update_support,
+            update::update_handoff_write,
+            update::update_handoff_take,
             license::get_entitlement,
             license::refresh_entitlement,
             save::save_document,
