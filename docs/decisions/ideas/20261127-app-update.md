@@ -2,7 +2,7 @@
 
 - Date: 2026-11-27
 - Idea id: `20261127-app-update`
-- Status: `decided` — 서명 키는 2026-11-27 사용자 결정 「비밀번호 걸어 직접 생성」([사용자 결정](#사용자-결정)). 키가 생기기 전에는 공개 키 한 줄만 비우고 진행
+- Status: `decided` — 서명 키는 2026-11-27 사용자가 비밀번호를 걸어 직접 만들었다([사용자 결정](#사용자-결정))
 - Verdict:
   - `ADOPT_WITH_CHANGES`: 설치기판(NSIS)에 Tauri updater — 조용한 확인·자동 받기·제목 표시줄 알약·사용자가 누를 때 재시작, 재시작 전 문서 보존, 설정 '업데이트' 탭, 로컬 빌드 + 서명 + `latest.json` 스크립트, 발행 없는 E2E
   - `DEFER`: Store판 `StoreContext` 「새 버전 있음」 표시(R-2 뒤), 종량제 연결 판정, 확인만 하고 받기는 누를 때(`notify` 선택지), GitHub Actions `tauri-action` 릴리스, Scoop 새 버전 알림
@@ -55,8 +55,8 @@
   5. 설정: 새 탭 **`update`(업데이트)**를 `file`과 `about` 사이에 — 항목 `updateCheck`(`auto` 자동으로 확인하고 받기·`off` 끔, **기본 `auto`**, 저장값이 없거나 이상해도 `auto`) + 상태·`지금 확인`·건너뛴 버전·바뀐 점 링크 패널. '정보' 탭은 구매·버전 커스텀 패널 전용이라 섞지 않는다. 설치 방식별로 항목을 숨기려고 스키마에 `available?: () => boolean`을 더한다.
   6. **재시작 순서**(Windows `exit(0)` 전에 모두 await): 한글 조합 확정 → 저장 중이면 기다림 → 저장 안 한 문서가 있으면 `모두 저장하고 업데이트`·`초안으로 두고 업데이트`·`취소`(**버리기 선택지 없음**, 저장 하나라도 실패하면 업데이트 멈춤) → 세션 즉시 저장 → Rust가 **재시작 인계 파일**(identifier 데이터 폴더의 `update-handoff.json`: 세션·이전/새 버전·노트)을 쓴다 → `install()`. 실패하면 인계 파일을 지우고 앱은 그대로.
   7. 새 앱 시작: 인계 파일이 있으면(24시간 안) 설치기가 다시 넘긴 **옛 argv 경로를 무시**하고, 설정 `restoreSession`과 무관하게 세션을 **한 번** 복원한다. 초안은 기존 복구 제안 흐름. `lastRunVersion`으로 설치기 직접 설치 뒤에도 `업데이트됨`.
-  8. 서명 키: **사용자가 비밀번호를 걸어 직접** 만든다(`npm run tauri signer generate -- -w <키 파일>`). 비밀 키는 로컬 비밀값 폴더 `%USERPROFILE%\Documents\Sensitive\frond-updater.key`(git·클라우드 밖, 공개 키 `.key.pub`도 같은 폴더), 비밀번호는 같은 폴더의 로컬 비밀값 env 파일 `FROND_UPDATER_KEY_PASSWORD=` 줄. 저장소에는 공개 키 **내용 한 줄만** `tauri.conf.json`에 커밋한다. 에이전트는 진짜 키를 만들지 않고, 비밀번호를 보거나 입력하거나 환경 변수에 넣지 않는다.
-     - 빌드는 세 갈래: ① **재설치 빌드**(에이전트) = 공개 키만 든 `npm run app:build` — 기본 설정에 `createUpdaterArtifacts`가 없어 서명 산출물을 만들지 않고 비밀 키도 묻지 않는다. ② **진짜 키 서명 릴리스 빌드** = 사용자가 자기 터미널에서 `release-build.ps1` — 스크립트가 env 파일에서 그 한 줄만 읽어 자식 프로세스의 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`로만 넘기고(출력·로그 없음), 줄이 없으면 `Read-Host -AsSecureString`으로 묻는다. ③ **E2E 시험 빌드**(에이전트) = 비밀번호 없는 일회용 시험 키(스크래치·`%TEMP%`에만, 커밋 금지, 끝나면 삭제).
+  8. 서명 키: **사용자가 비밀번호를 걸어 직접** 만든다(`npm run tauri signer generate -- -w <키 파일>`, 2026-11-27 생성함). 기본 위치 `%USERPROFILE%\.tauri\frond-updater.key`(공개 키 `.key.pub` 같은 폴더, 저장소 밖), 비밀번호는 로컬 비밀값 env 파일(git·클라우드 밖)의 `FROND_UPDATER_KEY_PASSWORD=` 줄. 릴리스 스크립트는 다른 키 경로도 받는다(인수 `-KeyFile` → env 파일 선택 줄 `FROND_UPDATER_KEY_PATH=` → 기본 경로). 저장소에는 공개 키 **내용 한 줄만** `tauri.conf.json`에 커밋한다. 에이전트는 진짜 키를 만들거나 열지 않고, 비밀번호를 보거나 입력하거나 환경 변수에 넣지 않는다.
+     - 빌드는 세 갈래: ① **재설치 빌드**(에이전트) = 공개 키만 든 `npm run app:build` — 기본 설정에 `createUpdaterArtifacts`가 없어 서명 산출물을 만들지 않고 비밀 키도 묻지 않는다. ② **진짜 키 서명 릴리스 빌드** = 사용자가 자기 터미널에서 `release-build.ps1` — 스크립트가 env 파일에서 비밀번호 줄(과 선택 키 경로 줄)만 읽어 자식 프로세스의 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`로만 넘기고(출력·로그 없음), 줄이 없으면 `Read-Host -AsSecureString`으로 묻는다. ③ **E2E 시험 빌드**(에이전트) = 비밀번호 없는 일회용 시험 키(스크래치·`%TEMP%`에만, 커밋 금지, 끝나면 삭제).
      - 시험 공개 키가 릴리스 설정에 섞이지 않게: 시험 키는 임시 덧설정 파일로만 넘기고 `tauri.conf.json`에 쓰지 않는다(E2E 스크립트가 앞뒤로 `git diff`로 확인), 시험 서명 환경 변수는 자식 프로세스에만, 릴리스 스크립트는 설정 `pubkey`가 `.key.pub`와 다르면 멈춘다.
      - 백업 두 곳(이 PC + 오프라인, 키 파일과 비밀번호는 따로). GitHub secret은 다시 읽을 수 없어 백업이 아니다. 키를 잃으면 기존 설치본은 앱 안 업데이트를 영영 못 받는다.
   9. 릴리스: 버전은 `package.json`(+lock)·`tauri.conf.json`·`src-tauri/Cargo.toml`(+`Cargo.lock`)을 `scripts/release/bump-version.mjs`로 함께(`frond-core`는 앱 버전과 따로). `CHANGELOG.md`의 `## <버전> — 날짜` 절이 `latest.json` `notes`와 GitHub 릴리스 본문. `scripts/release/release-build.ps1`(사용자가 실행)이 확인(공개 키 일치·`TAURI_CONFIG` 없음 등) → 서명 빌드 → `make-latest-json.mjs` → 올릴 `gh release create --draft` 명령만 출력. `-DryRun`은 확인만 하고 키·비밀번호를 읽지 않는다. 발행은 사용자 지시로 따로(draft → 시험 → Latest, 문제면 이전 릴리스를 Latest로).
@@ -81,14 +81,14 @@
 | U-2 | 제목 표시줄 알약, 설정 '업데이트' 탭(항목·패널), 스키마 `available`, 브라우저 미리보기 `?update=` 상태 흉내, `add-setting` 표·README 설정 표 | 상태마다 라이트·다크·좁은 창 확인, 포커스 안 가져감 |
 | U-3 | `restartToUpdate()` 보존 순서, 시작 때 인계 처리(옛 argv 무시·강제 복원·업데이트됨), 설치 실패 복구 | 단위 시험 통과, 실제 흐름은 U-4 |
 | U-4 | `scripts/update-e2e/`(시험 키·격리 덧설정·서버·CDP), `scripts/release/make-latest-json.mjs` | 필수 시나리오 통과, 실제 설치본·파일 연결 무변경, 정리 끝 |
-| U-5 | 공개 키, 릴리스 덧설정, `release-build.ps1`·`bump-version.mjs`, 0.2.0, 문서(개인정보·설명서·CHANGELOG·README·CLAUDE.md·roadmap·next-session) | 가드 시험(공개 키는 빈 값이거나 minisign 형식)·`-DryRun` 통과, `Frond_0.2.0_x64-setup.exe` |
+| U-5 | 공개 키(`.key.pub` 내용), 릴리스 덧설정, `release-build.ps1`·`bump-version.mjs`, 0.2.0, 문서(개인정보·설명서·CHANGELOG·README·CLAUDE.md·roadmap·next-session) | 가드 시험(공개 키 필수·minisign 형식)·`-DryRun`(공개 키 일치) 통과, `Frond_0.2.0_x64-setup.exe` |
 
-- U-1~U-4는 진짜 서명 키 없이 한다. U-5에서 공개 키 파일이 아직 없으면 **`pubkey` 한 줄만 비우고** 나머지를 끝낸다. 키가 생기면 그 한 줄만 따로 커밋한다. 재설치 빌드 때도 없으면 그 0.2.0은 `nokey`로 업데이트를 끈 채 뜨고, 키가 든 판을 한 번 더 직접 설치해야 한다.
+- U-1~U-4는 진짜 서명 키와 무관하게 한다(E2E는 시험 키). 키는 이미 있으므로 키 때문에 멈추는 지점은 없다. Rust `nokey` 판정은 공개 키가 빈 빌드(포크 등)를 위한 안전장치로만 남긴다.
 - 커밋은 단위마다 하나(U-5는 코드·문서 둘).
 
 ## 사용자 결정
 
-1. **서명 키 방식 — 결정(2026-11-27)**: 「비밀번호 걸어 직접 생성」. 같은 날 보관 위치도 정함 — 키 두 파일은 로컬 비밀값 폴더 `Documents\Sensitive`, 비밀번호는 그 폴더 env 파일의 `FROND_UPDATER_KEY_PASSWORD` 줄. 남은 일: 사용자가 키를 만들기(그 전까지는 공개 키 빈 채로 진행).
+1. **서명 키 방식 — 결정·생성 끝(2026-11-27)**: 「비밀번호 걸어 직접 생성」. 키 두 파일은 `%USERPROFILE%\.tauri\`, 비밀번호는 로컬 비밀값 env 파일의 `FROND_UPDATER_KEY_PASSWORD` 줄.
 2. 키 백업 둘째 자리(오프라인 USB·비밀번호 관리자 등, 키 파일과 비밀번호는 따로) — 사용자가 직접 둔다. 첫 실제 릴리스 전.
 3. 첫 GitHub 릴리스 시점 — 이번엔 안 함.
 4. 기본값·문구는 위 결정대로 진행(2026-10-06 「이후 단계는 사용자 확인을 기다리지 않고 진행」). 바꾸고 싶으면 알려 주면 된다.
