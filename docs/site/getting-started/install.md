@@ -16,15 +16,19 @@ npm install
 npm run app:build
 ```
 
-`target\release\bundle\nsis\Frond_0.1.0_x64-setup.exe`가 만들어집니다. 실행하면 현재 사용자 계정에 설치됩니다(관리자 권한 불필요, `%LOCALAPPDATA%\Frond`). WebView2 런타임이 없으면 설치기가 내려받습니다.
+`target\release\bundle\nsis\Frond_0.2.0_x64-setup.exe`가 만들어집니다. 실행하면 현재 사용자 계정에 설치됩니다(관리자 권한 불필요, `%LOCALAPPDATA%\Frond`). WebView2 런타임이 없으면 설치기가 내려받습니다.
 
 ## 같은 버전을 다시 설치할 때
 
 설치기가 "이미 설치됨" 페이지를 먼저 띄웁니다. **추가/재설치**를 골라 끝까지 진행해야 파일이 바뀝니다(창을 닫으면 아무것도 바뀌지 않습니다). 페이지 없이 덮어쓰려면 설치기를 `/S` 옵션으로 실행합니다.
 
 ```powershell
-Frond_0.1.0_x64-setup.exe /S
+Frond_0.2.0_x64-setup.exe /S
 ```
+
+## 업데이트
+
+0.2.0부터 설치기로 설치한 Frond는 새 버전을 앱 안에서 받습니다. 다 받으면 제목 표시줄에 **업데이트**가 뜨고, 누르면 재시작해 적용합니다([설정 → 업데이트](../customize/settings.md#업데이트)). 0.1.0을 쓰고 있으면 0.2.0은 설치기로 한 번 직접 설치합니다.
 
 ## MdEditor 이름으로 설치한 적이 있다면
 

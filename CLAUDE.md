@@ -52,6 +52,7 @@ src-tauri/             Tauri 2 백엔드. lib.rs(창·argv·single-instance·AI 
                        assoc.rs(파일 연결·기본 앱), elevation.rs(관리자 권한 감지), save.rs(저장·etag 충돌·인코딩·줄바꿈 변환),
                        print_menu.rs(WebView2 기본 메뉴 '인쇄' → 앱 인쇄 확인), drafts.rs(초안 백업), appdata.rs(데이터 폴더 %APPDATA%\Frond·옛 MdEditor 폴더 이전), assets.rs(붙여넣은 이미지), themes.rs(사용자 테마 폴더 문서\Frond\themes·옛 %APPDATA% 폴더 이전),
                        install.rs(설치 방식 판정 — MSIX·Scoop·설치기·개발), license.rs(권리 판정 — Store 밖은 모두 열림, Store 공급자 자리),
+                       update.rs(앱 안 업데이트 — 설치기판 + 공개 키일 때만 updater 플러그인 등록, 재시작 인계 파일),
                        nsis/hooks.nsh(설치기 레지스트리 훅), capabilities/(최소 권한)
 src/                   프런트(vanilla TS). main.ts 셸(탭별 문서 상태·열기·보기/소스/분할 모드·저장·초안·외부 변경·비교·세션·목차·상태바·줌·설정 적용),
                        tabs.ts(제목 표시줄 탭 띠), session.ts(세션 복원 저장값), split.ts(분할 뷰 손잡이·스크롤 동기 계산),
@@ -67,12 +68,15 @@ src/                   프런트(vanilla TS). main.ts 셸(탭별 문서 상태·
                        theme/catalog.ts(테마 목록 = 내장 → 추천 → 구매자 전용 → 사용자, 적용 테마 게이트 visibleTheme),
                        theme/supporter.ts(구매자 전용 테마 — docs/themes/supporter/*.json),
                        license.ts(권리 상태·canUseTheme·구매 권유 순수 함수), purchase.ts(설정 정보 탭·구매 안내·권유 배너),
+                       update.ts(앱 안 업데이트 상태 기계·확인 주기·인계 판정), update-ui.ts(제목 표시줄 알약·확인 팝업·설정 업데이트 탭),
                        style.css(셸 CSS·대체 색 토큰)
                        titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), frame.ts(둥근 창 틀 — 여백 크기 조절·최대화 때 각지게), nav.ts(왼쪽 탐색 영역 탭·최근 파일),
                        recent.ts(최근 목록 순수 함수·문서 제목 추출),
                        resize.ts(목차 폭), settings.ts(설정 스키마 — 항목을 더하면 팝업에 자동 표시), settings-dialog.ts,
                        dialog.ts(알림·확인 팝업), context-menu.ts(오른쪽 클릭 메뉴), prefs.ts(UI 상태 localStorage)
 public/fonts/          D2Coding woff2 (OFL) 번들
+scripts/release/        릴리스 — release-build.ps1(서명 빌드·latest.json·올릴 명령 출력, 발행 안 함), bump-version.mjs, make-latest-json.mjs
+scripts/update-e2e/     발행 없는 업데이트 E2E — 시험 키·격리 덧설정으로 시험 설치기 두 벌, 127.0.0.1 서버, CDP 시나리오(README.md)
 integrations/          AI 앱 연동 — open-new-md.ps1(Claude Code·Codex PostToolUse 훅: 새 md를 --from-hook 표식과 함께 앱에 넘김). UTF-8 BOM 유지
 spike/                 (main에 없음) Phase 0 실험 앱·측정 — archived-exp/ime-spike, archived-exp/wpf-hello
 ```
@@ -104,5 +108,9 @@ cd crates/frond-core; cargo run --example roundtrip -- ../../samples/raw   # 제
 - 사용자 조절 값은 `src/settings.ts`의 `SETTINGS`에 추가하고 `main.ts` `applySetting`에서 적용한다 (하드코딩 금지).
   설정 팝업은 왼쪽 카테고리 탭 구조 — 항목·기능을 더할 때는 `add-setting` 스킬(`.claude/skills/add-setting/`)을 따른다
 - CM6·다크 모드에서 `.cm-cursor` 색은 반드시 테마에서 지정한다 (기본 검정이라 안 보임 — Phase 0 발견)
+- 앱 안 업데이트(결정 `20261127-app-update`): 서명 키는 저장소 밖 `$env:USERPROFILE\.tauri\frond-updater.key`(+`.pub`, 사용자가 비밀번호를 걸어 만듦)이고
+  `tauri.conf.json` `pubkey`는 그 `.pub` 내용이다. 에이전트는 비밀 키·비밀번호 파일을 열지 않는다 — `npm run app:build`는 서명 없이 되고(기본 설정에
+  `createUpdaterArtifacts` 없음), 서명 릴리스 빌드는 사용자가 `scripts/release/release-build.ps1`(덧설정 `src-tauri/tauri.release.conf.json`)로 돌린다(에이전트는 `-DryRun`만).
+  빌드 전 `$env:TAURI_CONFIG`를 비운다. 시험 엔드포인트·시험 키는 `scripts/update-e2e`가 저장소 밖 임시 덧설정으로만 넘기고, 커밋된 설정은 `src/release-config.test.ts`가 지킨다
 - 앱 아이콘은 `src-tauri/icons/icon.svg`가 원본이고, `icon.ico`의 16·24·32px은 픽셀 격자에 맞춘 전용판이다.
   아이콘 파일만 바꾸면 `tauri-build`가 다시 돌지 않아 exe에 예전 아이콘이 남는다 → `tauri.conf.json`을 touch한 뒤 빌드

@@ -2,7 +2,7 @@
 
 - Date: 2026-11-27
 - Idea id: `20261127-app-update`
-- Status: `decided` — 서명 키는 2026-11-27 사용자가 비밀번호를 걸어 직접 만들었다([사용자 결정](#사용자-결정))
+- Status: `decided` — 서명 키는 2026-11-27 사용자가 비밀번호를 걸어 직접 만들었다([사용자 결정](#사용자-결정)). **구현 2026-11-27**(U-1~U-5, [구현 결과](#구현-결과))
 - Verdict:
   - `ADOPT_WITH_CHANGES`: 설치기판(NSIS)에 Tauri updater — 조용한 확인·자동 받기·제목 표시줄 알약·사용자가 누를 때 재시작, 재시작 전 문서 보존, 설정 '업데이트' 탭, 로컬 빌드 + 서명 + `latest.json` 스크립트, 발행 없는 E2E
   - `DEFER`: Store판 `StoreContext` 「새 버전 있음」 표시(R-2 뒤), 종량제 연결 판정, 확인만 하고 받기는 누를 때(`notify` 선택지), GitHub Actions `tauri-action` 릴리스, Scoop 새 버전 알림
@@ -86,6 +86,14 @@
 - U-1~U-4는 진짜 서명 키와 무관하게 한다(E2E는 시험 키). 키는 이미 있으므로 키 때문에 멈추는 지점은 없다. Rust `nokey` 판정은 공개 키가 빈 빌드(포크 등)를 위한 안전장치로만 남긴다.
 - 커밋은 단위마다 하나(U-5는 코드·문서 둘).
 
+## 구현 결과
+
+- 2026-11-27 U-1 `cbf85f3`·U-2 `c1f8557`·U-3 `eb4e96e`·U-4 `fe19287`·U-5 `95d220a`, 고침 `9423eb1`·`1f1b82b`. 앱 버전 0.2.0, `pubkey`는 `.key.pub` 내용.
+- 발행 없는 E2E(`scripts/update-e2e`, 시험 빌드 0.9.0·0.9.1·0.9.2): 필수 S1~S14·S17 통과, S16 기록(받은 설치기에 `Zone.Identifier` 없음), S15는 돌리지 않음(NSIS 모달 위험). 실제 설치본 exe·레지스트리·바로 가기·`%APPDATA%\Frond` 무변경.
+- 실측: `install()` 뒤 옛 앱은 1초 안에 끝나고 2초 뒤 새 버전이 뜬다(passive). `exit(0)` 직전 localStorage 기록도 남았다 — 인계 파일은 그대로 둔다(보장 없는 동작에 기대지 않음). 설치기가 다시 띄운 앱은 부모 환경 변수를 물려받는다.
+- 계획과 다른 점: updater 2.14는 서명에 든 버전과 `latest.json` 버전이 다르면 받기를 거절한다 → 같은 설치기를 더 새 버전으로 흉내 내지 못해 0.9.2를 따로 빌드했다. 이 오류도 서명 문구로 보인다(`1f1b82b`). 시험 제품의 `HKCU\Software\cyKim\FrondUpdateTest`는 제거기가 남겨(‘앱 데이터 삭제’를 안 고르면 Tauri 기본 동작) cleanup이 지운다.
+- 한계: 업데이트마다 `%TEMP%\<제품>-<버전>-updater-*`에 받은 설치기가 남는다(플러그인 동작). `requireSignedVersion`은 켜지 않았다(버전 불일치 거절은 이미 됨).
+
 ## 사용자 결정
 
 1. **서명 키 방식 — 결정·생성 끝(2026-11-27)**: 「비밀번호 걸어 직접 생성」. 키 두 파일은 `%USERPROFILE%\.tauri\`, 비밀번호는 로컬 비밀값 env 파일의 `FROND_UPDATER_KEY_PASSWORD` 줄.
@@ -95,7 +103,7 @@
 
 ## Follow-up
 
-- Spec / implementation owner: 에이전트(2026-11-27 다음 세션, U-1~U-5). 사용자 실기는 `docs/next-session.md` §2 P(구현 때 추가)
+- Spec / implementation owner: 에이전트(2026-11-27, U-1~U-5 구현 끝). 사용자 실기는 `docs/next-session.md` §2 P
 - Revisit when: 첫 GitHub 릴리스를 낼 때(서명 산출물·draft 시험·Latest 전환), 릴리스가 잦아지면 `tauri-action`으로, R-2 MSIX 때 `StoreContext` 알림, Win11에서 업데이트 설치기 SmartScreen·Smart App Control 실측
 - Logged in INDEX: yes
 
