@@ -72,7 +72,7 @@ src/                   프런트(vanilla TS). main.ts 셸(탭별 문서 상태·
                        style.css(셸 CSS·대체 색 토큰)
                        titlebar.ts(창 테두리 없음 + 열별 머리 띠 = 제목 표시줄), frame.ts(둥근 창 틀 — 여백 크기 조절·최대화 때 각지게), nav.ts(왼쪽 탐색 영역 탭·최근 파일),
                        recent.ts(최근 목록 순수 함수·문서 제목 추출),
-                       resize.ts(목차 폭), settings.ts(설정 스키마 — 항목을 더하면 팝업에 자동 표시), settings-dialog.ts,
+                       toc-panel.ts(목차 자리 오른쪽·왼쪽·접기 — 오른쪽은 #main-body로 옮김), resize.ts(목차 폭), settings.ts(설정 스키마 — 항목을 더하면 팝업에 자동 표시), settings-dialog.ts,
                        dialog.ts(알림·확인 팝업), context-menu.ts(오른쪽 클릭 메뉴), prefs.ts(UI 상태 localStorage)
 public/fonts/          D2Coding woff2 (OFL) 번들
 scripts/release/        릴리스 — release-build.ps1(서명 빌드·latest.json·올릴 명령 출력, 발행 안 함), bump-version.mjs, make-latest-json.mjs
