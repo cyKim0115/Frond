@@ -4,13 +4,19 @@ import {
   EMPTY_PREFS,
   failureMessage,
   type FoundUpdate,
+  type Handoff,
+  handoffFresh,
+  isHandoff,
   isNewer,
   isUpdatePrefs,
   notesPreview,
+  parseHandoff,
   pillLevel,
   readUpdatePrefs,
   recordSeen,
   shouldDownload,
+  type StartupInput,
+  startupPlan,
   UPDATE,
   Updater,
   type UpdaterApi,
@@ -327,5 +333,128 @@ describe("Updater", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+// ---- 재시작 인계 (U-3) ------------------------------------------------------------------
+
+const SESSION = { tabs: [{ path: "C:/docs/a.md", mode: "split" as const, line: 12 }, { path: "C:/docs/b.md", mode: "view" as const, line: 0 }], active: 1 };
+const HANDOFF: Handoff = { v: 1, from: "0.2.0", to: "0.2.1", notes: "- 새 기능", at: T0, session: SESSION, drafts: ["C:/docs/a.md"] };
+
+describe("인계 파일", () => {
+  it("isHandoff — 모양 검증", () => {
+    expect(isHandoff(HANDOFF)).toBe(true);
+    expect(isHandoff({ ...HANDOFF, session: null, drafts: [] })).toBe(true);
+    expect(isHandoff({ ...HANDOFF, v: 2 })).toBe(false);
+    expect(isHandoff({ ...HANDOFF, at: "어제" })).toBe(false);
+    expect(isHandoff({ ...HANDOFF, drafts: [1] })).toBe(false);
+    expect(isHandoff({ ...HANDOFF, session: { tabs: [] } })).toBe(false);
+    expect(isHandoff(null)).toBe(false);
+  });
+
+  it("parseHandoff — 깨진 JSON·빈 값은 null, 세션은 바로잡는다", () => {
+    expect(parseHandoff(null)).toBe(null);
+    expect(parseHandoff("")).toBe(null);
+    expect(parseHandoff("{broken")).toBe(null);
+    expect(parseHandoff(JSON.stringify(HANDOFF))).toEqual(HANDOFF);
+    const wild = { ...HANDOFF, session: { tabs: [...SESSION.tabs, { path: "", mode: "x", line: -1 }], active: 9 } };
+    expect(parseHandoff(JSON.stringify(wild))?.session).toEqual({ tabs: SESSION.tabs, active: 1 });
+  });
+
+  it("handoffFresh — 24시간", () => {
+    expect(handoffFresh(HANDOFF, T0)).toBe(true);
+    expect(handoffFresh(HANDOFF, T0 + DAY - 1)).toBe(true);
+    expect(handoffFresh(HANDOFF, T0 + DAY)).toBe(false);
+    expect(handoffFresh(HANDOFF, T0 - 60_000)).toBe(true); // 시계가 조금 뒤로
+    expect(handoffFresh(HANDOFF, T0 - HOUR)).toBe(false); // 미래에 쓴 파일
+  });
+});
+
+describe("startupPlan", () => {
+  const base: StartupInput = { handoff: null, restoreSetting: "restore", pending: [], current: "0.2.1", lastRunVersion: "0.2.1", now: T0 + 30_000 };
+
+  it("인계 파일 없음 — 설정대로, 인수 파일은 연다, 같은 버전이면 알림 없음", () => {
+    expect(startupPlan(base)).toEqual({ restoreFrom: "saved", open: [], notice: null });
+    expect(startupPlan({ ...base, restoreSetting: "none", pending: ["C:/x.md"] })).toEqual({ restoreFrom: "none", open: ["C:/x.md"], notice: null });
+  });
+
+  it("업데이트 재시작 — 설정과 무관하게 인계 세션, 옛 argv는 버림, 노트 있는 알림", () => {
+    for (const restoreSetting of ["restore", "none"]) {
+      for (const pending of [[], ["C:/docs/a.md"]]) {
+        expect(startupPlan({ ...base, handoff: HANDOFF, restoreSetting, pending, lastRunVersion: "0.2.0" })).toEqual({
+          restoreFrom: "handoff",
+          open: [],
+          notice: { from: "0.2.0", to: "0.2.1", notes: "- 새 기능" },
+        });
+      }
+    }
+  });
+
+  it("인계 파일이 있는데 버전이 그대로 — 설치가 안 됐다: 세션만, 알림 없음", () => {
+    expect(startupPlan({ ...base, handoff: HANDOFF, current: "0.2.0", lastRunVersion: "0.2.0" })).toEqual({ restoreFrom: "handoff", open: [], notice: null });
+  });
+
+  it("받은 것과 다른 버전으로 올라갔으면 노트 없이 알림", () => {
+    expect(startupPlan({ ...base, handoff: HANDOFF, current: "0.2.2" }).notice).toEqual({ from: "0.2.0", to: "0.2.2", notes: null });
+  });
+
+  it("오래된 인계 파일은 무시 — 평소 시작", () => {
+    const stale = { ...HANDOFF, at: T0 - 2 * DAY };
+    expect(startupPlan({ ...base, handoff: stale, restoreSetting: "none", pending: ["C:/x.md"] })).toEqual({ restoreFrom: "none", open: ["C:/x.md"], notice: null });
+  });
+
+  it("lastRunVersion — 없음(처음 실행)은 알림 없음, 작으면 노트 없는 알림, 같거나 크면 없음", () => {
+    expect(startupPlan({ ...base, lastRunVersion: null }).notice).toBe(null);
+    expect(startupPlan({ ...base, lastRunVersion: "0.2.0" }).notice).toEqual({ from: "0.2.0", to: "0.2.1", notes: null });
+    expect(startupPlan({ ...base, lastRunVersion: "0.2.1" }).notice).toBe(null);
+    expect(startupPlan({ ...base, lastRunVersion: "0.3.0" }).notice).toBe(null);
+  });
+});
+
+describe("Updater.install", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("받아 둔 것이 없으면 던진다", async () => {
+    const { updater } = makeUpdater([]);
+    await expect(updater.install()).rejects.toThrow();
+  });
+
+  it("설치가 실패하면 ready로 되돌리고 던진다", async () => {
+    const found = fakeUpdate("0.2.1");
+    found.install = async () => {
+      throw new Error("io error");
+    };
+    const { updater } = makeUpdater([found]);
+    await updater.auto();
+    const kinds: string[] = [];
+    updater.onChange((s) => kinds.push(s.kind));
+    await expect(updater.install()).rejects.toThrow("io error");
+    expect(kinds).toEqual(["installing", "ready"]);
+    expect(updater.current.kind).toBe("ready");
+  });
+
+  it("설치가 돌아오면(프로세스가 안 끝남) 실패로 본다", async () => {
+    const { updater } = makeUpdater([fakeUpdate("0.2.1")]);
+    await updater.auto();
+    await expect(updater.install()).rejects.toThrow();
+    expect(updater.current.kind).toBe("ready");
+  });
+
+  it("installing 중에는 확인하지 않는다", async () => {
+    const found = fakeUpdate("0.2.1");
+    let release: () => void = () => undefined;
+    found.install = () => new Promise<void>((r) => (release = r));
+    const { updater, calls } = makeUpdater([found, null]);
+    await updater.auto();
+    const installing = updater.install().catch(() => undefined);
+    expect(updater.current.kind).toBe("installing");
+    await updater.checkNow();
+    expect(calls.length).toBe(1);
+    release();
+    await installing;
   });
 });

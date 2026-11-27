@@ -48,7 +48,21 @@ import { applyTheme, registerColorTokens, resolveTheme, type ThemeDef, themeTran
 import { createThemePanel } from "./theme-panel";
 import { initFrame } from "./frame";
 import { initTitlebar } from "./titlebar";
-import { isUpdateSupport, pluginApi, setUpdateSupport, Updater, type UpdateSupport } from "./update";
+import {
+  errorText,
+  failureMessage,
+  type Handoff,
+  isUpdateSupport,
+  parseHandoff,
+  pluginApi,
+  readUpdatePrefs,
+  recordRunVersion,
+  setUpdateSupport,
+  startupPlan,
+  UPDATE,
+  Updater,
+  type UpdateSupport,
+} from "./update";
 import { createUpdateUi, PREVIEW_CURRENT, PREVIEW_KINDS, type PreviewKind, previewUpdater } from "./update-ui";
 import { countText, type TextCount } from "./wordcount";
 import "./style.css";
@@ -2284,14 +2298,19 @@ function onPaneScroll(from: "editor" | "viewer"): void {
   syncFrame = requestAnimationFrame(from === "editor" ? syncViewerFromEditor : syncEditorFromViewer);
 }
 
-function saveSessionNow(): void {
-  window.clearTimeout(sessionTimer);
-  if (!sessionReady || !IS_TAURI) return;
+/** 지금 열린 탭 — 세션 저장과 업데이트 인계 파일이 같이 쓴다. 탭이 없으면 null */
+function currentSession(): Session | null {
   const session: Session = {
     tabs: tabs.map((t) => ({ path: t.doc.path, mode: t.mode, line: sessionLine(t) })),
     active: active ? Math.max(0, tabs.indexOf(active)) : 0,
   };
-  writeSession(session.tabs.length ? session : null);
+  return session.tabs.length ? session : null;
+}
+
+function saveSessionNow(): void {
+  window.clearTimeout(sessionTimer);
+  if (!sessionReady || !IS_TAURI) return;
+  writeSession(currentSession());
 }
 
 /**
@@ -2556,11 +2575,22 @@ async function init(): Promise<void> {
     saveSessionNow();
   });
 
-  const pending = await invoke<string[]>("take_pending_paths");
-  const session = getSetting("restoreSession") === "restore" ? readSession() : null;
+  // 업데이트 재시작 인계(update.rs) — 인수 파일보다 먼저 본다. 신선하면 옛 argv를 버리고 그 세션을 설정과 무관하게 한 번 연다
+  const handoff = parseHandoff(await invoke<string | null>("update_handoff_take").catch(() => null));
+  const version = await getVersion().catch(() => null);
+  const plan = startupPlan({
+    handoff,
+    restoreSetting: getSetting("restoreSession"),
+    pending: await invoke<string[]>("take_pending_paths"),
+    current: version ?? "",
+    lastRunVersion: readUpdatePrefs().lastRunVersion,
+    now: Date.now(),
+  });
+  const session = plan.restoreFrom === "handoff" ? (handoff?.session ?? null) : plan.restoreFrom === "saved" ? readSession() : null;
   // 더블클릭으로 연 파일을 먼저 보이고, 지난 세션 탭은 그 앞에 뒤에서 채운다
-  for (const path of pending) await openPath(path);
-  if (session) await restoreSession(session, pending.length === 0);
+  for (const path of plan.open) await openPath(path);
+  if (session) await restoreSession(session, plan.open.length === 0);
+  if (version) recordRunVersion(version);
   sessionReady = true;
   if (!active) showWelcome();
   saveSession();
@@ -2569,26 +2599,129 @@ async function init(): Promise<void> {
   $("#status-elevated").hidden = !(await invoke<boolean>("is_elevated").catch(() => false));
   void checkWebviewVersion();
   startNag();
-  void startUpdater();
+  void startUpdater(version ?? "—", plan.notice);
 }
 
-/** 지원 판정(update.rs) → 업데이터를 만들고 자동 확인을 예약한다. Store·Scoop·개발 빌드는 패널에 사유만 */
-async function startUpdater(): Promise<void> {
+/** 지원 판정(update.rs) → 업데이터를 만들고 자동 확인을 예약한다. Store·Scoop·개발 빌드는 패널에 사유만.
+ * 업데이트 직후면 알약 자리에 '업데이트됨'을 잠깐 보인다 */
+async function startUpdater(version: string, notice: { from: string | null; to: string; notes: string | null } | null): Promise<void> {
   const support: UpdateSupport = await invoke<unknown>("get_update_support").then(
     (s) => (isUpdateSupport(s) ? s : "dev"),
     () => "dev",
   );
   setUpdateSupport(support);
-  const version = await getVersion().catch(() => "—");
   updater = new Updater({ support, api: pluginApi, autoEnabled: () => getSetting("updateCheck") === "auto" });
   updateUi.attach(updater, version);
+  if (notice) {
+    updater.showUpdated(notice.from, notice.to, notice.notes);
+    window.setTimeout(() => updater?.clearUpdated(), UPDATE.updatedNoticeMs);
+  }
   updateScheduleReady = true;
   syncUpdateSchedule();
 }
 
-/** '재시작해 업데이트' — 확인 팝업 뒤. 문서 보존·설치는 다음 단계에서 잇는다 */
+/** 재시작 업데이트 순서가 도는 중 — 두 번 누르지 않게 */
+let updateRestarting = false;
+
+/**
+ * '재시작해 업데이트'(확인 팝업 뒤) — Windows `install()`은 설치기를 띄우고 바로 프로세스를 끝낸다(onCloseRequested·초안 주기를
+ * 거치지 않는다). 그래서 쓰기를 전부 여기서 await로 끝낸다: 조합 확정 → 저장 중이면 기다림 → 저장 안 한 문서(모두 저장 / 초안으로)
+ * → 세션 즉시 저장 → 인계 파일 → install. 어느 단계든 실패하면 멈추고 앱은 그대로 둔다
+ */
 async function restartToUpdate(): Promise<void> {
-  flashStatus("업데이트 설치는 아직 연결하지 않았습니다.");
+  if (!updater || updateRestarting || updater.current.kind !== "ready") return;
+  if (!IS_TAURI) {
+    flashStatus("브라우저 미리보기에서는 업데이트를 설치할 수 없습니다.");
+    return;
+  }
+  const ready = updater.current;
+  updateRestarting = true;
+  try {
+    await flushComposition();
+    const until = Date.now() + 5000;
+    while (busyTasks > 0 && Date.now() < until) await new Promise((r) => setTimeout(r, 100));
+    if (busyTasks > 0) {
+      await showDialog({ title: "업데이트", message: "저장 중입니다. 잠시 뒤 다시 눌러 주세요." });
+      return;
+    }
+    const drafts = await keepUnsavedForUpdate();
+    if (drafts === null) return;
+    saveSessionNow();
+    const handoff: Handoff = {
+      v: 1,
+      from: await getVersion().catch(() => ""),
+      to: ready.version,
+      notes: ready.notes,
+      at: Date.now(),
+      session: currentSession(),
+      drafts,
+    };
+    try {
+      await invoke("update_handoff_write", { json: JSON.stringify(handoff) });
+    } catch (e) {
+      await showDialog({ title: "업데이트를 멈췄습니다", message: "재시작 뒤 탭을 되살릴 정보를 남기지 못했습니다.", detail: errorText(e) });
+      return;
+    }
+    window.clearInterval(draftTimer);
+    statusPath.textContent = "업데이트를 설치하고 다시 엽니다…";
+    try {
+      await updater.install(); // 정상이면 여기서 프로세스가 끝난다
+    } catch (e) {
+      const detail = errorText(e);
+      console.warn("[update] install 실패:", detail);
+      await invoke("update_handoff_take").catch(() => undefined);
+      scheduleDrafts();
+      syncUpdateSchedule();
+      statusPath.textContent = active?.doc.path ?? "";
+      await showDialog({ title: "업데이트", message: failureMessage(detail, "install"), detail });
+    }
+  } finally {
+    updateRestarting = false;
+  }
+}
+
+/**
+ * 업데이트 전 저장 안 한 문서 — 1개여도 같은 팝업. 창 닫기와 달리 '저장 안 함(버리기)'은 없다(초안까지 지우므로).
+ * 초안으로 남긴 문서 경로를 돌려준다(모두 저장이면 빈 배열). 취소·실패면 null — 업데이트를 멈춘다
+ */
+async function keepUnsavedForUpdate(): Promise<string[] | null> {
+  const dirtyTabs = tabs.filter((t) => t.dirty);
+  if (dirtyTabs.length === 0) return [];
+  const choice = await showChoice({
+    title: "저장하지 않은 문서",
+    message: `문서 ${dirtyTabs.length}개에 저장하지 않은 변경이 있습니다. 업데이트 전에 어떻게 할까요?`,
+    detail: dirtyTabs.map((t) => t.doc.name).join(", "),
+    choices: [
+      { value: "drafts", label: "초안으로 두고 업데이트" },
+      { value: "save", label: "모두 저장하고 업데이트", kind: "primary" },
+    ],
+    cancelLabel: "취소",
+  });
+  if (choice === "save") {
+    for (const tab of dirtyTabs) {
+      activate(tab);
+      if (!(await save({}, tab))) {
+        await showDialog({ title: "업데이트를 멈췄습니다", message: `‘${tab.doc.name}’을(를) 저장하지 못해 업데이트를 멈췄습니다.` });
+        return null;
+      }
+    }
+    return [];
+  }
+  if (choice !== "drafts") return null;
+  // 같은 글이어도 다시 쓴다 — 탭의 dirty·초안은 그대로 두고, 새 앱이 탭을 열 때 초안 복구를 제안한다
+  const kept: string[] = [];
+  for (const tab of dirtyTabs) {
+    const text = workingText(tab);
+    try {
+      await invoke("write_draft", { path: tab.doc.path, text, baseHash: tab.doc.hash });
+      tab.lastDraftText = text;
+      kept.push(tab.doc.path);
+    } catch (e) {
+      await showDialog({ title: "업데이트를 멈췄습니다", message: `‘${tab.doc.name}’의 초안을 남기지 못해 업데이트를 멈췄습니다.`, detail: errorText(e) });
+      return null;
+    }
+  }
+  return kept;
 }
 
 /** 구매 권유(store-launch A-4) — Store판 비구매자에게만 뜬다. 미리보기는 ?entitlement=free&nag=now 로 곧바로 시험 */

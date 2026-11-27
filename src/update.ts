@@ -11,6 +11,7 @@
 
 import { check as pluginCheck } from "@tauri-apps/plugin-updater";
 import { readPref, writePref } from "./prefs";
+import { normalizeSession, type Session } from "./session";
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -200,6 +201,105 @@ export function failureMessage(detail: string, stage: "check" | "download" | "in
 export function errorText(e: unknown): string {
   if (e instanceof Error) return e.message;
   return typeof e === "string" ? e : String(e);
+}
+
+// ---- 재시작 인계 (U-3) -------------------------------------------------------------------
+//
+// Windows `install()`은 설치기를 띄우고 곧바로 프로세스를 끝낸다. 그 전에 세션·노트를 인계 파일(update.rs)에 남기고,
+// 새 앱은 시작 첫머리에 읽고 지운다. 신선한 인계 파일이 있으면 옛 argv(설치기 `/ARGS`가 처음 인수를 다시 넘김)를 무시하고
+// 설정 '시작할 때'와 무관하게 그 세션을 한 번 다시 연다.
+
+export interface Handoff {
+  v: 1;
+  /** 업데이트 전 버전 */
+  from: string;
+  /** 받아 둔 새 버전 */
+  to: string;
+  notes: string;
+  /** 쓴 시각(유닉스 밀리초) */
+  at: number;
+  session: Session | null;
+  /** 초안으로 남기고 업데이트한 문서 경로 */
+  drafts: string[];
+}
+
+export function isHandoff(value: unknown): value is Handoff {
+  if (typeof value !== "object" || value === null) return false;
+  const h = value as Record<string, unknown>;
+  return (
+    h.v === 1 &&
+    typeof h.from === "string" &&
+    typeof h.to === "string" &&
+    typeof h.notes === "string" &&
+    typeof h.at === "number" &&
+    Number.isFinite(h.at) &&
+    (h.session === null || normalizeSession(h.session) !== null) &&
+    Array.isArray(h.drafts) &&
+    h.drafts.every((d) => typeof d === "string")
+  );
+}
+
+/** 인계 파일 내용(JSON) → 검증된 값. 깨졌으면 null */
+export function parseHandoff(raw: string | null): Handoff | null {
+  if (!raw) return null;
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (!isHandoff(value)) return null;
+    return { ...value, session: value.session === null ? null : normalizeSession(value.session) };
+  } catch {
+    return null;
+  }
+}
+
+/** 24시간 안에 쓴 인계 파일만 믿는다 — 오래된 것은 지난 업데이트가 남긴 찌꺼기. 시계가 조금 뒤로 간 것(5분)은 봐준다 */
+export function handoffFresh(h: Handoff, now: number): boolean {
+  return h.at <= now + 5 * 60_000 && now - h.at < UPDATE.handoffFreshMs;
+}
+
+export interface StartupInput {
+  handoff: Handoff | null;
+  /** 설정 '시작할 때' */
+  restoreSetting: string;
+  /** 이번 실행 인수로 받은 파일 */
+  pending: string[];
+  /** 지금 앱 버전 */
+  current: string;
+  lastRunVersion: string | null;
+  now: number;
+}
+
+export interface StartupPlan {
+  /** 다시 열 세션 — 인계 파일 / 저장된 세션 / 없음 */
+  restoreFrom: "handoff" | "saved" | "none";
+  /** 먼저 열 인수 파일 — 업데이트 재시작이면 옛 argv라 버린다 */
+  open: string[];
+  /** '업데이트됨' 알림. 노트는 인계 파일에 있을 때만 */
+  notice: { from: string | null; to: string; notes: string | null } | null;
+}
+
+export function startupPlan(input: StartupInput): StartupPlan {
+  const { handoff, current, lastRunVersion } = input;
+  if (handoff && handoffFresh(handoff, input.now)) {
+    // 설치가 안 됐는데 다시 켜진 경우(current ≤ from)는 알림 없이 세션만
+    const updated = isNewer(current, handoff.from);
+    return {
+      restoreFrom: "handoff",
+      open: [],
+      notice: updated ? { from: handoff.from, to: current, notes: handoff.to === current ? handoff.notes : null } : null,
+    };
+  }
+  // 설치기로 직접 올린 경우 — 노트 없는 '업데이트됨'. 처음 실행(기록 없음)은 알리지 않는다
+  const updated = lastRunVersion !== null && isNewer(current, lastRunVersion);
+  return {
+    restoreFrom: input.restoreSetting === "restore" ? "saved" : "none",
+    open: input.pending,
+    notice: updated ? { from: lastRunVersion, to: current, notes: null } : null,
+  };
+}
+
+/** 지금 실행 버전을 남긴다 — 다음 실행의 '업데이트됨' 판정 */
+export function recordRunVersion(current: string): void {
+  patchPrefs({ lastRunVersion: current });
 }
 
 // ---- 플러그인 감싸기 ----------------------------------------------------------------------
@@ -412,6 +512,25 @@ export class Updater {
   async unskip(): Promise<void> {
     patchPrefs({ skipped: null });
     await this.checkNow();
+  }
+
+  /**
+   * 받아 둔 업데이트를 설치한다. Windows에서는 설치기를 띄우고 프로세스가 끝나 돌아오지 않는다 — 부르기 전에 모든 쓰기를 끝낸다.
+   * 돌아오거나 던지면 설치가 안 된 것이다: `ready`로 되돌리고 던진다(부른 쪽이 인계 파일을 지우고 앱을 그대로 둔다)
+   */
+  async install(): Promise<void> {
+    const ready = this.state;
+    if (ready.kind !== "ready" || !this.pending) throw new Error("받아 둔 업데이트가 없습니다");
+    this.stop();
+    this.set({ kind: "installing" });
+    try {
+      await this.pending.install();
+    } catch (e) {
+      this.set(ready);
+      throw e;
+    }
+    this.set(ready);
+    throw new Error("설치기가 앱을 끝내지 않았습니다");
   }
 
   /** 재시작 뒤 '업데이트됨' 표시 — 시간이 지나면 `idle`로 */
